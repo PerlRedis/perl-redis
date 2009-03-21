@@ -5,6 +5,7 @@ use strict;
 
 use IO::Socket::INET;
 use Data::Dump qw/dump/;
+use Carp qw/confess/;
 
 =head1 NAME
 
@@ -80,15 +81,15 @@ sub ping {
 
 =head2 set
 
-  $r->set( foo => 'bar' );
+  $r->set( foo => 'bar', $new );
 
 =cut
 
 sub set {
-	my ( $self, $k, $v ) = @_;
-	print $sock "SET $k " . length($v) . "\r\n$v\r\n";
+	my ( $self, $k, $v, $new ) = @_;
+	print $sock ( $new ? "SETNX" : "SET" ) . " $k " . length($v) . "\r\n$v\r\n";
 	my $ok = <$sock>;
-	die dump($ok) unless $ok eq "+OK\r\n";
+	confess dump($ok) unless $ok eq "+OK\r\n";
 }
 
 =head2 get
