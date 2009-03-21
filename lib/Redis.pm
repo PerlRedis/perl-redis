@@ -112,7 +112,24 @@ sub get {
 	return $v;
 }
 
+=head2 incr
 
+  $r->incr('counter');
+  $r->incr('tripplets', 3);
+
+=cut
+
+sub incr {
+	my ( $self, $key, $value ) = @_;
+	if ( defined $value ) {
+		print $sock "INCRBY $key $value\r\n";
+	} else {
+		print $sock "INCR $key\r\n";
+	}
+	my $count = <$sock>;
+	warn "# $key = $count";
+	return $count;
+}
 
 =head1 AUTHOR
 
