@@ -209,6 +209,18 @@ sub keys {
 	return split(/\s/, _sock_result_bulk());
 }
 
+=head2 randomkey
+
+  my $key = $r->randomkey;
+
+=cut
+
+sub randomkey {
+	my ( $self, $glob ) = @_;
+	print $sock "RANDOMKEY\r\n";
+	_sock_result();
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>

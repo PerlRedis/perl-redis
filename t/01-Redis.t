@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 48;
+use Test::More tests => 49;
 
 use lib 'lib';
 
@@ -65,5 +65,8 @@ cmp_ok( $o->type('foo'), 'eq', 'string', 'type' );
 
 cmp_ok( $o->keys('key-*'), '==', $key_next + 1, 'key-*' );
 is_deeply( [ $o->keys('key-*') ], [ @keys ], 'keys' );
+
+ok( my $key = $o->randomkey, 'randomkey' );
+diag "key: $key";
 
 ok( $o->quit, 'quit' );
