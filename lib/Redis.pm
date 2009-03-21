@@ -3,13 +3,12 @@ package Redis;
 use warnings;
 use strict;
 
+use IO::Socket::INET;
+use Data::Dump qw/dump/;
+
 =head1 NAME
 
 Redis - The great new Redis!
-
-=head1 VERSION
-
-Version 0.01
 
 =cut
 
@@ -18,34 +17,63 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
+Pure perl bindings for L<http://code.google.com/p/redis/>
 
     use Redis;
 
-    my $foo = Redis->new();
-    ...
+    my $r = Redis->new();
 
-=head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 new
 
 =cut
 
-sub function1 {
+our $sock;
+my $server = '127.0.0.1:6379';
+
+sub new {
+	my $class = shift;
+	my $self = {};
+	bless($self, $class);
+
+	warn "# opening socket to $server";
+
+	$sock ||= IO::Socket::INET->new(
+		PeerAddr => $server,
+		Proto => 'tcp',
+	) || die $!;
+
+	$self;
 }
 
-=head2 function2
+=head1 Connection Handling
+
+=head2 quit
+
+  $r->quit;
 
 =cut
 
-sub function2 {
+sub quit {
+	my $self = shift;
+
+	close( $sock ) || warn $!;
+}
+
+=head2 ping
+
+	$r->ping || die "no server?";
+
+=cut
+
+sub ping {
+	print $sock "PING\r\n";
+	my $pong = <$sock>;
+	die "ping failed, got ", dump($pong) unless $pong eq "+PONG\r\n";
 }
 
 =head1 AUTHOR
