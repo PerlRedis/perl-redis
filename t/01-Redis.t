@@ -69,10 +69,10 @@ is_deeply( [ $o->keys('key-*') ], [ @keys ], 'keys' );
 ok( my $key = $o->randomkey, 'randomkey' );
 diag "key: $key";
 
-ok( $o->rename( $key, 'test-renamed' ), 'rename' );
+ok( $o->rename( 'test-incrby', 'test-renamed' ), 'rename' );
 ok( $o->exists( 'test-renamed' ), 'exists test-renamed' );
 
-eval { $o->rename( $o->randomkey, 'test-renamed', 1 ) };
+eval { $o->rename( 'test-decrby', 'test-renamed', 1 ) };
 ok( $@, 'rename to existing key' );
 
 ok( $o->quit, 'quit' );
