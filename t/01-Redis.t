@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 37;
+use Test::More tests => 42;
 
 use lib 'lib';
 
@@ -26,6 +26,7 @@ ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'baz', 'get foo = baz' );
 
+ok( ! $o->exists( 'non-existant' ), 'exists non-existant' );
 ok( ! $o->get( 'non-existant' ), 'get non-existant' );
 
 ok( $o->set('key-next' => 0), 'key-next = 0' );
@@ -36,6 +37,7 @@ ok( $o->set('key-left' => $key_next), 'key-left' );
 
 foreach ( 0 .. $key_next ) {
 	ok(     $o->set( "key-$_" => $_ ),           "set key-$_" );
+	ok(  $o->exists( "key-$_"       ),           "exists key-$_" );
 	cmp_ok( $o->get( "key-$_"       ), 'eq', $_, "get key-$_" );
 	cmp_ok( $o->incr( 'key-next' ), '==', $_ + 1, 'incr' );
 	cmp_ok( $o->decr( 'key-left' ), '==', $key_next - $_ - 1, 'decr' );

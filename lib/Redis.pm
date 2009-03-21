@@ -150,6 +150,21 @@ sub decr {
 	return $count;
 }
 
+=head2 exists
+
+  $r->exists( 'key' ) && print "got key!";
+
+=cut
+
+sub exists {
+	my ( $self, $key ) = @_;
+	print $sock "EXISTS $key\r\n";
+	my $found = <$sock>;
+	$found =~ s{\r\n$}{};
+	warn "# exists $key = $found";
+	return $found;
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
