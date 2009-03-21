@@ -131,6 +131,25 @@ sub incr {
 	return $count;
 }
 
+=head2 decr
+
+  $r->decr('counter');
+  $r->decr('tripplets', 3);
+
+=cut
+
+sub decr {
+	my ( $self, $key, $value ) = @_;
+	if ( defined $value ) {
+		print $sock "DECRBY $key $value\r\n";
+	} else {
+		print $sock "DECR $key\r\n";
+	}
+	my $count = <$sock>;
+	warn "# $key = $count";
+	return $count;
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
