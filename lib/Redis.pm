@@ -70,6 +70,11 @@ sub _sock_result_bulk {
 	return $v;
 }
 
+sub _sock_ok {
+	my $ok = <$sock>;
+	confess dump($ok) unless $ok eq "+OK\r\n";
+}
+
 =head1 Connection Handling
 
 =head2 quit
@@ -107,8 +112,7 @@ sub ping {
 sub set {
 	my ( $self, $k, $v, $new ) = @_;
 	print $sock ( $new ? "SETNX" : "SET" ) . " $k " . length($v) . "\r\n$v\r\n";
-	my $ok = <$sock>;
-	confess dump($ok) unless $ok eq "+OK\r\n";
+	_sock_ok();
 }
 
 =head2 get
@@ -216,9 +220,21 @@ sub keys {
 =cut
 
 sub randomkey {
-	my ( $self, $glob ) = @_;
+	my ( $self ) = @_;
 	print $sock "RANDOMKEY\r\n";
 	_sock_result();
+}
+
+=head2 rename
+
+  my $ok = $r->rename( 'old-key', 'new-key', $only_if_new );
+
+=cut
+
+sub rename {
+	my ( $self, $old, $new, $nx ) = @_;
+	print $sock "RENAME" . ( $nx ? 'NX' : '' ) . " $old $new\r\n";
+	_sock_ok();
 }
 
 =head1 AUTHOR
