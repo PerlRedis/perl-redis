@@ -101,10 +101,17 @@ sub get {
 	my ( $self, $k ) = @_;
 	print $sock "GET $k\r\n";
 	my $len = <$sock>;
+#	warn "# len: ",dump($len);
+	return undef if $len eq "nil\r\n";
 	my $v;
 	read($sock, $v, $len) || die $!;
+#	warn "# v: ",dump($v);
+	my $crlf;
+	read($sock, $crlf, 2); # skip cr/lf
 	return $v;
 }
+
+
 
 =head1 AUTHOR
 
