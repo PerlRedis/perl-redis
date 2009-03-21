@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 44;
+use Test::More tests => 48;
 
 use lib 'lib';
 
@@ -37,10 +37,14 @@ my $key_next = 3;
 
 ok( $o->set('key-left' => $key_next), 'key-left' );
 
+my @keys;
+
 foreach ( 0 .. $key_next ) {
-	ok(     $o->set( "key-$_" => $_ ),           "set key-$_" );
-	ok(  $o->exists( "key-$_"       ),           "exists key-$_" );
-	cmp_ok( $o->get( "key-$_"       ), 'eq', $_, "get key-$_" );
+	my $key = 'key-' . $_;
+	push @keys, $key;
+	ok(     $o->set( $key => $_ ),           "set $key" );
+	ok(  $o->exists( $key       ),           "exists $key" );
+	cmp_ok( $o->get( $key       ), 'eq', $_, "get $key" );
 	cmp_ok( $o->incr( 'key-next' ), '==', $_ + 1, 'incr' );
 	cmp_ok( $o->decr( 'key-left' ), '==', $key_next - $_ - 1, 'decr' );
 }
@@ -54,8 +58,12 @@ foreach ( 1 .. 3 ) {
 	cmp_ok( $o->decr('test-decrby', 7), '==', -( $_ * 7 ), 'decrby 7' );
 }
 
-ok( $o->del('key-next' ), 'del' );
+ok( $o->del( $_ ), "del $_" ) foreach map { "key-$_" } ( 'next', 'left' );
+ok( ! $o->del('non-existing' ), 'del non-existing' );
 
 cmp_ok( $o->type('foo'), 'eq', 'string', 'type' );
+
+cmp_ok( $o->keys('key-*'), '==', $key_next + 1, 'key-*' );
+is_deeply( [ $o->keys('key-*') ], [ @keys ], 'keys' );
 
 ok( $o->quit, 'quit' );

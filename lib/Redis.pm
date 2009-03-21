@@ -58,6 +58,18 @@ sub _sock_result {
 	return $result;
 }
 
+sub _sock_result_bulk {
+	my $len = <$sock>;
+	warn "# len: ",dump($len);
+	return undef if $len eq "nil\r\n";
+	my $v;
+	read($sock, $v, $len) || die $!;
+	warn "# v: ",dump($v);
+	my $crlf;
+	read($sock, $crlf, 2); # skip cr/lf
+	return $v;
+}
+
 =head1 Connection Handling
 
 =head2 quit
@@ -108,15 +120,7 @@ sub set {
 sub get {
 	my ( $self, $k ) = @_;
 	print $sock "GET $k\r\n";
-	my $len = <$sock>;
-#	warn "# len: ",dump($len);
-	return undef if $len eq "nil\r\n";
-	my $v;
-	read($sock, $v, $len) || die $!;
-#	warn "# v: ",dump($v);
-	my $crlf;
-	read($sock, $crlf, 2); # skip cr/lf
-	return $v;
+	_sock_result_bulk();
 }
 
 =head2 incr
@@ -187,8 +191,22 @@ sub del {
 
 sub type {
 	my ( $self, $key ) = @_;
-	print $sock "type $key\r\n";
+	print $sock "TYPE $key\r\n";
 	_sock_result();
+}
+
+=head1 Commands operating on the key space
+
+=head2 keys
+
+  my @keys = $r->keys( '*glob_pattern*' );
+
+=cut
+
+sub keys {
+	my ( $self, $glob ) = @_;
+	print $sock "KEYS $glob\r\n";
+	return split(/\s/, _sock_result_bulk());
 }
 
 =head1 AUTHOR
