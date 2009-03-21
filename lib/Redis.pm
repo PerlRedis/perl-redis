@@ -51,6 +51,13 @@ sub new {
 	$self;
 }
 
+sub _sock_result {
+	my $result = <$sock>;
+	warn "# result: ",dump( $result );
+	$result =~ s{\r\n$}{} || warn "can't find cr/lf";
+	return $result;
+}
+
 =head1 Connection Handling
 
 =head2 quit
@@ -119,12 +126,6 @@ sub get {
 
 =cut
 
-sub sock_result {
-	my $result = <$sock>;
-	warn "# result: ",dump( $result );
-	$result =~ s{\r\n$}{} || warn "can't find cr/lf";
-	return $result;
-}
 	
 
 sub incr {
@@ -134,7 +135,7 @@ sub incr {
 	} else {
 		print $sock "INCR $key\r\n";
 	}
-	sock_result();
+	_sock_result();
 }
 
 =head2 decr
@@ -151,7 +152,7 @@ sub decr {
 	} else {
 		print $sock "DECR $key\r\n";
 	}
-	sock_result();
+	_sock_result();
 }
 
 =head2 exists
@@ -163,7 +164,7 @@ sub decr {
 sub exists {
 	my ( $self, $key ) = @_;
 	print $sock "EXISTS $key\r\n";
-	sock_result();
+	_sock_result();
 }
 
 =head2 del
@@ -175,7 +176,19 @@ sub exists {
 sub del {
 	my ( $self, $key ) = @_;
 	print $sock "DEL $key\r\n";
-	sock_result();
+	_sock_result();
+}
+
+=head2 type
+
+  $r->type( 'key' ); # = string
+
+=cut
+
+sub type {
+	my ( $self, $key ) = @_;
+	print $sock "type $key\r\n";
+	_sock_result();
 }
 
 =head1 AUTHOR

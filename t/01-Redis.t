@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 43;
+use Test::More tests => 44;
 
 use lib 'lib';
 
@@ -55,5 +55,7 @@ foreach ( 1 .. 3 ) {
 }
 
 ok( $o->del('key-next' ), 'del' );
+
+cmp_ok( $o->type('foo'), 'eq', 'string', 'type' );
 
 ok( $o->quit, 'quit' );
