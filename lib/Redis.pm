@@ -111,7 +111,7 @@ sub ping {
 
 sub set {
 	my ( $self, $k, $v, $new ) = @_;
-	print $sock ( $new ? "SETNX" : "SET" ) . " $k " . length($v) . "\r\n$v\r\n";
+	print $sock "SET" . ( $new ? 'NX' : '' ) . " $k " . length($v) . "\r\n$v\r\n";
 	_sock_ok();
 }
 
@@ -227,7 +227,7 @@ sub randomkey {
 
 =head2 rename
 
-  my $ok = $r->rename( 'old-key', 'new-key', $only_if_new );
+  my $ok = $r->rename( 'old-key', 'new-key', $new );
 
 =cut
 
