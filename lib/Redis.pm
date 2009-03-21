@@ -66,7 +66,7 @@ sub quit {
 
 =head2 ping
 
-	$r->ping || die "no server?";
+  $r->ping || die "no server?";
 
 =cut
 
@@ -74,6 +74,36 @@ sub ping {
 	print $sock "PING\r\n";
 	my $pong = <$sock>;
 	die "ping failed, got ", dump($pong) unless $pong eq "+PONG\r\n";
+}
+
+=head1 Commands operating on string values
+
+=head2 set
+
+  $r->set( foo => 'bar' );
+
+=cut
+
+sub set {
+	my ( $self, $k, $v ) = @_;
+	print $sock "SET $k " . length($v) . "\r\n$v\r\n";
+	my $ok = <$sock>;
+	die dump($ok) unless $ok eq "+OK\r\n";
+}
+
+=head2 get
+
+  my $value = $r->get( 'foo' );
+
+=cut
+
+sub get {
+	my ( $self, $k ) = @_;
+	print $sock "GET $k\r\n";
+	my $len = <$sock>;
+	my $v;
+	read($sock, $v, $len) || die $!;
+	return $v;
 }
 
 =head1 AUTHOR
