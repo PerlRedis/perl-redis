@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 42;
+use Test::More tests => 43;
 
 use lib 'lib';
 
@@ -25,6 +25,8 @@ cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
 ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'baz', 'get foo = baz' );
+
+$o->del('non-existant');
 
 ok( ! $o->exists( 'non-existant' ), 'exists non-existant' );
 ok( ! $o->get( 'non-existant' ), 'get non-existant' );
@@ -51,5 +53,7 @@ foreach ( 1 .. 3 ) {
 	cmp_ok( $o->incr('test-incrby', 3), '==', $_ * 3, 'incrby 3' );
 	cmp_ok( $o->decr('test-decrby', 7), '==', -( $_ * 7 ), 'decrby 7' );
 }
+
+ok( $o->del('key-next' ), 'del' );
 
 ok( $o->quit, 'quit' );

@@ -119,6 +119,14 @@ sub get {
 
 =cut
 
+sub sock_result {
+	my $result = <$sock>;
+	warn "# result: ",dump( $result );
+	$result =~ s{\r\n$}{} || warn "can't find cr/lf";
+	return $result;
+}
+	
+
 sub incr {
 	my ( $self, $key, $value ) = @_;
 	if ( defined $value ) {
@@ -126,9 +134,7 @@ sub incr {
 	} else {
 		print $sock "INCR $key\r\n";
 	}
-	my $count = <$sock>;
-	warn "# $key = $count";
-	return $count;
+	sock_result();
 }
 
 =head2 decr
@@ -145,9 +151,7 @@ sub decr {
 	} else {
 		print $sock "DECR $key\r\n";
 	}
-	my $count = <$sock>;
-	warn "# $key = $count";
-	return $count;
+	sock_result();
 }
 
 =head2 exists
@@ -159,10 +163,19 @@ sub decr {
 sub exists {
 	my ( $self, $key ) = @_;
 	print $sock "EXISTS $key\r\n";
-	my $found = <$sock>;
-	$found =~ s{\r\n$}{};
-	warn "# exists $key = $found";
-	return $found;
+	sock_result();
+}
+
+=head2 del
+
+  $r->del( 'key' ) || warn "key doesn't exist";
+
+=cut
+
+sub del {
+	my ( $self, $key ) = @_;
+	print $sock "DEL $key\r\n";
+	sock_result();
 }
 
 =head1 AUTHOR
