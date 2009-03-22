@@ -432,6 +432,17 @@ sub scard {
 	$self->_sock_send( 'SCARD', $key );
 }
 
+=head2 sismember
+
+  $r->sismember( $key, $member );
+
+=cut
+
+sub sismember {
+	my ( $self, $key, $member ) = @_;
+	$self->_sock_send_bulk_number( 'SISMEMBER', $key, $member );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
