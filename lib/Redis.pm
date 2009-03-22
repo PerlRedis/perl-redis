@@ -97,8 +97,9 @@ sub _sock_send_ok {
 }
 
 sub _sock_send_bulk {
-	my ( $self, $command, $key, $value ) = @_;
-	print $sock "$command $key " . length($value) . "\r\n$value\r\n";
+	my $self = shift;
+	my $value = pop;
+	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n";
 	_sock_ok();
 }
 
@@ -334,9 +335,19 @@ sub ltrim {
 
 sub lindex {
 	my ( $self, $key, $index ) = @_;
-	$self->_sock_result_bulk( 'lindex', $key, $index );
+	$self->_sock_result_bulk( 'LINDEX', $key, $index );
 }
 
+=head2 lset
+
+  $r->lset( $key, $index, $value );
+
+=cut
+
+sub lset {
+	my ( $self, $key, $index, $value ) = @_;
+	$self->_sock_send_bulk( 'LSET', $key, $index, $value );
+}
 
 =head1 AUTHOR
 
