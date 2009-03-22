@@ -501,6 +501,28 @@ sub move {
 	$self->_sock_send( 'MOVE', $key, $dbindex );
 }
 
+=head2 flushdb
+
+  $r->flushdb;
+
+=cut
+
+sub flushdb {
+	my $self = shift;
+	$self->_sock_send_ok('FLUSHDB');
+}
+
+=head2 flushall
+
+  $r->flushall;
+
+=cut
+
+sub flushall {
+	my $self = shift;
+	$self->_sock_send_ok('flushall');
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>

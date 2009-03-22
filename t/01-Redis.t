@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 92;
+use Test::More tests => 94;
 
 use lib 'lib';
 
@@ -156,6 +156,9 @@ ok( ! $o->exists( 'foo' ), 'gone' );
 
 ok( $o->select( 1 ), 'select' );
 ok( $o->exists( 'foo' ), 'exists' );
+
+ok( $o->flushdb, 'flushdb' );
+cmp_ok( $o->dbsize, '==', 0, 'empty' );
 
 diag "Connection handling";
 
