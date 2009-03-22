@@ -80,11 +80,12 @@ diag "dbsize: $nr_keys";
 
 diag "Commands operating on lists";
 
-ok( $o->rpush( 'test-list' => 'foo' ), 'rpush' );
+ok( $o->rpush( 'test-list' => "r$_" ), 'rpush' ) foreach ( 1 .. 3 );
 
-ok( $o->lpush( 'test-list' => 'foo' ), 'lpush' );
+ok( $o->lpush( 'test-list' => "l$_" ), 'lpush' ) foreach ( 1 .. 2 );
 
 cmp_ok( $o->llen('test-list'), '==', 2, 'llen' );
 
+is_deeply( [ $o->lrange( 'test-list', 0, 1 ) ], [ 'l2', 'l1' ], 'lrange' );
 
 ok( $o->quit, 'quit' );

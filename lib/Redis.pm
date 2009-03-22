@@ -58,16 +58,23 @@ sub _sock_result {
 	return $result;
 }
 
-sub _sock_result_bulk {
+sub _sock_read_bulk {
 	my $len = <$sock>;
-	warn "# len: ",dump($len);
+	warn "## bulk len: ",dump($len);
 	return undef if $len eq "nil\r\n";
 	my $v;
 	read($sock, $v, $len) || die $!;
-	warn "# v: ",dump($v);
+	warn "## bulk v: ",dump($v);
 	my $crlf;
 	read($sock, $crlf, 2); # skip cr/lf
 	return $v;
+}
+
+sub _sock_result_bulk {
+	my $self = shift;
+	warn "## _sock_result_bulk ",dump( @_ );
+	print $sock join(' ',@_) . "\r\n";
+	_sock_read_bulk();
 }
 
 sub _sock_ok {
@@ -77,8 +84,16 @@ sub _sock_ok {
 
 sub _sock_send {
 	my $self = shift;
+	warn "## _sock_send ",dump( @_ );
 	print $sock join(' ',@_) . "\r\n";
 	_sock_result();
+}
+
+sub _sock_send_ok {
+	my $self = shift;
+	warn "## _sock_send_ok ",dump( @_ );
+	print $sock join(' ',@_) . "\r\n";
+	_sock_ok();
 }
 
 sub _sock_send_bulk {
@@ -134,9 +149,8 @@ sub set {
 =cut
 
 sub get {
-	my ( $self, $k ) = @_;
-	print $sock "GET $k\r\n";
-	_sock_result_bulk();
+	my $self = shift;
+	$self->_sock_result_bulk('GET', @_);
 }
 
 =head2 incr
@@ -149,13 +163,8 @@ sub get {
 	
 
 sub incr {
-	my ( $self, $key, $value ) = @_;
-	if ( defined $value ) {
-		print $sock "INCRBY $key $value\r\n";
-	} else {
-		print $sock "INCR $key\r\n";
-	}
-	_sock_result();
+	my $self = shift;
+	$self->_sock_send( 'INCR' . ( $#_ ? 'BY' : '' ), @_ );
 }
 
 =head2 decr
@@ -166,13 +175,8 @@ sub incr {
 =cut
 
 sub decr {
-	my ( $self, $key, $value ) = @_;
-	if ( defined $value ) {
-		print $sock "DECRBY $key $value\r\n";
-	} else {
-		print $sock "DECR $key\r\n";
-	}
-	_sock_result();
+	my $self = shift;
+	$self->_sock_send( 'DECR' . ( $#_ ? 'BY' : '' ), @_ );
 }
 
 =head2 exists
@@ -183,8 +187,7 @@ sub decr {
 
 sub exists {
 	my ( $self, $key ) = @_;
-	print $sock "EXISTS $key\r\n";
-	_sock_result();
+	$self->_sock_send( 'EXISTS', $key );
 }
 
 =head2 del
@@ -195,8 +198,7 @@ sub exists {
 
 sub del {
 	my ( $self, $key ) = @_;
-	print $sock "DEL $key\r\n";
-	_sock_result();
+	$self->_sock_send( 'DEL', $key );
 }
 
 =head2 type
@@ -207,8 +209,7 @@ sub del {
 
 sub type {
 	my ( $self, $key ) = @_;
-	print $sock "TYPE $key\r\n";
-	_sock_result();
+	$self->_sock_send( 'TYPE', $key );
 }
 
 =head1 Commands operating on the key space
@@ -221,8 +222,7 @@ sub type {
 
 sub keys {
 	my ( $self, $glob ) = @_;
-	print $sock "KEYS $glob\r\n";
-	return split(/\s/, _sock_result_bulk());
+	return split(/\s/, $self->_sock_result_bulk( 'KEYS', $glob ));
 }
 
 =head2 randomkey
@@ -233,8 +233,7 @@ sub keys {
 
 sub randomkey {
 	my ( $self ) = @_;
-	print $sock "RANDOMKEY\r\n";
-	_sock_result();
+	$self->_sock_send( 'RANDOMKEY' );
 }
 
 =head2 rename
@@ -245,8 +244,7 @@ sub randomkey {
 
 sub rename {
 	my ( $self, $old, $new, $nx ) = @_;
-	print $sock "RENAME" . ( $nx ? 'NX' : '' ) . " $old $new\r\n";
-	_sock_ok();
+	$self->_sock_send_ok( 'RENAME' . ( $nx ? 'NX' : '' ), $old, $new );
 }
 
 =head2 dbsize
@@ -257,8 +255,7 @@ sub rename {
 
 sub dbsize {
 	my ( $self ) = @_;
-	print $sock "DBSIZE\r\n";
-	_sock_result();
+	$self->_sock_send('DBSIZE');
 }
 
 =head1 Commands operating on lists
@@ -293,7 +290,29 @@ sub lpush {
 
 sub llen {
 	my ( $self, $key ) = @_;
-	$self->_sock_send( 'llen', $key );
+	$self->_sock_send( 'LLEN', $key );
+}
+
+=head2 lrange
+
+  my @list = $r->lrange( $key, $start, $end );
+
+=cut
+
+sub lrange {
+	my ( $self, $key, $start, $end ) = @_;
+	my $size = $self->_sock_send('LRANGE', $key, $start, $end);
+
+	confess $size unless $size > 0;
+	$size--;
+
+	my @list = ( 0 .. $size );
+	foreach ( 0 .. $size ) {
+		$list[ $_ ] = _sock_read_bulk();
+	}
+
+	warn "## lrange $key $start $end = [$size] ", dump( @list );
+	return @list;
 }
 
 =head1 AUTHOR
