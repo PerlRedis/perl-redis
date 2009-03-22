@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 66;
+use Test::More tests => 67;
 
 use lib 'lib';
 
@@ -88,6 +88,7 @@ ok( $o->rpush( $list => "r$_" ), 'rpush' ) foreach ( 1 .. 3 );
 
 ok( $o->lpush( $list => "l$_" ), 'lpush' ) foreach ( 1 .. 2 );
 
+cmp_ok( $o->type($list), 'eq', 'list', 'type' );
 cmp_ok( $o->llen($list), '==', 5, 'llen' );
 
 is_deeply( [ $o->lrange( $list, 0, 1 ) ], [ 'l2', 'l1' ], 'lrange' );
