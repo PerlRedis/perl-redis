@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 84;
+use Test::More tests => 86;
 
 use lib 'lib';
 
@@ -134,6 +134,12 @@ cmp_ok( $o->scard( $set ), '==', 0, 'scard' );
 $o->sadd( 'test-set1', $_ ) foreach ( 'foo', 'bar', 'baz' );
 $o->sadd( 'test-set2', $_ ) foreach ( 'foo', 'baz', 'xxx' );
 
-is_deeply( [ $o->sinter( 'test-set1', 'test-set2' ) ], [ 'baz', 'foo' ], 'siter' );
+my $inter = [ 'baz', 'foo' ];
+
+is_deeply( [ $o->sinter( 'test-set1', 'test-set2' ) ], $inter, 'siter' );
+
+ok( $o->sinterstore( 'test-set-inter', 'test-set1', 'test-set2' ), 'sinterstore' );
+
+cmp_ok( $o->scard( 'test-set-inter' ), '==', $#$inter + 1, 'cardinality of intersection' );
 
 ok( $o->quit, 'quit' );

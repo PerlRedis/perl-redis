@@ -460,6 +460,17 @@ sub sinter {
 	$self->_sock_result_bulk_list( 'SINTER', @_ );
 }
 
+=head2 sinterstore
+
+  my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
+
+=cut
+
+sub sinterstore {
+	my $self = shift;
+	$self->_sock_send_ok( 'SINTERSTORE', @_ );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
