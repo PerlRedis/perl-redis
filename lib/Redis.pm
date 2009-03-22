@@ -79,6 +79,23 @@ sub _sock_result_bulk {
 	_sock_read_bulk();
 }
 
+sub _sock_result_bulk_list {
+	my $self = shift;
+	warn "## _sock_result_bulk_list ",dump( @_ );
+
+	my $size = $self->_sock_send( @_ );
+	confess $size unless $size > 0;
+	$size--;
+
+	my @list = ( 0 .. $size );
+	foreach ( 0 .. $size ) {
+		$list[ $_ ] = _sock_read_bulk();
+	}
+
+	warn "## list = ", dump( @list );
+	return @list;
+}
+
 sub __sock_ok {
 	my $ok = <$sock>;
 	return undef if $ok eq "nil\r\n";
@@ -317,18 +334,7 @@ sub llen {
 
 sub lrange {
 	my ( $self, $key, $start, $end ) = @_;
-	my $size = $self->_sock_send('LRANGE', $key, $start, $end);
-
-	confess $size unless $size > 0;
-	$size--;
-
-	my @list = ( 0 .. $size );
-	foreach ( 0 .. $size ) {
-		$list[ $_ ] = _sock_read_bulk();
-	}
-
-	warn "## lrange $key $start $end = [$size] ", dump( @list );
-	return @list;
+	$self->_sock_result_bulk_list('LRANGE', $key, $start, $end);
 }
 
 =head2 ltrim
@@ -441,6 +447,17 @@ sub scard {
 sub sismember {
 	my ( $self, $key, $member ) = @_;
 	$self->_sock_send_bulk_number( 'SISMEMBER', $key, $member );
+}
+
+=head2 sinter
+
+  $r->sinter( $key1, $key2, ... );
+
+=cut
+
+sub sinter {
+	my $self = shift;
+	$self->_sock_result_bulk_list( 'SINTER', @_ );
 }
 
 =head1 AUTHOR
