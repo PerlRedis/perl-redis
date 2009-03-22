@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 56;
+use Test::More tests => 62;
 
 use lib 'lib';
 
@@ -80,12 +80,19 @@ diag "dbsize: $nr_keys";
 
 diag "Commands operating on lists";
 
-ok( $o->rpush( 'test-list' => "r$_" ), 'rpush' ) foreach ( 1 .. 3 );
+my $list = 'test-list';
 
-ok( $o->lpush( 'test-list' => "l$_" ), 'lpush' ) foreach ( 1 .. 2 );
+$o->del($list) && diag "cleanup $list from last run";
 
-cmp_ok( $o->llen('test-list'), '==', 2, 'llen' );
+ok( $o->rpush( $list => "r$_" ), 'rpush' ) foreach ( 1 .. 3 );
 
-is_deeply( [ $o->lrange( 'test-list', 0, 1 ) ], [ 'l2', 'l1' ], 'lrange' );
+ok( $o->lpush( $list => "l$_" ), 'lpush' ) foreach ( 1 .. 2 );
+
+cmp_ok( $o->llen($list), '==', 5, 'llen' );
+
+is_deeply( [ $o->lrange( $list, 0, 1 ) ], [ 'l2', 'l1' ], 'lrange' );
+
+ok( $o->ltrim( $list, 2, 3 ), 'ltrim' );
+cmp_ok( $o->llen($list), '==', 2, 'llen after ltrim' );
 
 ok( $o->quit, 'quit' );

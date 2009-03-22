@@ -315,6 +315,17 @@ sub lrange {
 	return @list;
 }
 
+=head2 ltrim
+
+  my $ok = $r->ltrim( $key, $start, $end );
+
+=cut
+
+sub ltrim {
+	my ( $self, $key, $start, $end ) = @_;
+	$self->_sock_send_ok( 'LTRIM', $key, $start, $end );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
