@@ -9,7 +9,7 @@ use Carp qw/confess/;
 
 =head1 NAME
 
-Redis - The great new Redis!
+Redis - perl binding for Redis database
 
 =cut
 
@@ -20,12 +20,12 @@ our $VERSION = '0.01';
 
 Pure perl bindings for L<http://code.google.com/p/redis/>
 
+This version support git version of Redis available at
+L<git://github.com/antirez/redis>
+
     use Redis;
 
     my $r = Redis->new();
-
-
-
 
 =head1 FUNCTIONS
 
