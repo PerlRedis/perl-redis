@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 80;
+use Test::More tests => 82;
 
 use lib 'lib';
 
@@ -122,10 +122,12 @@ $o->del($set);
 
 ok( $o->sadd( $set, 'foo' ), 'sadd' );
 ok( ! $o->sadd( $set, 'foo' ), 'sadd' );
+cmp_ok( $o->scard( $set ), '==', 1, 'scard' );
 
 cmp_ok( $o->type( $set ), 'eq', 'set', 'type is set' );
 
 ok( $o->srem( $set, 'foo' ), 'srem' );
 ok( ! $o->srem( $set, 'foo' ), 'srem again' );
+cmp_ok( $o->scard( $set ), '==', 0, 'scard' );
 
 ok( $o->quit, 'quit' );

@@ -421,6 +421,17 @@ sub srem {
 	$self->_sock_send_bulk_number( 'SREM', $key, $member );
 }
 
+=head2 scard
+
+  my $elements = $r->scard( $key );
+
+=cut
+
+sub scard {
+	my ( $self, $key ) = @_;
+	$self->_sock_send( 'SCARD', $key );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
