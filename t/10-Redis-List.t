@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 9;
+use Test::More tests => 8;
 use lib 'lib';
 use Data::Dump qw/dump/;
 
@@ -17,7 +17,7 @@ ok( my $o = tie( @a, 'Redis::List', 'test-redis-list' ), 'tie' );
 
 isa_ok( $o, 'Redis::List' );
 
-ok( $o->CLEAR, 'CLEAR' );
+$o->CLEAR;
 
 ok( ! @a, 'empty list' );
 
