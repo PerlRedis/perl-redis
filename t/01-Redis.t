@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 52;
+use Test::More tests => 53;
 
 use lib 'lib';
 
@@ -74,5 +74,8 @@ ok( $o->exists( 'test-renamed' ), 'exists test-renamed' );
 
 eval { $o->rename( 'test-decrby', 'test-renamed', 1 ) };
 ok( $@, 'rename to existing key' );
+
+ok( my $nr_keys = $o->dbsize, 'dbsize' );
+diag "dbsize: $nr_keys";
 
 ok( $o->quit, 'quit' );

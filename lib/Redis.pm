@@ -237,6 +237,18 @@ sub rename {
 	_sock_ok();
 }
 
+=head2 dbsize
+
+  my $nr_keys = $r->dbsize;
+
+=cut
+
+sub dbsize {
+	my ( $self ) = @_;
+	print $sock "DBSIZE\r\n";
+	_sock_result();
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
