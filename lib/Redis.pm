@@ -77,7 +77,7 @@ sub _sock_result_bulk {
 	_sock_read_bulk();
 }
 
-sub _sock_ok {
+sub __sock_ok {
 	my $ok = <$sock>;
 	confess dump($ok) unless $ok eq "+OK\r\n";
 }
@@ -93,16 +93,27 @@ sub _sock_send_ok {
 	my $self = shift;
 	warn "## _sock_send_ok ",dump( @_ );
 	print $sock join(' ',@_) . "\r\n";
-	_sock_ok();
+	__sock_ok();
+}
+
+sub __sock_send_bulk_raw {
+	my $self = shift;
+	warn "## _sock_send_bulk ",dump( @_ );
+	my $value = pop;
+	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n";
 }
 
 sub _sock_send_bulk {
-	my $self = shift;
-	my $value = pop;
-	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n";
-	_sock_ok();
+	__sock_send_bulk_raw( @_ );
+	__sock_ok();
 }
 
+sub _sock_send_bulk_number {
+	__sock_send_bulk_raw( @_ );
+	my $v = _sock_result();
+	confess $v unless $v =~ m{^\-?\d+$};
+	return $v;
+}
 
 =head1 Connection Handling
 
@@ -347,6 +358,17 @@ sub lindex {
 sub lset {
 	my ( $self, $key, $index, $value ) = @_;
 	$self->_sock_send_bulk( 'LSET', $key, $index, $value );
+}
+
+=head2 lrem
+
+  $r->lrem( $key, $count, $value );
+
+=cut
+
+sub lrem {
+	my ( $self, $key, $count, $value ) = @_;
+	$self->_sock_send_bulk_number( 'LREM', $key, $count, $value );
 }
 
 =head1 AUTHOR
