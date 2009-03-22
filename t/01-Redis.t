@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 55;
+use Test::More tests => 56;
 
 use lib 'lib';
 
@@ -84,6 +84,7 @@ ok( $o->rpush( 'test-list' => 'foo' ), 'rpush' );
 
 ok( $o->lpush( 'test-list' => 'foo' ), 'lpush' );
 
+cmp_ok( $o->llen('test-list'), '==', 2, 'llen' );
 
 
 ok( $o->quit, 'quit' );

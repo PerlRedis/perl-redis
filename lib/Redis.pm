@@ -75,6 +75,12 @@ sub _sock_ok {
 	confess dump($ok) unless $ok eq "+OK\r\n";
 }
 
+sub _sock_send {
+	my $self = shift;
+	print $sock join(' ',@_) . "\r\n";
+	_sock_result();
+}
+
 sub _sock_send_bulk {
 	my ( $self, $command, $key, $value ) = @_;
 	print $sock "$command $key " . length($value) . "\r\n$value\r\n";
@@ -277,6 +283,17 @@ sub rpush {
 sub lpush {
 	my ( $self, $key, $value ) = @_;
 	$self->_sock_send_bulk('LPUSH', $key, $value);
+}
+
+=head2 llen
+
+  $r->llen( $key );
+
+=cut
+
+sub llen {
+	my ( $self, $key ) = @_;
+	$self->_sock_send( 'llen', $key );
 }
 
 =head1 AUTHOR
