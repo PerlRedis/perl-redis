@@ -293,6 +293,8 @@ sub dbsize {
 
 =head1 Commands operating on lists
 
+See also L<Redis::List> for tie interface.
+
 =head2 rpush
 
   $r->rpush( $key, $value );
