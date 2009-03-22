@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 53;
+use Test::More tests => 54;
 
 use lib 'lib';
 
@@ -77,5 +77,12 @@ ok( $@, 'rename to existing key' );
 
 ok( my $nr_keys = $o->dbsize, 'dbsize' );
 diag "dbsize: $nr_keys";
+
+diag "Commands operating on lists";
+
+ok( $o->rpush( 'test-list' => 'foo' ), 'rpush' );
+
+
+
 
 ok( $o->quit, 'quit' );

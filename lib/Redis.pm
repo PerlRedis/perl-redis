@@ -75,6 +75,13 @@ sub _sock_ok {
 	confess dump($ok) unless $ok eq "+OK\r\n";
 }
 
+sub _sock_send_bulk {
+	my ( $self, $command, $key, $value ) = @_;
+	print $sock "$command $key " . length($value) . "\r\n$value\r\n";
+	_sock_ok();
+}
+
+
 =head1 Connection Handling
 
 =head2 quit
@@ -110,9 +117,8 @@ sub ping {
 =cut
 
 sub set {
-	my ( $self, $k, $v, $new ) = @_;
-	print $sock "SET" . ( $new ? 'NX' : '' ) . " $k " . length($v) . "\r\n$v\r\n";
-	_sock_ok();
+	my ( $self, $key, $value, $new ) = @_;
+	$self->_sock_send_bulk( "SET" . ( $new ? 'NX' : '' ), $key, $value );
 }
 
 =head2 get
@@ -247,6 +253,19 @@ sub dbsize {
 	my ( $self ) = @_;
 	print $sock "DBSIZE\r\n";
 	_sock_result();
+}
+
+=head1 Commands operating on lists
+
+=head2 rpush
+
+  $r->rpush( $key, $value );
+
+=cut
+
+sub rpush {
+	my ( $self, $key, $value ) = @_;
+	$self->_sock_send_bulk('RPUSH', $key, $value);
 }
 
 =head1 AUTHOR
