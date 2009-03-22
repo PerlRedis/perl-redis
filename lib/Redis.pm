@@ -362,13 +362,35 @@ sub lset {
 
 =head2 lrem
 
-  $r->lrem( $key, $count, $value );
+  my $modified_count = $r->lrem( $key, $count, $value );
 
 =cut
 
 sub lrem {
 	my ( $self, $key, $count, $value ) = @_;
 	$self->_sock_send_bulk_number( 'LREM', $key, $count, $value );
+}
+
+=head2 lpop
+
+  my $value = $r->lpop( $key );
+
+=cut
+
+sub lpop {
+	my ( $self, $key ) = @_;
+	$self->_sock_result_bulk( 'lpop', $key );
+}
+
+=head2 rpop
+
+  my $value = $r->rpop( $key );
+
+=cut
+
+sub rpop {
+	my ( $self, $key ) = @_;
+	$self->_sock_result_bulk( 'rpop', $key );
 }
 
 =head1 AUTHOR

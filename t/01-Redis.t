@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 69;
+use Test::More tests => 71;
 
 use lib 'lib';
 
@@ -104,5 +104,9 @@ cmp_ok( $o->lindex( $list, 0 ), 'eq', 'foo', 'verified' );
 
 ok( $o->lrem( $list, 1, 'foo' ), 'lrem' );
 cmp_ok( $o->llen( $list ), '==', 1, 'llen after lrem' );
+
+cmp_ok( $o->lpop( $list ), 'eq', 'r1', 'lpop' );
+
+ok( ! $o->rpop( $list ), 'rpop' );
 
 ok( $o->quit, 'quit' );
