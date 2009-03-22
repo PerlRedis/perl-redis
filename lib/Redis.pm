@@ -33,6 +33,8 @@ L<git://github.com/antirez/redis>
 
 =cut
 
+our $debug = $ENV{REDIS} || 0;
+
 our $sock;
 my $server = '127.0.0.1:6379';
 
@@ -53,19 +55,19 @@ sub new {
 
 sub _sock_result {
 	my $result = <$sock>;
-	warn "# result: ",dump( $result );
+	warn "## result: ",dump( $result ) if $debug;
 	$result =~ s{\r\n$}{} || warn "can't find cr/lf";
 	return $result;
 }
 
 sub _sock_read_bulk {
 	my $len = <$sock>;
-	warn "## bulk len: ",dump($len);
+	warn "## bulk len: ",dump($len) if $debug;
 	return undef if $len eq "nil\r\n";
 	my $v;
 	if ( $len > 0 ) {
 		read($sock, $v, $len) || die $!;
-		warn "## bulk v: ",dump($v);
+		warn "## bulk v: ",dump($v) if $debug;
 	}
 	my $crlf;
 	read($sock, $crlf, 2); # skip cr/lf
@@ -74,14 +76,14 @@ sub _sock_read_bulk {
 
 sub _sock_result_bulk {
 	my $self = shift;
-	warn "## _sock_result_bulk ",dump( @_ );
+	warn "## _sock_result_bulk ",dump( @_ ) if $debug;
 	print $sock join(' ',@_) . "\r\n";
 	_sock_read_bulk();
 }
 
 sub _sock_result_bulk_list {
 	my $self = shift;
-	warn "## _sock_result_bulk_list ",dump( @_ );
+	warn "## _sock_result_bulk_list ",dump( @_ ) if $debug;
 
 	my $size = $self->_sock_send( @_ );
 	confess $size unless $size > 0;
@@ -92,7 +94,7 @@ sub _sock_result_bulk_list {
 		$list[ $_ ] = _sock_read_bulk();
 	}
 
-	warn "## list = ", dump( @list );
+	warn "## list = ", dump( @list ) if $debug;
 	return @list;
 }
 
@@ -104,21 +106,21 @@ sub __sock_ok {
 
 sub _sock_send {
 	my $self = shift;
-	warn "## _sock_send ",dump( @_ );
+	warn "## _sock_send ",dump( @_ ) if $debug;
 	print $sock join(' ',@_) . "\r\n";
 	_sock_result();
 }
 
 sub _sock_send_ok {
 	my $self = shift;
-	warn "## _sock_send_ok ",dump( @_ );
+	warn "## _sock_send_ok ",dump( @_ ) if $debug;
 	print $sock join(' ',@_) . "\r\n";
 	__sock_ok();
 }
 
 sub __sock_send_bulk_raw {
 	my $self = shift;
-	warn "## _sock_send_bulk ",dump( @_ );
+	warn "## _sock_send_bulk ",dump( @_ ) if $debug;
 	my $value = pop;
 	$value = '' unless defined $value; # FIXME errr? nil?
 	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n"
