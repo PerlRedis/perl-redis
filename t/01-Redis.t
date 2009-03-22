@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 62;
+use Test::More tests => 64;
 
 use lib 'lib';
 
@@ -92,7 +92,10 @@ cmp_ok( $o->llen($list), '==', 5, 'llen' );
 
 is_deeply( [ $o->lrange( $list, 0, 1 ) ], [ 'l2', 'l1' ], 'lrange' );
 
-ok( $o->ltrim( $list, 2, 3 ), 'ltrim' );
+ok( $o->ltrim( $list, 1, 2 ), 'ltrim' );
 cmp_ok( $o->llen($list), '==', 2, 'llen after ltrim' );
+
+cmp_ok( $o->lindex( $list, 0 ), 'eq', 'l1', 'lindex' );
+cmp_ok( $o->lindex( $list, 1 ), 'eq', 'r1', 'lindex' );
 
 ok( $o->quit, 'quit' );

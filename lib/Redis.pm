@@ -326,6 +326,18 @@ sub ltrim {
 	$self->_sock_send_ok( 'LTRIM', $key, $start, $end );
 }
 
+=head2 lindex
+
+  $r->lindex( $key, $index );
+
+=cut
+
+sub lindex {
+	my ( $self, $key, $index ) = @_;
+	$self->_sock_result_bulk( 'lindex', $key, $index );
+}
+
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
