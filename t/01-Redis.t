@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 86;
+use Test::More tests => 88;
 
 use lib 'lib';
 
@@ -14,6 +14,8 @@ BEGIN {
 ok( my $o = Redis->new(), 'new' );
 
 ok( $o->ping, 'ping' );
+
+diag "Commands operating on string values";
 
 ok( $o->set( foo => 'bar' ), 'set foo => bar' );
 
@@ -115,7 +117,8 @@ cmp_ok( $o->lpop( $list ), 'eq', 'r1', 'lpop' );
 
 ok( ! $o->rpop( $list ), 'rpop' );
 
-# Commands operating on sets
+
+diag "Commands operating on sets";
 
 my $set = 'test-set';
 $o->del($set);
@@ -141,5 +144,14 @@ is_deeply( [ $o->sinter( 'test-set1', 'test-set2' ) ], $inter, 'siter' );
 ok( $o->sinterstore( 'test-set-inter', 'test-set1', 'test-set2' ), 'sinterstore' );
 
 cmp_ok( $o->scard( 'test-set-inter' ), '==', $#$inter + 1, 'cardinality of intersection' );
+
+
+diag "Multiple databases handling commands";
+
+ok( $o->select( 1 ), 'select' );
+ok( $o->select( 0 ), 'select' );
+
+
+diag "Connection handling";
 
 ok( $o->quit, 'quit' );

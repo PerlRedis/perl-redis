@@ -475,6 +475,19 @@ sub sinterstore {
 	$self->_sock_send_ok( 'SINTERSTORE', @_ );
 }
 
+=head1 Multiple databases handling commands
+
+=head2 select
+
+  $r->select( 1 );
+
+=cut
+
+sub select {
+	my ($self,$index) = @_;
+	$self->_sock_send_ok( 'SELECT', $index );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
