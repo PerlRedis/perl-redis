@@ -383,7 +383,7 @@ sub lrem {
 
 sub lpop {
 	my ( $self, $key ) = @_;
-	$self->_sock_result_bulk( 'lpop', $key );
+	$self->_sock_result_bulk( 'LPOP', $key );
 }
 
 =head2 rpop
@@ -394,7 +394,31 @@ sub lpop {
 
 sub rpop {
 	my ( $self, $key ) = @_;
-	$self->_sock_result_bulk( 'rpop', $key );
+	$self->_sock_result_bulk( 'RPOP', $key );
+}
+
+=head1 Commands operating on sets
+
+=head2 sadd
+
+  $r->sadd( $key, $member );
+
+=cut
+
+sub sadd {
+	my ( $self, $key, $member ) = @_;
+	$self->_sock_send_bulk_number( 'SADD', $key, $member );
+}
+
+=head2 srem
+
+  $r->srem( $key, $member );
+
+=cut
+
+sub srem {
+	my ( $self, $key, $member ) = @_;
+	$self->_sock_send_bulk_number( 'SREM', $key, $member );
 }
 
 =head1 AUTHOR

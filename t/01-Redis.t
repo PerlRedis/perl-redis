@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 75;
+use Test::More tests => 80;
 
 use lib 'lib';
 
@@ -114,5 +114,18 @@ cmp_ok( $o->llen( $list ), '==', 1, 'llen after lrem' );
 cmp_ok( $o->lpop( $list ), 'eq', 'r1', 'lpop' );
 
 ok( ! $o->rpop( $list ), 'rpop' );
+
+# Commands operating on sets
+
+my $set = 'test-set';
+$o->del($set);
+
+ok( $o->sadd( $set, 'foo' ), 'sadd' );
+ok( ! $o->sadd( $set, 'foo' ), 'sadd' );
+
+cmp_ok( $o->type( $set ), 'eq', 'set', 'type is set' );
+
+ok( $o->srem( $set, 'foo' ), 'srem' );
+ok( ! $o->srem( $set, 'foo' ), 'srem again' );
 
 ok( $o->quit, 'quit' );
