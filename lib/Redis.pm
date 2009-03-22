@@ -258,7 +258,9 @@ sub type {
 
 sub keys {
 	my ( $self, $glob ) = @_;
-	return split(/\s/, $self->_sock_result_bulk( 'KEYS', $glob ));
+	my $keys = $self->_sock_result_bulk( 'KEYS', $glob );
+	return split(/\s/, $keys) if $keys;
+	return () if wantarray;
 }
 
 =head2 randomkey

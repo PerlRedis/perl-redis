@@ -11,20 +11,20 @@ BEGIN {
 	use_ok( 'Redis::Hash' );
 }
 
-my $h;
-
-ok( my $o = tie( %$h, 'Redis::Hash', 'test-redis-hash' ), 'tie' );
+ok( my $o = tie( my %h, 'Redis::Hash', 'test-redis-hash' ), 'tie' );
 
 isa_ok( $o, 'Redis::Hash' );
 
-$h = {};
+$o->CLEAR();
 
-ok( ! %$h, 'empty' );
+ok( ! keys %h, 'empty' );
 
-ok( $h = { 'foo' => 42, 'bar' => 1, 'baz' => 99 }, '=' );
+ok( %h = ( 'foo' => 42, 'bar' => 1, 'baz' => 99 ), '=' );
 
-is_deeply( $h, { bar => 1, baz => 99, foo => 42 }, 'values' );
+is_deeply( [ keys %h ], [ 'bar', 'baz', 'foo' ], 'keys' );
 
-is_deeply( [ keys %$h ], [ 'bar', 'baz', 'foo' ], 'keys' );
+is_deeply( \%h, { bar => 1, baz => 99, foo => 42, }, 'structure' );
 
-diag dump( $h );
+
+diag dump( \%h );
+
