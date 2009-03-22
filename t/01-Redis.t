@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 54;
+use Test::More tests => 55;
 
 use lib 'lib';
 
@@ -82,6 +82,7 @@ diag "Commands operating on lists";
 
 ok( $o->rpush( 'test-list' => 'foo' ), 'rpush' );
 
+ok( $o->lpush( 'test-list' => 'foo' ), 'lpush' );
 
 
 

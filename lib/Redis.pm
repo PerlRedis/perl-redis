@@ -268,6 +268,17 @@ sub rpush {
 	$self->_sock_send_bulk('RPUSH', $key, $value);
 }
 
+=head2 lpush
+
+  $r->lpush( $key, $value );
+
+=cut
+
+sub lpush {
+	my ( $self, $key, $value ) = @_;
+	$self->_sock_send_bulk('LPUSH', $key, $value);
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
