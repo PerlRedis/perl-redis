@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 88;
+use Test::More tests => 92;
 
 use lib 'lib';
 
@@ -151,6 +151,11 @@ diag "Multiple databases handling commands";
 ok( $o->select( 1 ), 'select' );
 ok( $o->select( 0 ), 'select' );
 
+ok( $o->move( 'foo', 1 ), 'move' );
+ok( ! $o->exists( 'foo' ), 'gone' );
+
+ok( $o->select( 1 ), 'select' );
+ok( $o->exists( 'foo' ), 'exists' );
 
 diag "Connection handling";
 

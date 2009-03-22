@@ -53,14 +53,14 @@ sub new {
 	$self;
 }
 
-sub _sock_result {
+sub __sock_result {
 	my $result = <$sock>;
 	warn "## result: ",dump( $result ) if $debug;
 	$result =~ s{\r\n$}{} || warn "can't find cr/lf";
 	return $result;
 }
 
-sub _sock_read_bulk {
+sub __sock_read_bulk {
 	my $len = <$sock>;
 	warn "## bulk len: ",dump($len) if $debug;
 	return undef if $len eq "nil\r\n";
@@ -78,7 +78,7 @@ sub _sock_result_bulk {
 	my $self = shift;
 	warn "## _sock_result_bulk ",dump( @_ ) if $debug;
 	print $sock join(' ',@_) . "\r\n";
-	_sock_read_bulk();
+	__sock_read_bulk();
 }
 
 sub _sock_result_bulk_list {
@@ -91,7 +91,7 @@ sub _sock_result_bulk_list {
 
 	my @list = ( 0 .. $size );
 	foreach ( 0 .. $size ) {
-		$list[ $_ ] = _sock_read_bulk();
+		$list[ $_ ] = __sock_read_bulk();
 	}
 
 	warn "## list = ", dump( @list ) if $debug;
@@ -108,7 +108,7 @@ sub _sock_send {
 	my $self = shift;
 	warn "## _sock_send ",dump( @_ ) if $debug;
 	print $sock join(' ',@_) . "\r\n";
-	_sock_result();
+	__sock_result();
 }
 
 sub _sock_send_ok {
@@ -119,7 +119,6 @@ sub _sock_send_ok {
 }
 
 sub __sock_send_bulk_raw {
-	my $self = shift;
 	warn "## _sock_send_bulk ",dump( @_ ) if $debug;
 	my $value = pop;
 	$value = '' unless defined $value; # FIXME errr? nil?
@@ -127,13 +126,15 @@ sub __sock_send_bulk_raw {
 }
 
 sub _sock_send_bulk {
+	my $self = shift;
 	__sock_send_bulk_raw( @_ );
 	__sock_ok();
 }
 
 sub _sock_send_bulk_number {
+	my $self = shift;
 	__sock_send_bulk_raw( @_ );
-	my $v = _sock_result();
+	my $v = __sock_result();
 	confess $v unless $v =~ m{^\-?\d+$};
 	return $v;
 }
@@ -479,13 +480,25 @@ sub sinterstore {
 
 =head2 select
 
-  $r->select( 1 );
+  $r->select( $dbindex ); # 0 for new clients
 
 =cut
 
 sub select {
-	my ($self,$index) = @_;
-	$self->_sock_send_ok( 'SELECT', $index );
+	my ($self,$dbindex) = @_;
+	confess dump($dbindex) . 'not number' unless $dbindex =~ m{^\d+$};
+	$self->_sock_send_ok( 'SELECT', $dbindex );
+}
+
+=head2 move
+
+  $r->move( $key, $dbindex );
+
+=cut
+
+sub move {
+	my ( $self, $key, $dbindex ) = @_;
+	$self->_sock_send( 'MOVE', $key, $dbindex );
 }
 
 =head1 AUTHOR
