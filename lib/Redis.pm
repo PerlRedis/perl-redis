@@ -63,8 +63,10 @@ sub _sock_read_bulk {
 	warn "## bulk len: ",dump($len);
 	return undef if $len eq "nil\r\n";
 	my $v;
-	read($sock, $v, $len) || die $!;
-	warn "## bulk v: ",dump($v);
+	if ( $len > 0 ) {
+		read($sock, $v, $len) || die $!;
+		warn "## bulk v: ",dump($v);
+	}
 	my $crlf;
 	read($sock, $crlf, 2); # skip cr/lf
 	return $v;
@@ -79,6 +81,7 @@ sub _sock_result_bulk {
 
 sub __sock_ok {
 	my $ok = <$sock>;
+	return undef if $ok eq "nil\r\n";
 	confess dump($ok) unless $ok eq "+OK\r\n";
 }
 
@@ -100,7 +103,8 @@ sub __sock_send_bulk_raw {
 	my $self = shift;
 	warn "## _sock_send_bulk ",dump( @_ );
 	my $value = pop;
-	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n";
+	$value = '' unless defined $value; # FIXME errr? nil?
+	print $sock join(' ',@_) . ' ' . length($value) . "\r\n$value\r\n"
 }
 
 sub _sock_send_bulk {

@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 71;
+use Test::More tests => 75;
 
 use lib 'lib';
 
@@ -25,6 +25,12 @@ cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
 ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'baz', 'get foo = baz' );
+
+ok( $o->set( 'test-undef' => 42 ), 'set test-undef' );
+ok( $o->set( 'test-undef' => undef ), 'set undef' );
+ok( ! defined $o->get( 'test-undef' ), 'get undef' );
+diag $o->exists( 'test-undef' );
+ok( $o->exists( 'test-undef' ), 'exists undef' );
 
 $o->del('non-existant');
 
