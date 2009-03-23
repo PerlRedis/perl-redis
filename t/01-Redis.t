@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 use Test::More tests => 106;
+use Data::Dump qw/dump/;
 
 use lib 'lib';
 
@@ -176,7 +177,13 @@ diag "Persistence control commands";
 ok( $o->save, 'save' );
 ok( $o->bgsave, 'bgsave' );
 ok( $o->lastsave, 'lastsave' );
-ok( $o->shutdown, 'shutdown' );
+#ok( $o->shutdown, 'shutdown' );
+diag "shutdown not tested";
+
+diag "Remote server control commands";
+
+ok( my $info = $o->info, 'info' );
+diag dump( $info );
 
 diag "Connection handling";
 

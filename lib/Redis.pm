@@ -595,6 +595,25 @@ sub shutdown {
 	$self->_sock_send( 'SHUTDOWN' );
 }
 
+=head1 Remote server control commands
+
+=head2 info
+
+  my $info_hash = $r->info;
+
+=cut
+
+sub info {
+	my $self = shift;
+	my $info = $self->_sock_result_bulk( 'INFO' );
+	my $hash;
+	foreach my $l ( split(/\r\n/, $info ) ) {
+		my ($n,$v) = split(/:/, $l, 2);
+		$hash->{$n} = $v;
+	}
+	return $hash;
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
