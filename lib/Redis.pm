@@ -562,6 +562,39 @@ sub save {
 	$self->_sock_send_ok( 'SAVE' );
 }
 
+=head2 bgsave
+
+  $r->bgsave;
+
+=cut
+
+sub bgsave {
+	my $self = shift;
+	$self->_sock_send_ok( 'BGSAVE' );
+}
+
+=head2 lastsave
+
+  $r->lastsave;
+
+=cut
+
+sub lastsave {
+	my $self = shift;
+	$self->_sock_send( 'LASTSAVE' );
+}
+
+=head2 shutdown
+
+  $r->shutdown;
+
+=cut
+
+sub shutdown {
+	my $self = shift;
+	$self->_sock_send( 'SHUTDOWN' );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>

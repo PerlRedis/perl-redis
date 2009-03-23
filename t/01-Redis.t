@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 103;
+use Test::More tests => 106;
 
 use lib 'lib';
 
@@ -32,7 +32,6 @@ cmp_ok( $o->get( 'foo' ), 'eq', 'baz', 'get foo = baz' );
 ok( $o->set( 'test-undef' => 42 ), 'set test-undef' );
 ok( $o->set( 'test-undef' => undef ), 'set undef' );
 ok( ! defined $o->get( 'test-undef' ), 'get undef' );
-diag $o->exists( 'test-undef' );
 ok( $o->exists( 'test-undef' ), 'exists undef' );
 
 $o->del('non-existant');
@@ -175,7 +174,9 @@ is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
 diag "Persistence control commands";
 
 ok( $o->save, 'save' );
-
+ok( $o->bgsave, 'bgsave' );
+ok( $o->lastsave, 'lastsave' );
+ok( $o->shutdown, 'shutdown' );
 
 diag "Connection handling";
 
