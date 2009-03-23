@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 102;
+use Test::More tests => 103;
 
 use lib 'lib';
 
@@ -14,6 +14,7 @@ BEGIN {
 ok( my $o = Redis->new(), 'new' );
 
 ok( $o->ping, 'ping' );
+
 
 diag "Commands operating on string values";
 
@@ -77,7 +78,6 @@ cmp_ok( $o->keys('key-*'), '==', $key_next + 1, 'key-*' );
 is_deeply( [ $o->keys('key-*') ], [ @keys ], 'keys' );
 
 ok( my $key = $o->randomkey, 'randomkey' );
-diag "key: $key";
 
 ok( $o->rename( 'test-incrby', 'test-renamed' ), 'rename' );
 ok( $o->exists( 'test-renamed' ), 'exists test-renamed' );
@@ -86,7 +86,7 @@ eval { $o->rename( 'test-decrby', 'test-renamed', 1 ) };
 ok( $@, 'rename to existing key' );
 
 ok( my $nr_keys = $o->dbsize, 'dbsize' );
-diag "dbsize: $nr_keys";
+
 
 diag "Commands operating on lists";
 
@@ -162,6 +162,7 @@ ok( $o->exists( 'foo' ), 'exists' );
 ok( $o->flushdb, 'flushdb' );
 cmp_ok( $o->dbsize, '==', 0, 'empty' );
 
+
 diag "Sorting";
 
 ok( $o->lpush( 'test-sort', $_ ), "put $_" ) foreach ( 1 .. 4 );
@@ -169,6 +170,12 @@ cmp_ok( $o->llen( 'test-sort' ), '==', 4, 'llen' );
 
 is_deeply( [ $o->sort( 'test-sort' )      ], [ 1,2,3,4 ], 'sort' );
 is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
+
+
+diag "Persistence control commands";
+
+ok( $o->save, 'save' );
+
 
 diag "Connection handling";
 

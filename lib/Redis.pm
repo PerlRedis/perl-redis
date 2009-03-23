@@ -538,6 +538,8 @@ sub flushall {
 
 =head1 Sorting
 
+=head2 sort
+
   $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
 
 =cut
@@ -545,6 +547,19 @@ sub flushall {
 sub sort {
 	my ( $self, $sort ) = @_;
 	$self->_sock_result_bulk_list( "SORT $sort" );
+}
+
+=head1 Persistence control commands
+
+=head2 save
+
+  $r->save;
+
+=cut
+
+sub save {
+	my $self = shift;
+	$self->_sock_send_ok( 'SAVE' );
 }
 
 =head1 AUTHOR
