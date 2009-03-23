@@ -26,5 +26,5 @@ is_deeply( [ sort keys %h ], [ 'bar', 'baz', 'foo' ], 'keys' );
 is_deeply( \%h, { bar => 1, baz => 99, foo => 42, }, 'structure' );
 
 
-diag dump( \%h );
+#diag dump( \%h );
 
