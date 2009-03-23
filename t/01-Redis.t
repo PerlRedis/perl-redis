@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 94;
+use Test::More tests => 95;
 
 use lib 'lib';
 
@@ -44,6 +44,8 @@ ok( $o->set('key-next' => 0), 'key-next = 0' );
 my $key_next = 3;
 
 ok( $o->set('key-left' => $key_next), 'key-left' );
+
+is_deeply( [ $o->mget( 'foo', 'key-next', 'key-left' ) ], [ 'baz', 0, 3 ], 'mget' );
 
 my @keys;
 

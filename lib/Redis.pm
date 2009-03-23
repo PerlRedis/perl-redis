@@ -186,7 +186,18 @@ sub set {
 
 sub get {
 	my $self = shift;
-	$self->_sock_result_bulk('GET', @_);
+	$self->_sock_result_bulk('GET',@_);
+}
+
+=head2 mget
+
+  my @values = $r->get( 'foo', 'bar', 'baz' );
+
+=cut
+
+sub mget {
+	my $self = shift;
+	$self->_sock_result_bulk_list('MGET',@_);
 }
 
 =head2 incr
