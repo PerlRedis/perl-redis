@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 95;
+use Test::More tests => 102;
 
 use lib 'lib';
 
@@ -161,6 +161,14 @@ ok( $o->exists( 'foo' ), 'exists' );
 
 ok( $o->flushdb, 'flushdb' );
 cmp_ok( $o->dbsize, '==', 0, 'empty' );
+
+diag "Sorting";
+
+ok( $o->lpush( 'test-sort', $_ ), "put $_" ) foreach ( 1 .. 4 );
+cmp_ok( $o->llen( 'test-sort' ), '==', 4, 'llen' );
+
+is_deeply( [ $o->sort( 'test-sort' )      ], [ 1,2,3,4 ], 'sort' );
+is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
 
 diag "Connection handling";
 

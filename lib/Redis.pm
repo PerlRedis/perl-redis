@@ -536,6 +536,17 @@ sub flushall {
 	$self->_sock_send_ok('flushall');
 }
 
+=head1 Sorting
+
+  $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
+
+=cut
+
+sub sort {
+	my ( $self, $sort ) = @_;
+	$self->_sock_result_bulk_list( "SORT $sort" );
+}
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
