@@ -21,8 +21,7 @@ diag "Commands operating on string values";
 
 ok( $o->set( foo => 'bar' ), 'set foo => bar' );
 
-eval { $o->set( foo => 'bar', 1 ) };
-ok( $@, 'set foo => bar new again failed' );
+ok( ! $o->setnx( foo => 'bar' ), 'setnx foo => bar fails' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
 
@@ -65,8 +64,8 @@ cmp_ok( $o->get( 'key-next' ), '==', $key_next + 1, 'key-next' );
 ok( $o->set('test-incrby', 0), 'test-incrby' );
 ok( $o->set('test-decrby', 0), 'test-decry' );
 foreach ( 1 .. 3 ) {
-	cmp_ok( $o->incr('test-incrby', 3), '==', $_ * 3, 'incrby 3' );
-	cmp_ok( $o->decr('test-decrby', 7), '==', -( $_ * 7 ), 'decrby 7' );
+	cmp_ok( $o->incrby('test-incrby', 3), '==', $_ * 3, 'incrby 3' );
+	cmp_ok( $o->decrby('test-decrby', 7), '==', -( $_ * 7 ), 'decrby 7' );
 }
 
 ok( $o->del( $_ ), "del $_" ) foreach map { "key-$_" } ( 'next', 'left' );
