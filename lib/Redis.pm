@@ -83,12 +83,13 @@ sub AUTOLOAD {
 
 	if ( defined $bulk_command->{$command} ) {
 		my $value = pop;
+		$value = '' if ! defined $value;
 		$send
 			= uc($command)
 			. ' '
 			. join(' ', @_)
 			. ' ' 
-			. length($value)
+			. length( $value )
 			. "\r\n$value\r\n"
 			;
 	} else {
@@ -121,7 +122,9 @@ sub AUTOLOAD {
 		}
 		return $hash;
 	} elsif ( $command eq 'keys' ) {
-		return split(/\s/, __sock_read_bulk($result));
+		my $keys = __sock_read_bulk($result);
+		return split(/\s/, $keys) if $keys;
+		return;
 	}
 
 	if ( $type eq '-' ) {
