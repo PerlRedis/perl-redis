@@ -49,14 +49,14 @@ is_deeply( [ $o->mget( 'foo', 'key-next', 'key-left' ) ], [ 'baz', 0, 3 ], 'mget
 
 my @keys;
 
-foreach ( 0 .. $key_next ) {
-	my $key = 'key-' . $_;
+foreach my $id ( 0 .. $key_next ) {
+	my $key = 'key-' . $id;
 	push @keys, $key;
-	ok(     $o->set( $key => $_ ),           "set $key" );
+	ok(     $o->set( $key => $id ),           "set $key" );
 	ok(  $o->exists( $key       ),           "exists $key" );
-	cmp_ok( $o->get( $key       ), 'eq', $_, "get $key" );
-	cmp_ok( $o->incr( 'key-next' ), '==', $_ + 1, 'incr' );
-	cmp_ok( $o->decr( 'key-left' ), '==', $key_next - $_ - 1, 'decr' );
+	cmp_ok( $o->get( $key       ), 'eq', $id, "get $key" );
+	cmp_ok( $o->incr( 'key-next' ), '==', $id + 1, 'incr' );
+	cmp_ok( $o->decr( 'key-left' ), '==', $key_next - $id - 1, 'decr' );
 }
 
 cmp_ok( $o->get( 'key-next' ), '==', $key_next + 1, 'key-next' );
