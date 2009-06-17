@@ -138,7 +138,7 @@ cmp_ok( $o->scard( $set ), '==', 0, 'scard' );
 $o->sadd( 'test-set1', $_ ) foreach ( 'foo', 'bar', 'baz' );
 $o->sadd( 'test-set2', $_ ) foreach ( 'foo', 'baz', 'xxx' );
 
-my $inter = [ 'baz', 'foo' ];
+my $inter = [ 'foo', 'baz' ];
 
 is_deeply( [ $o->sinter( 'test-set1', 'test-set2' ) ], $inter, 'siter' );
 
