@@ -16,6 +16,9 @@ Redis::Hash - tie perl hashes into Redis
 
   tie %name, 'Redis::Hash', 'prefix';
 
+  my $o = tie %foobar, 'Redis::Hash', 'foobar';
+  print $o->info->{used_memory}; # or any redis command
+
 =cut
 
 # mandatory methods
