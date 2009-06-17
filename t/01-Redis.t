@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 106;
+use Test::More tests => 107;
 use Data::Dump qw/dump/;
 
 use lib 'lib';
@@ -182,6 +182,7 @@ diag "shutdown not tested";
 diag "Remote server control commands";
 
 ok( my $info = $o->info, 'info' );
+isa_ok( $info, 'HASH' );
 diag dump( $info );
 
 diag "Connection handling";
