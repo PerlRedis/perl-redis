@@ -5,8 +5,12 @@ use strict;
 use Benchmark qw/:all/;
 use lib 'lib';
 use Redis;
+use Redis::Hash;
 
 my $r = Redis->new;
+
+my %hash;
+tie %hash, 'Redis::Hash', 'hash';
 
 my $i = 0;
 
@@ -21,4 +25,6 @@ timethese( 100000, {
 	'40_lpush'	=> sub { $r->lpush( 'mylist', 'bar' ) },
 	'40_lpush'	=> sub { $r->lpush( 'mylist', 'bar' ) },
 	'50_lpop'	=> sub { $r->lpop( 'mylist' ) },
+	'90_h_set' => sub { $hash{ 'test' . rand() } = rand() },
+	'90_h_get' => sub { my $a = $hash{ 'test' . rand() }; },
 });
