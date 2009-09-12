@@ -13,14 +13,14 @@ Redis - perl binding for Redis database
 
 =cut
 
-our $VERSION = '0.08';
+our $VERSION = '0.0801';
 
 
 =head1 DESCRIPTION
 
 Pure perl bindings for L<http://code.google.com/p/redis/>
 
-This version support git version 0.08 of Redis available at
+This version support git version 0.08 or later of Redis available at
 
 L<git://github.com/antirez/redis>
 
@@ -34,27 +34,23 @@ with same peace of code with a little help of C<AUTOLOAD>.
 
 =head2 new
 
-  my $r = Redis->new;
+  my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
+
+  my $r = Redis->new( server => '192.168.0.1:6379', debug = 0 );
 
 =cut
 
-our $debug = $ENV{REDIS} || 0;
-
-our $sock;
-my $server = '127.0.0.1:6379';
-
 sub new {
 	my $class = shift;
-	my $self = {};
-	bless($self, $class);
+	my $self = {@_};
+	$self->{debug} ||= $ENV{REDIS_DEBUG};
 
-	warn "# opening socket to $server";
-
-	$sock ||= IO::Socket::INET->new(
-		PeerAddr => $server,
+	$self->{sock} = IO::Socket::INET->new(
+		PeerAddr => $self->{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379',
 		Proto => 'tcp',
 	) || die $!;
 
+	bless($self, $class);
 	$self;
 }
 
@@ -74,10 +70,12 @@ our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
 
+	my $sock = $self->{sock} || die "no server connected";
+
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
 
-	warn "## $command ",dump(@_) if $debug;
+	warn "## $command ",dump(@_) if $self->{debug};
 
 	my $send;
 
@@ -101,7 +99,7 @@ sub AUTOLOAD {
 			;
 	}
 
-	warn ">> $send" if $debug;
+	warn ">> $send" if $self->{debug};
 	print $sock $send;
 
 	if ( $command eq 'quit' ) {
@@ -110,19 +108,19 @@ sub AUTOLOAD {
 	}
 
 	my $result = <$sock> || die "can't read socket: $!";
-	warn "<< $result" if $debug;
+	warn "<< $result" if $self->{debug};
 	my $type = substr($result,0,1);
 	$result = substr($result,1,-2);
 
 	if ( $command eq 'info' ) {
 		my $hash;
-		foreach my $l ( split(/\r\n/, __sock_read_bulk($result) ) ) {
+		foreach my $l ( split(/\r\n/, $self->__read_bulk($result) ) ) {
 			my ($n,$v) = split(/:/, $l, 2);
 			$hash->{$n} = $v;
 		}
 		return $hash;
 	} elsif ( $command eq 'keys' ) {
-		my $keys = __sock_read_bulk($result);
+		my $keys = $self->__read_bulk($result);
 		return split(/\s/, $keys) if $keys;
 		return;
 	}
@@ -132,42 +130,43 @@ sub AUTOLOAD {
 	} elsif ( $type eq '+' ) {
 		return $result;
 	} elsif ( $type eq '$' ) {
-		return __sock_read_bulk($result);
+		return $self->__read_bulk($result);
 	} elsif ( $type eq '*' ) {
-		return __sock_read_multi_bulk($result);
+		return $self->__read_multi_bulk($result);
 	} elsif ( $type eq ':' ) {
 		return $result; # FIXME check if int?
 	} else {
-		confess "unknown type: $type", __sock_read_line();
+		confess "unknown type: $type", $self->__read_line();
 	}
 }
 
-sub __sock_read_bulk {
-	my $len = shift;
+sub __read_bulk {
+	my ($self,$len) = @_;
 	return undef if $len < 0;
 
 	my $v;
 	if ( $len > 0 ) {
-		read($sock, $v, $len) || die $!;
-		warn "<< ",dump($v),$/ if $debug;
+		read($self->{sock}, $v, $len) || die $!;
+		warn "<< ",dump($v),$/ if $self->{debug};
 	}
 	my $crlf;
-	read($sock, $crlf, 2); # skip cr/lf
+	read($self->{sock}, $crlf, 2); # skip cr/lf
 	return $v;
 }
 
-sub __sock_read_multi_bulk {
-	my $size = shift;
+sub __read_multi_bulk {
+	my ($self,$size) = @_;
 	return undef if $size < 0;
+	my $sock = $self->{sock};
 
 	$size--;
 
 	my @list = ( 0 .. $size );
 	foreach ( 0 .. $size ) {
-		$list[ $_ ] = __sock_read_bulk( substr(<$sock>,1,-2) );
+		$list[ $_ ] = $self->__read_bulk( substr(<$sock>,1,-2) );
 	}
 
-	warn "## list = ", dump( @list ) if $debug;
+	warn "## list = ", dump( @list ) if $self->{debug};
 	return @list;
 }
 
