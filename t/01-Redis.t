@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 107;
+use Test::More tests => 108;
 use Data::Dump qw/dump/;
 
 use lib 'lib';
@@ -16,6 +16,7 @@ ok( my $o = Redis->new(), 'new' );
 
 ok( $o->ping, 'ping' );
 
+ok( $o = Redis->new( server => 'localhost:6379' ), 'new with server' );
 
 diag "Commands operating on string values";
 
