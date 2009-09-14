@@ -6,8 +6,6 @@ use warnings;
 use Tie::Hash;
 use base qw/Redis Tie::StdHash/;
 
-use Data::Dump qw/dump/;
-
 =head1 NAME
 
 Redis::Hash - tie perl hashes into Redis

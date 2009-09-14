@@ -5,7 +5,6 @@ use strict;
 
 use Test::More tests => 8;
 use lib 'lib';
-use Data::Dump qw/dump/;
 
 BEGIN {
 	use_ok( 'Redis::Hash' );

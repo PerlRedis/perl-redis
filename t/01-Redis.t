@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use Test::More tests => 108;
-use Data::Dump qw/dump/;
+use Data::Dumper;
 
 use lib 'lib';
 
@@ -184,7 +184,7 @@ diag "Remote server control commands";
 
 ok( my $info = $o->info, 'info' );
 isa_ok( $info, 'HASH' );
-diag dump( $info );
+diag Dumper( $info );
 
 diag "Connection handling";
 

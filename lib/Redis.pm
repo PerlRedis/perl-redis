@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use IO::Socket::INET;
-use Data::Dump qw/dump/;
+use Data::Dumper;
 use Carp qw/confess/;
 
 =head1 NAME
@@ -75,7 +75,7 @@ sub AUTOLOAD {
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
 
-	warn "## $command ",dump(@_) if $self->{debug};
+	warn "## $command ",Dumper(@_) if $self->{debug};
 
 	my $send;
 
@@ -147,7 +147,7 @@ sub __read_bulk {
 	my $v;
 	if ( $len > 0 ) {
 		read($self->{sock}, $v, $len) || die $!;
-		warn "<< ",dump($v),$/ if $self->{debug};
+		warn "<< ",Dumper($v),$/ if $self->{debug};
 	}
 	my $crlf;
 	read($self->{sock}, $crlf, 2); # skip cr/lf
@@ -166,7 +166,7 @@ sub __read_multi_bulk {
 		$list[ $_ ] = $self->__read_bulk( substr(<$sock>,1,-2) );
 	}
 
-	warn "## list = ", dump( @list ) if $self->{debug};
+	warn "## list = ", Dumper( @list ) if $self->{debug};
 	return @list;
 }
 
