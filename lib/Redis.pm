@@ -126,7 +126,7 @@ sub AUTOLOAD {
 	}
 
 	if ( $type eq '-' ) {
-		confess $result;
+		confess "[$command] $result";
 	} elsif ( $type eq '+' ) {
 		return $result;
 	} elsif ( $type eq '$' ) {
