@@ -6,6 +6,7 @@ use strict;
 use IO::Socket::INET;
 use Data::Dumper;
 use Carp qw/confess/;
+use Encode;
 
 =head1 NAME
 
@@ -117,6 +118,7 @@ sub AUTOLOAD {
 	}
 
 	my $result = <$sock> || die "can't read socket: $!";
+	Encode::_utf8_on($result);
 	warn "<< $result" if $self->{debug};
 	my $type = substr($result,0,1);
 	$result = substr($result,1,-2);
@@ -156,6 +158,7 @@ sub __read_bulk {
 	my $v;
 	if ( $len > 0 ) {
 		read($self->{sock}, $v, $len) || die $!;
+		Encode::_utf8_on($v);
 		warn "<< ",Dumper($v),$/ if $self->{debug};
 	}
 	my $crlf;
