@@ -1,3 +1,21 @@
+*** NOTICE ***
+
+This is a modified version of the Redis module from CPAN.  It's what's
+currently in use at Craigslist for our Redis work.
+
+My goal is to share our work in the hopes of having it included back
+into the main distribution.
+
+See MyChanges.txt for details on how this differs from that module.
+
+For details, please contact:
+
+  Jeremy Zawodny
+  Jeremy@Zawodny.com
+  http://blog.zawodny.com/
+
+*** NOTICE ***
+
 Redis
 
 Perl binding for Redis database which is in-memory hash store with
