@@ -1,7 +1,7 @@
 Changes from the mainline CPAN module:
 
   * added support for the new commands in Redis 1.2.x (sorted sets,
-	etc).  all are new bulk commands (zadd, zrem, zscore, etc.)
+    etc).  all are new bulk commands (zadd, zrem, zscore, etc.)
 
 Fixes being considered:
 
