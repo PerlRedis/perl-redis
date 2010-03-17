@@ -13,14 +13,14 @@ Redis - perl binding for Redis database
 
 =cut
 
-our $VERSION = '0.0801';
+our $VERSION = '1.2001';
 
 
 =head1 DESCRIPTION
 
 Pure perl bindings for L<http://code.google.com/p/redis/>
 
-This version support git version 0.08 or later of Redis available at
+This version supports protocol 1.2 or later of Redis available at
 
 L<git://github.com/antirez/redis>
 
@@ -417,7 +417,7 @@ L<http://search.cpan.org/dist/Redis>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Dobrica Pavlinusic, all rights reserved.
+Copyright 2009-2010 Dobrica Pavlinusic, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
