@@ -6,3 +6,7 @@ Revision history for Redis
 0.08	Tue Mar 24 22:38:59 CET 2009
 	This version supports new protocol introduced in beta 8
 	Version bump to be in-sync with Redis version
+
+1.2001	Wed Mar 17 17:22:01 CET 2010
+	Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com>
+	Version bump to be in-sync with Redis version
