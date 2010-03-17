@@ -77,6 +77,8 @@ our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
 
+	use bytes;
+
 	my $sock = $self->{sock} || die "no server connected";
 
 	my $command = $AUTOLOAD;
