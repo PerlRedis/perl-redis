@@ -61,6 +61,13 @@ my $bulk_command = {
 	sadd => 1,	srem => 1,
 	sismember => 1,
 	echo => 1,
+	getset => 1,
+	smove => 1,
+	zadd => 1,
+	zrem => 1,
+	zscore => 1,
+	zincrby => 1,
+	append => 1,
 };
 
 # we don't want DESTROY to fallback into AUTOLOAD
