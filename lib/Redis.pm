@@ -372,6 +372,14 @@ See also L<Redis::List> for tie interface.
 
   my $info_hash = $r->info;
 
+=head1 ENCODING
+
+Since Redis knows nothing about encoding, we are forcing utf-8 flag on all data received from Redis.
+This change is introduced in 1.2001 version.
+
+This allows us to round-trip utf-8 encoded characters correctly, but might be problem if you push
+binary junk into Redis and expect to get it back without utf-8 flag turned on.
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
