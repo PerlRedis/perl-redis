@@ -10,3 +10,4 @@ Revision history for Redis
 1.2001	Wed Mar 17 17:22:01 CET 2010
 	Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
 	Version bump to be in-sync with Redis version
+	Correctly round-trip utf-8 encoded characters
