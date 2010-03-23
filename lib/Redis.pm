@@ -117,7 +117,17 @@ sub AUTOLOAD {
 		return 1;
 	}
 
-	my $result = <$sock> || die "can't read socket: $!";
+	my $result = <$sock>;
+	if ( !$result ) {
+		$self->{sock} = $sock = IO::Socket::INET->new(
+			PeerAddr => $self->{server},
+			Proto => 'tcp',
+		) || die $!;
+
+		print $sock $send;
+
+		$result = <$sock> || die "can't read socket: $!";
+	}
 	Encode::_utf8_on($result);
 	warn "<< $result" if $self->{debug};
 	my $type = substr($result,0,1);

@@ -18,12 +18,12 @@ $o->CLEAR();
 
 ok( ! keys %h, 'empty' );
 
+my $commands_processed_before = $o->info->{total_commands_processed};
+
 ok( %h = ( 'foo' => 42, 'bar' => 1, 'baz' => 99 ), '=' );
 
 is_deeply( [ sort keys %h ], [ 'bar', 'baz', 'foo' ], 'keys' );
 
 is_deeply( \%h, { bar => 1, baz => 99, foo => 42, }, 'structure' );
 
-ok( my $mem = $o->info->{used_memory}, 'info' );
-diag "used memory $mem";
-
+ok( $commands_processed_before < $o->info->{total_commands_processed}, 'more processed commands than before' );

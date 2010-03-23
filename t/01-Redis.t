@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 110;
+use Test::More tests => 111;
 use Data::Dumper;
 
 use lib 'lib';
@@ -25,6 +25,17 @@ ok( $o->set( foo => 'bar' ), 'set foo => bar' );
 ok( ! $o->setnx( foo => 'bar' ), 'setnx foo => bar fails' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
+
+SKIP: {
+    skip "set REDIS_RESTART to init script location to test reconnect code", 1 unless $ENV{REDIS_RESTART};
+
+    diag( 'Restarting redis server' );
+    $o->save();
+
+    `sudo $ENV{REDIS_RESTART} restart`;
+
+    cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar still works after restart' );
+}
 
 ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
