@@ -100,10 +100,6 @@ sub AUTOLOAD {
 			$hash->{$n} = $v;
 		}
 		return $hash;
-	} elsif ( $command eq 'keys' ) {
-		my $keys = $self->__read_bulk($result);
-		return split(/\s/, $keys) if $keys;
-		return;
 	}
 
 	if ( $type eq '-' ) {
