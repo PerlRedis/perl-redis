@@ -153,7 +153,7 @@ sub AUTOLOAD {
 
 sub __read_bulk {
 	my ($self,$len) = @_;
-	return undef if $len < 0;
+	return if $len < 0;
 
 	my $v;
 	if ( $len > 0 ) {
@@ -168,7 +168,7 @@ sub __read_bulk {
 
 sub __read_multi_bulk {
 	my ($self,$size) = @_;
-	return undef if $size < 0;
+	return if $size < 0;
 	my $sock = $self->{sock};
 
 	$size--;
