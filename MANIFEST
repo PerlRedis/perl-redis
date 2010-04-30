@@ -5,6 +5,7 @@ README
 lib/Redis.pm
 lib/Redis/List.pm
 lib/Redis/Hash.pm
+scripts/redis-benchmark.pl
 t/00-load.t
 t/pod-coverage.t
 t/pod.t
