@@ -86,8 +86,8 @@ ok( my $key = $o->randomkey, 'randomkey' );
 ok( $o->rename( 'test-incrby', 'test-renamed' ), 'rename' );
 ok( $o->exists( 'test-renamed' ), 'exists test-renamed' );
 
-eval { $o->rename( 'test-decrby', 'test-renamed', 1 ) };
-ok( $@, 'rename to existing key' );
+eval { $o->rename( 'test-decrby', 'test-decrby' ) };
+ok( $@, 'rename to same key' );
 
 ok( my $nr_keys = $o->dbsize, 'dbsize' );
 
@@ -173,7 +173,7 @@ ok( $o->lpush( 'test-sort', $_ ), "put $_" ) foreach ( 1 .. 4 );
 cmp_ok( $o->llen( 'test-sort' ), '==', 4, 'llen' );
 
 is_deeply( [ $o->sort( 'test-sort' )      ], [ 1,2,3,4 ], 'sort' );
-is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
+is_deeply( [ $o->sort( 'test-sort', 'DESC' )      ], [ 4,3,2,1 ], 'sort DESC' );
 
 
 diag "Persistence control commands";
