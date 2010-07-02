@@ -1,12 +1,4 @@
 Changes from the mainline CPAN module:
 
-  * added support for the new commands in Redis 1.2.x (sorted sets,
-    etc).  all are new bulk commands (zadd, zrem, zscore, etc.)
-
-Fixes being considered:
-
-  * adding a "use bytes" in AUTOLOAD to prevent issues with wide
-    characters since the module uses print()
-
-  * Fix return for NULL result vs. empty result as described here:
-    https://rt.cpan.org/Public/Bug/Display.html?id=55507
+  * started with the main multi-bulk branch and fixed up the test
+    cases so that all test pass with the Redis 2.0.0 RC2.
