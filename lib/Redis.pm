@@ -6,6 +6,7 @@ use strict;
 use IO::Socket::INET;
 use Data::Dumper;
 use Carp qw/confess/;
+use Encode;
 
 =head1 NAME
 
@@ -13,14 +14,14 @@ Redis - perl binding for Redis database
 
 =cut
 
-our $VERSION = '0.0801';
+our $VERSION = '1.2001';
 
 
 =head1 DESCRIPTION
 
 Pure perl bindings for L<http://code.google.com/p/redis/>
 
-This version support git version 0.08 or later of Redis available at
+This version supports protocol 1.2 or later of Redis available at
 
 L<git://github.com/antirez/redis>
 
@@ -54,28 +55,14 @@ sub new {
 	$self;
 }
 
-my $bulk_command = {
-	set => 1,	setnx => 1,
-	rpush => 1,	lpush => 1,
-	lset => 1,	lrem => 1,
-	sadd => 1,	srem => 1,
-	sismember => 1,
-	echo => 1,
-	getset => 1,
-	smove => 1,
-	zadd => 1,
-	zrem => 1,
-	zscore => 1,
-	zincrby => 1,
-	append => 1,
-};
-
 # we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY {}
 
 our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
+
+	use bytes;
 
 	my $sock = $self->{sock} || die "no server connected";
 
@@ -84,27 +71,13 @@ sub AUTOLOAD {
 
 	warn "## $command ",Dumper(@_) if $self->{debug};
 
-	my $send;
+	unshift @_, uc($command);
 
-	if ( defined $bulk_command->{$command} ) {
-		my $value = pop;
-		$value = '' if ! defined $value;
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. ' ' 
-			. length( $value )
-			. "\r\n$value\r\n"
-			;
-	} else {
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
+	my $send
+ 			= "*".(scalar @_)
 			. "\r\n"
+ 			. join("", map { "\$". length($_) ."\r\n". $_ ."\r\n" } @_)
 			;
-	}
 
 	warn ">> $send" if $self->{debug};
 	print $sock $send;
@@ -115,6 +88,7 @@ sub AUTOLOAD {
 	}
 
 	my $result = <$sock> || die "can't read socket: $!";
+	Encode::_utf8_on($result);
 	warn "<< $result" if $self->{debug};
 	my $type = substr($result,0,1);
 	$result = substr($result,1,-2);
@@ -126,14 +100,10 @@ sub AUTOLOAD {
 			$hash->{$n} = $v;
 		}
 		return $hash;
-	} elsif ( $command eq 'keys' ) {
-		my $keys = $self->__read_bulk($result);
-		return split(/\s/, $keys) if $keys;
-		return;
 	}
 
 	if ( $type eq '-' ) {
-		confess $result;
+		confess "[$command] $result";
 	} elsif ( $type eq '+' ) {
 		return $result;
 	} elsif ( $type eq '$' ) {
@@ -154,6 +124,7 @@ sub __read_bulk {
 	my $v;
 	if ( $len > 0 ) {
 		read($self->{sock}, $v, $len) || die $!;
+		Encode::_utf8_on($v);
 		warn "<< ",Dumper($v),$/ if $self->{debug};
 	}
 	my $crlf;
@@ -367,6 +338,14 @@ See also L<Redis::List> for tie interface.
 
   my $info_hash = $r->info;
 
+=head1 ENCODING
+
+Since Redis knows nothing about encoding, we are forcing utf-8 flag on all data received from Redis.
+This change is introduced in 1.2001 version.
+
+This allows us to round-trip utf-8 encoded characters correctly, but might be problem if you push
+binary junk into Redis and expect to get it back without utf-8 flag turned on.
+
 =head1 AUTHOR
 
 Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
@@ -417,7 +396,7 @@ L<http://search.cpan.org/dist/Redis>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Dobrica Pavlinusic, all rights reserved.
+Copyright 2009-2010 Dobrica Pavlinusic, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 105;
+use Test::More tests => 110;
 use Data::Dumper;
 
 use lib 'lib';
@@ -29,6 +29,10 @@ cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
 ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'baz', 'get foo = baz' );
+
+my $euro = "\x{20ac}";
+ok( $o->set( utf8 => $euro ), 'set utf8' );
+cmp_ok( $o->get( 'utf8' ), 'eq', $euro, 'get utf8' );
 
 ok( $o->set( 'test-undef' => 42 ), 'set test-undef' );
 ok( $o->set( 'test-undef' => undef ), 'set undef' );
@@ -174,9 +178,9 @@ is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
 
 diag "Persistence control commands";
 
-#ok( $o->save, 'save' );
-#ok( $o->bgsave, 'bgsave' );
-#ok( $o->lastsave, 'lastsave' );
+ok( $o->save, 'save' );
+ok( $o->bgsave, 'bgsave' );
+ok( $o->lastsave, 'lastsave' );
 #ok( $o->shutdown, 'shutdown' );
 diag "shutdown not tested";
 

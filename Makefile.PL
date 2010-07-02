@@ -13,6 +13,7 @@ WriteMakefile(
 		'IO::Socket::INET' => 0,
 		'Data::Dumper' => 0,
 		'Carp' => 0,
+		'Encode' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Redis-*' },
