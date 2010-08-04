@@ -64,10 +64,11 @@ sub AUTOLOAD {
 	my $self = shift;
 	my $sock = $self->{sock} || die "no server connected";
 	my $enc = $self->{encoding};
+	my $deb = $self->{debug};
 
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
-	warn "## $command ",Dumper([@_]) if $self->{debug};
+	warn "[SEND] $command ",Dumper([@_]) if $deb;
 
 	my $n_elems = scalar(@_)+1;
 	my $send = "\*$n_elems\r\n";
@@ -76,7 +77,7 @@ sub AUTOLOAD {
 	  $send .= defined($bin)? '$'.length($bin)."\r\n$bin\r\n" : "\$-1\r\n";
  	}
 
-	warn ">> $send" if $self->{debug};
+	warn "[SEND RAW] $send" if $deb;
 	print $sock $send;
 
 	if ( $command eq 'quit' ) {
@@ -89,7 +90,7 @@ sub AUTOLOAD {
 	$result = substr($result,1,-2);
 
 	$result = decode($enc, $result) if $enc;
-	warn "<< Response: '$type$result'," if $self->{debug};
+	warn "[RECV] '$type$result'" if $deb;
 
 	if ( $command eq 'info' ) {
 		my $hash;
@@ -130,10 +131,11 @@ sub __read_bulk {
 	if ( $len > 0 ) {
 		read($self->{sock}, $v, $len) || die $!;
 		$v = decode($enc, $v) if $enc;
-		warn "<< read_bulk ".Dumper($v) if $self->{debug};
 	}
 	my $crlf;
 	read($self->{sock}, $crlf, 2); # skip cr/lf
+
+	warn "[PARSE] read_bulk ".Dumper($v) if $self->{debug};
 	return $v;
 }
 
@@ -142,16 +144,17 @@ sub __read_multi_bulk {
 	return if $size <= 0;
 
 	my $sock = $self->{sock};
+	my $deb = $self->{debug};
 	my $enc = $self->{encoding};
   my @list;	
 	while ($size--) {
 		my $v = $self->__read_bulk( substr(<$sock>,1,-2) );
 		$v = decode($enc, $v) if $enc;
-		warn "<< read_multi_bulk ($size) ".Dumper($v) if $self->{debug};
+		warn "  [PARSE] read_multi_bulk ($size) ".Dumper($v) if $deb;
 		push @list, $v;
 	}
 
-	warn "<< multi_bunk list = ".Dumper( \@list ) if $self->{debug};
+	warn "[PARSE] multi_bulk ".Dumper( \@list ) if $deb;
 	return @list;
 }
 
