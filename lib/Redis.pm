@@ -48,10 +48,11 @@ sub new {
 	$self->{debug} ||= $ENV{REDIS_DEBUG};
 	$self->{encoding} ||= 'utf8';    ## default to lax utf8
 
+	$self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
 	$self->{sock} = IO::Socket::INET->new(
-		PeerAddr => $self->{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379',
+		PeerAddr => $self->{server},
 		Proto => 'tcp',
-	) || die $!;
+	) || confess("Could not connect to Redis server at $self->{server}: $!");
 
 	return bless($self, $class);
 }
@@ -62,7 +63,7 @@ sub DESTROY {}
 our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
-	my $sock = $self->{sock} || die "no server connected";
+	my $sock = $self->{sock} || confess("Not connected to any server");
 	my $enc = $self->{encoding};
 	my $deb = $self->{debug};
 
@@ -81,11 +82,11 @@ sub AUTOLOAD {
 	print $sock $send;
 
 	if ( $command eq 'quit' ) {
-		close( $sock ) || die "can't close socket: $!";
+		close( $sock ) || confess("Can't close socket: $!");
 		return 1;
 	}
 
-	my $result = <$sock> || die "can't read socket: $!";
+	my $result = <$sock> || confess("Can't read socket: $!");
 	my $type = substr($result,0,1);
 	$result = substr($result,1,-2);
 
@@ -129,7 +130,7 @@ sub __read_bulk {
 	my $enc = $self->{encoding};
 	my $v = '';
 	if ( $len > 0 ) {
-		read($self->{sock}, $v, $len) || die $!;
+		read($self->{sock}, $v, $len) || confess("Could not read from sock: $!");
 		$v = decode($enc, $v) if $enc;
 	}
 	my $crlf;

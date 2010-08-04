@@ -3,7 +3,8 @@
 use warnings;
 use strict;
 
-use Test::More tests => 110;
+use Test::More tests => 111;
+use Test::Exception;
 use Data::Dumper;
 
 use lib 'lib';
@@ -195,3 +196,7 @@ diag Dumper( $info );
 diag "Connection handling";
 
 ok( $o->quit, 'quit' );
+
+throws_ok sub { Redis->new(server => '127.0.0.1:1') },
+  qr/Could not connect to Redis server at 127[.]0[.]0[.]1:1:/,
+  'Failed connection throws exception';
