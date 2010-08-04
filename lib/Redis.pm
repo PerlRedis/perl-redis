@@ -60,6 +60,8 @@ sub new {
 # we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY {}
 
+
+### Deal with common, general case, Redis commands
 our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
@@ -71,11 +73,6 @@ sub AUTOLOAD {
 	$command =~ s/.*://;
 
 	$self->__send_command($command, @_);
-
-	if ( $command eq 'quit' ) {
-		close( $sock ) || confess("Can't close socket: $!");
-		return 1;
-	}
 
 	my $result = <$sock> || confess("Can't read socket: $!");
 	my $type = substr($result,0,1);
@@ -112,6 +109,18 @@ sub AUTOLOAD {
 	} else {
 		confess "unknown type: $type", $self->__read_line();
 	}
+}
+
+
+### Commands with extra logic
+
+sub quit {
+  my ($self) = @_;
+
+  $self->__send_command('QUIT');
+
+  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  return 1;
 }
 
 
