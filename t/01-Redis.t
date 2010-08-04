@@ -171,7 +171,7 @@ ok( $o->lpush( 'test-sort', $_ ), "put $_" ) foreach ( 1 .. 4 );
 cmp_ok( $o->llen( 'test-sort' ), '==', 4, 'llen' );
 
 is_deeply( [ $o->sort( 'test-sort' )      ], [ 1,2,3,4 ], 'sort' );
-is_deeply( [ $o->sort( 'test-sort DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
+is_deeply( [ $o->sort( 'test-sort', 'DESC' ) ], [ 4,3,2,1 ], 'sort DESC' );
 
 
 diag "Persistence control commands";
