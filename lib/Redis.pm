@@ -43,33 +43,18 @@ with same peace of code with a little help of C<AUTOLOAD>.
 
 sub new {
 	my $class = shift;
-	my $self = {@_};
+	my $self  = {@_};
+
 	$self->{debug} ||= $ENV{REDIS_DEBUG};
+	$self->{encoding} ||= 'utf8';    ## default to lax utf8
 
 	$self->{sock} = IO::Socket::INET->new(
 		PeerAddr => $self->{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379',
 		Proto => 'tcp',
 	) || die $!;
 
-	bless($self, $class);
-	$self;
+	return bless($self, $class);
 }
-
-my $bulk_command = {
-	set => 1,	setnx => 1,
-	rpush => 1,	lpush => 1,
-	lset => 1,	lrem => 1,
-	sadd => 1,	srem => 1,
-	sismember => 1,
-	echo => 1,
-	getset => 1,
-	smove => 1,
-	zadd => 1,
-	zrem => 1,
-	zscore => 1,
-	zincrby => 1,
-	append => 1,
-};
 
 # we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY {}
@@ -77,37 +62,19 @@ sub DESTROY {}
 our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
-
-	use bytes;
-
 	my $sock = $self->{sock} || die "no server connected";
+	my $enc = $self->{encoding};
 
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
+	warn "## $command ",Dumper([@_]) if $self->{debug};
 
-	warn "## $command ",Dumper(@_) if $self->{debug};
-
-	my $send;
-
-	if ( defined $bulk_command->{$command} ) {
-		my $value = pop;
-		$value = '' if ! defined $value;
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. ' ' 
-			. length( $value )
-			. "\r\n$value\r\n"
-			;
-	} else {
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. "\r\n"
-			;
-	}
+	my $n_elems = scalar(@_)+1;
+	my $send = "\*$n_elems\r\n";
+	for my $str (uc($command), @_) {
+	  my $bin = $enc? encode($enc, $str) : $str;
+	  $send .= defined($bin)? '$'.length($bin)."\r\n$bin\r\n" : "\$-1\r\n";
+ 	}
 
 	warn ">> $send" if $self->{debug};
 	print $sock $send;
@@ -118,10 +85,11 @@ sub AUTOLOAD {
 	}
 
 	my $result = <$sock> || die "can't read socket: $!";
-	Encode::_utf8_on($result);
-	warn "<< $result" if $self->{debug};
 	my $type = substr($result,0,1);
 	$result = substr($result,1,-2);
+
+	$result = decode($enc, $result) if $enc;
+	warn "<< Response: '$type$result'," if $self->{debug};
 
 	if ( $command eq 'info' ) {
 		my $hash;
@@ -131,6 +99,8 @@ sub AUTOLOAD {
 		}
 		return $hash;
 	} elsif ( $command eq 'keys' ) {
+		return $self->__read_multi_bulk($result)
+			if $type eq '*';
 		my $keys = $self->__read_bulk($result);
 		return split(/\s/, $keys) if $keys;
 		return;
@@ -155,11 +125,12 @@ sub __read_bulk {
 	my ($self,$len) = @_;
 	return if $len < 0;
 
-	my $v;
+	my $enc = $self->{encoding};
+	my $v = '';
 	if ( $len > 0 ) {
 		read($self->{sock}, $v, $len) || die $!;
-		Encode::_utf8_on($v);
-		warn "<< ",Dumper($v),$/ if $self->{debug};
+		$v = decode($enc, $v) if $enc;
+		warn "<< read_bulk ".Dumper($v) if $self->{debug};
 	}
 	my $crlf;
 	read($self->{sock}, $crlf, 2); # skip cr/lf
@@ -168,17 +139,19 @@ sub __read_bulk {
 
 sub __read_multi_bulk {
 	my ($self,$size) = @_;
-	return if $size < 0;
+	return if $size <= 0;
+
 	my $sock = $self->{sock};
-
-	$size--;
-
-	my @list = ( 0 .. $size );
-	foreach ( 0 .. $size ) {
-		$list[ $_ ] = $self->__read_bulk( substr(<$sock>,1,-2) );
+	my $enc = $self->{encoding};
+  my @list;	
+	while ($size--) {
+		my $v = $self->__read_bulk( substr(<$sock>,1,-2) );
+		$v = decode($enc, $v) if $enc;
+		warn "<< read_multi_bulk ($size) ".Dumper($v) if $self->{debug};
+		push @list, $v;
 	}
 
-	warn "## list = ", Dumper( @list ) if $self->{debug};
+	warn "<< multi_bunk list = ".Dumper( \@list ) if $self->{debug};
 	return @list;
 }
 
