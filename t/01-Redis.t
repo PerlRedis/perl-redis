@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 108;
+use Test::More tests => 110;
 use Data::Dumper;
 
 use lib 'lib';
@@ -25,6 +25,10 @@ ok( $o->set( foo => 'bar' ), 'set foo => bar' );
 ok( ! $o->setnx( foo => 'bar' ), 'setnx foo => bar fails' );
 
 cmp_ok( $o->get( 'foo' ), 'eq', 'bar', 'get foo = bar' );
+
+ok( $o->set( foo => '' ), 'set foo => ""' );
+
+cmp_ok( $o->get( 'foo' ), 'eq', '', 'get foo = ""' );
 
 ok( $o->set( foo => 'baz' ), 'set foo => baz' );
 
