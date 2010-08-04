@@ -69,17 +69,8 @@ sub AUTOLOAD {
 
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
-	warn "[SEND] $command ",Dumper([@_]) if $deb;
 
-	my $n_elems = scalar(@_)+1;
-	my $send = "\*$n_elems\r\n";
-	for my $str (uc($command), @_) {
-	  my $bin = $enc? encode($enc, $str) : $str;
-	  $send .= defined($bin)? '$'.length($bin)."\r\n$bin\r\n" : "\$-1\r\n";
- 	}
-
-	warn "[SEND RAW] $send" if $deb;
-	print $sock $send;
+	$self->__send_command($command, @_);
 
 	if ( $command eq 'quit' ) {
 		close( $sock ) || confess("Can't close socket: $!");
@@ -121,6 +112,38 @@ sub AUTOLOAD {
 	} else {
 		confess "unknown type: $type", $self->__read_line();
 	}
+}
+
+
+### Socket operations
+
+sub __send_command {
+  my $self = shift;
+  my $cmd  = uc(shift);
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
+
+  warn "[SEND] $cmd ", Dumper([@_]) if $deb;
+
+  ## Encode command using multi-bulk format
+  my $n_elems = scalar(@_) + 1;
+  my $buf     = "\*$n_elems\r\n";
+  for my $elem ($cmd, @_) {
+    my $bin = $enc ? encode($enc, $elem) : $elem;
+    $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
+  }
+
+  ## Send command, take care for partial writes
+  warn "[SEND RAW] $buf" if $deb;
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  while ($buf) {
+    my $len = syswrite $sock, $buf, length $buf;
+    confess("Could not write to Redis server: $!")
+      unless $len;
+    substr $buf, 0, $len, "";
+  }
+
+  return;
 }
 
 sub __read_bulk {
