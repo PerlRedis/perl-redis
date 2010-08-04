@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 110;
+use Test::More tests => 108;
 use Data::Dumper;
 
 use lib 'lib';
@@ -35,8 +35,6 @@ ok( $o->set( utf8 => $euro ), 'set utf8' );
 cmp_ok( $o->get( 'utf8' ), 'eq', $euro, 'get utf8' );
 
 ok( $o->set( 'test-undef' => 42 ), 'set test-undef' );
-ok( $o->set( 'test-undef' => undef ), 'set undef' );
-ok( ! defined $o->get( 'test-undef' ), 'get undef' );
 ok( $o->exists( 'test-undef' ), 'exists undef' );
 
 $o->del('non-existant');
