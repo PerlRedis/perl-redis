@@ -42,42 +42,43 @@ with same peace of code with a little help of C<AUTOLOAD>.
 =cut
 
 sub new {
-	my $class = shift;
-	my $self  = {@_};
+  my $class = shift;
+  my $self  = {@_};
 
-	$self->{debug} ||= $ENV{REDIS_DEBUG};
-	$self->{encoding} ||= 'utf8';    ## default to lax utf8
+  $self->{debug} ||= $ENV{REDIS_DEBUG};
+  $self->{encoding} ||= 'utf8';    ## default to lax utf8
 
-	$self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
-	$self->{sock} = IO::Socket::INET->new(
-		PeerAddr => $self->{server},
-		Proto => 'tcp',
-	) || confess("Could not connect to Redis server at $self->{server}: $!");
-	$self->{rbuf} = '';
-	
-	$self->{is_subscriber} = 0;
+  $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+  $self->{sock} = IO::Socket::INET->new(
+    PeerAddr => $self->{server},
+    Proto    => 'tcp',
+  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+  $self->{rbuf} = '';
 
-	return bless($self, $class);
+  $self->{is_subscriber} = 0;
+
+  return bless($self, $class);
 }
 
 
 ### we don't want DESTROY to fallback into AUTOLOAD
-sub DESTROY {}
+sub DESTROY { }
 
 
 ### Deal with common, general case, Redis commands
 our $AUTOLOAD;
+
 sub AUTOLOAD {
-	my $self = shift;
-	my $sock = $self->{sock} || confess("Not connected to any server");
-	my $enc = $self->{encoding};
-	my $deb = $self->{debug};
+  my $self = shift;
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
 
-	my $command = $AUTOLOAD;
-	$command =~ s/.*://;
-	$self->__is_valid_command($command);
+  my $command = $AUTOLOAD;
+  $command =~ s/.*://;
+  $self->__is_valid_command($command);
 
-	$self->__send_command($command, @_);
+  $self->__send_command($command, @_);
 
   return $self->__read_response($command);
 }
@@ -103,9 +104,7 @@ sub info {
 
   my $info = $self->__read_response('INFO');
 
-  return {
-    map { split(/:/, $_, 2) } split(/\r\n/, $info)
-  };
+  return {map { split(/:/, $_, 2) } split(/\r\n/, $info)};
 }
 
 sub keys {
@@ -176,21 +175,21 @@ sub __read_response {
     return $result;
   }
   elsif ($type eq '$') {
-		return if $result < 0;
-		return $self->__read_sock($result);
+    return if $result < 0;
+    return $self->__read_sock($result);
   }
   elsif ($type eq '*') {
-	  my @list;
-	  while ($result--) {
-		  push @list, $self->__read_response($command);
-  	}
+    my @list;
+    while ($result--) {
+      push @list, $self->__read_response($command);
+    }
     return @list;
   }
   elsif ($type eq ':') {
     return $result;
   }
   else {
-    confess "unknown answer type: $type ($result), "
+    confess "unknown answer type: $type ($result), ";
   }
 }
 
@@ -202,7 +201,7 @@ sub __read_sock {
   my $rbuf = \($self->{rbuf});
 
   my ($data, $type) = ('', '');
-  my $read_size = defined $len? $len+2 : 8192;
+  my $read_size = defined $len ? $len + 2 : 8192;
   while (1) {
     ## Read NN bytes, strip \r\n at the end
     if (defined $len) {
@@ -218,7 +217,8 @@ sub __read_sock {
     }
 
     my $bytes = sysread $sock, $$rbuf, $read_size, length $$rbuf;
-    confess("Error while reading from Redis server: $!") unless defined $bytes;
+    confess("Error while reading from Redis server: $!")
+      unless defined $bytes;
     confess("Redis server closed connection") unless $bytes;
   }
 
