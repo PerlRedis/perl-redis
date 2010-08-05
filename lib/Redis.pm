@@ -58,7 +58,8 @@ sub new {
 	return bless($self, $class);
 }
 
-# we don't want DESTROY to fallback into AUTOLOAD
+
+### we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY {}
 
 
@@ -80,7 +81,6 @@ sub AUTOLOAD {
 
 
 ### Commands with extra logic
-
 sub quit {
   my ($self) = @_;
 
@@ -119,7 +119,6 @@ sub keys {
 
 
 ### Socket operations
-
 sub __send_command {
   my $self = shift;
   my $cmd  = uc(shift);
