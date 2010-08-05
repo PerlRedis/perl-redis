@@ -53,6 +53,7 @@ sub new {
 		PeerAddr => $self->{server},
 		Proto => 'tcp',
 	) || confess("Could not connect to Redis server at $self->{server}: $!");
+	$self->{rbuf} = '';
 
 	return bless($self, $class);
 }
@@ -74,41 +75,7 @@ sub AUTOLOAD {
 
 	$self->__send_command($command, @_);
 
-	my $result = <$sock> || confess("Can't read socket: $!");
-	my $type = substr($result,0,1);
-	$result = substr($result,1,-2);
-
-	$result = decode($enc, $result) if $enc;
-	warn "[RECV] '$type$result'" if $deb;
-
-	if ( $command eq 'info' ) {
-		my $hash;
-		foreach my $l ( split(/\r\n/, $self->__read_bulk($result) ) ) {
-			my ($n,$v) = split(/:/, $l, 2);
-			$hash->{$n} = $v;
-		}
-		return $hash;
-	} elsif ( $command eq 'keys' ) {
-		return $self->__read_multi_bulk($result)
-			if $type eq '*';
-		my $keys = $self->__read_bulk($result);
-		return split(/\s/, $keys) if $keys;
-		return;
-	}
-
-	if ( $type eq '-' ) {
-		confess "[$command] $result";
-	} elsif ( $type eq '+' ) {
-		return $result;
-	} elsif ( $type eq '$' ) {
-		return $self->__read_bulk($result);
-	} elsif ( $type eq '*' ) {
-		return $self->__read_multi_bulk($result);
-	} elsif ( $type eq ':' ) {
-		return $result; # FIXME check if int?
-	} else {
-		confess "unknown type: $type", $self->__read_line();
-	}
+  return $self->__read_response($command);
 }
 
 
@@ -120,7 +87,34 @@ sub quit {
   $self->__send_command('QUIT');
 
   close(delete $self->{sock}) || confess("Can't close socket: $!");
+  delete $self->{rbuf};
+
   return 1;
+}
+
+sub info {
+  my ($self) = @_;
+
+  $self->__send_command('INFO');
+
+  my $info = $self->__read_response('INFO');
+
+  return {
+    map { split(/:/, $_, 2) } split(/\r\n/, $info)
+  };
+}
+
+sub keys {
+  my $self = shift;
+
+  $self->__send_command('KEYS', @_);
+
+  my @keys = $self->__read_response('INFO', \my $type);
+  return @keys if $type eq '*';
+
+  ## Support redis <= 1.2.6
+  return split(/\s/, $keys[0]) if $keys[0];
+  return;
 }
 
 
@@ -155,41 +149,72 @@ sub __send_command {
   return;
 }
 
-sub __read_bulk {
-	my ($self,$len) = @_;
-	return if $len < 0;
+sub __read_response {
+  my ($self, $command, $type_r) = @_;
 
-	my $enc = $self->{encoding};
-	my $v = '';
-	if ( $len > 0 ) {
-		read($self->{sock}, $v, $len) || confess("Could not read from sock: $!");
-		$v = decode($enc, $v) if $enc;
-	}
-	my $crlf;
-	read($self->{sock}, $crlf, 2); # skip cr/lf
+  my ($type, $result) = $self->__read_sock;
+  $$type_r = $type if $type_r;
 
-	warn "[PARSE] read_bulk ".Dumper($v) if $self->{debug};
-	return $v;
+  if ($type eq '-') {
+    confess "[$command] $result, ";
+  }
+  elsif ($type eq '+') {
+    return $result;
+  }
+  elsif ($type eq '$') {
+		return if $result < 0;
+		return $self->__read_sock($result);
+  }
+  elsif ($type eq '*') {
+	  my @list;
+	  while ($result--) {
+		  push @list, $self->__read_response($command);
+  	}
+    return @list;
+  }
+  elsif ($type eq ':') {
+    return $result;
+  }
+  else {
+    confess "unknown answer type: $type ($result), "
+  }
 }
 
-sub __read_multi_bulk {
-	my ($self,$size) = @_;
-	return if $size <= 0;
+sub __read_sock {
+  my ($self, $len) = @_;
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
+  my $rbuf = \($self->{rbuf});
 
-	my $sock = $self->{sock};
-	my $deb = $self->{debug};
-	my $enc = $self->{encoding};
-  my @list;	
-	while ($size--) {
-		my $v = $self->__read_bulk( substr(<$sock>,1,-2) );
-		$v = decode($enc, $v) if $enc;
-		warn "  [PARSE] read_multi_bulk ($size) ".Dumper($v) if $deb;
-		push @list, $v;
-	}
+  my ($data, $type) = ('', '');
+  my $read_size = defined $len? $len+2 : 8192;
+  while (1) {
+    ## Read NN bytes, strip \r\n at the end
+    if (defined $len) {
+      if (length($$rbuf) >= $len + 2) {
+        $data = substr(substr($$rbuf, 0, $len + 2, ''), 0, -2);
+        last;
+      }
+    }
+    ## No len, means line more, read until \r\n
+    elsif ($$rbuf =~ s/^(.)([^\015\012]*)\015\012//) {
+      ($type, $data) = ($1, $2);
+      last;
+    }
 
-	warn "[PARSE] multi_bulk ".Dumper( \@list ) if $deb;
-	return @list;
+    my $bytes = sysread $sock, $$rbuf, $read_size, length $$rbuf;
+    confess("Error while reading from Redis server: $!") unless defined $bytes;
+    confess("Redis server closed connection") unless $bytes;
+  }
+
+  $data = decode($enc, $data) if $enc;
+  warn "[RECV] '$type$data'" if $self->{debug};
+
+  return ($type, $data) if $type;
+  return $data;
 }
+
 
 1;
 
