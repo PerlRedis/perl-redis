@@ -54,6 +54,8 @@ sub new {
 		Proto => 'tcp',
 	) || confess("Could not connect to Redis server at $self->{server}: $!");
 	$self->{rbuf} = '';
+	
+	$self->{is_subscriber} = 0;
 
 	return bless($self, $class);
 }
@@ -73,6 +75,7 @@ sub AUTOLOAD {
 
 	my $command = $AUTOLOAD;
 	$command =~ s/.*://;
+	$self->__is_valid_command($command);
 
 	$self->__send_command($command, @_);
 
@@ -94,6 +97,7 @@ sub quit {
 
 sub info {
   my ($self) = @_;
+  $self->__is_valid_command('INFO');
 
   $self->__send_command('INFO');
 
@@ -106,6 +110,7 @@ sub info {
 
 sub keys {
   my $self = shift;
+  $self->__is_valid_command('KEYS');
 
   $self->__send_command('KEYS', @_);
 
@@ -115,6 +120,16 @@ sub keys {
   ## Support redis <= 1.2.6
   return split(/\s/, $keys[0]) if $keys[0];
   return;
+}
+
+
+### Mode validation
+sub __is_valid_command {
+  my ($self, $cmd) = @_;
+
+  return unless $self->{is_subscriber};
+  return if $cmd =~ /^P?(UN)?SUBSCRIBE$/;
+  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ");
 }
 
 
