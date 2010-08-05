@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 111;
+use Test::More tests => 121;
 use Test::Exception;
 use Data::Dumper;
 
@@ -41,6 +41,12 @@ cmp_ok( $o->get( 'utf8' ), 'eq', $euro, 'get utf8' );
 
 ok( $o->set( 'test-undef' => 42 ), 'set test-undef' );
 ok( $o->exists( 'test-undef' ), 'exists undef' );
+
+for my $size (10_000, 100_000, 500_000, 1_000_000, 2_500_000) {
+  my $v = 'a' x $size;
+  ok( $o->set('big_key', $v), "set with value size $size ok" );
+  is( $o->get('big_key'), $v, "... and get was ok to" );
+}
 
 $o->del('non-existant');
 
