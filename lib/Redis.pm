@@ -116,7 +116,8 @@ sub keys {
 
   $self->__send_command('KEYS', @_);
 
-  my @keys = $self->__read_response('INFO', \my $type);
+  my @keys = $self->__read_response('KEYS', \my $type);
+  ## Support redis > 1.26
   return @keys if $type eq '*';
 
   ## Support redis <= 1.2.6
