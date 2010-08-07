@@ -93,8 +93,8 @@ sub quit {
 
   $self->__send_command('QUIT');
 
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
   delete $self->{rbuf};
+  close(delete $self->{sock}) || confess("Can't close socket: $!");
 
   return 1;
 }
