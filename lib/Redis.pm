@@ -289,7 +289,8 @@ sub __read_response {
     while ($result--) {
       push @list, scalar($self->__read_response($command));
     }
-    return @list;
+    return @list if wantarray;
+    return \@list;
   }
   elsif ($type eq ':') {
     return $result;
