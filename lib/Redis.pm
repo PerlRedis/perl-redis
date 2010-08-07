@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 use IO::Socket::INET;
+use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
@@ -227,6 +228,27 @@ sub __read_sock {
 
   return ($type, $data) if $type;
   return $data;
+}
+
+sub __can_read_sock {
+  my ($self) = @_;
+  my $sock   = $self->{sock};
+  my $rbuf   = \($self->{rbuf});
+
+  return 1 if $$rbuf;
+  __fh_nonblocking($sock, 1);
+  my $bytes = sysread $sock, $$rbuf, 8192, length $$rbuf;
+  __fh_nonblocking($sock, 0);
+  return 1 if $bytes;
+  return 0;
+}
+
+
+### Copied from AnyEvent::Util
+BEGIN {
+  *__fh_nonblocking = ($^O eq 'MSWin32')
+    ? sub($$) { ioctl $_[0], 0x8004667e, pack "L", $_[1]; }    # FIONBIO
+    : sub($$) { fcntl $_[0], F_SETFL, $_[1] ? O_NONBLOCK : 0; };
 }
 
 
