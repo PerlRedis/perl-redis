@@ -128,7 +128,7 @@ sub __is_valid_command {
   my ($self, $cmd) = @_;
 
   return unless $self->{is_subscriber};
-  return if $cmd =~ /^P?(UN)?SUBSCRIBE$/;
+  return if $cmd =~ /^P?(UN)?SUBSCRIBE$/i;
   confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ");
 }
 
