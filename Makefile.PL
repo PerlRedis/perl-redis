@@ -11,6 +11,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More' => 0.92,
         'Test::Exception' => 0,
+        'Test::Deep' => 0,
 		'IO::Socket::INET' => 0,
 		'Data::Dumper' => 0,
 		'Carp' => 0,
