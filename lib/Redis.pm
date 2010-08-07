@@ -287,7 +287,7 @@ sub __read_response {
   elsif ($type eq '*') {
     my @list;
     while ($result--) {
-      push @list, $self->__read_response($command);
+      push @list, scalar($self->__read_response($command));
     }
     return @list;
   }
