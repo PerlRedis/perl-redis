@@ -54,7 +54,9 @@ sub new {
     PeerAddr => $self->{server},
     Proto    => 'tcp',
   ) || confess("Could not connect to Redis server at $self->{server}: $!");
-  $self->{rbuf} = '';
+
+  $self->{read_size} = 8192;
+  $self->{rbuf}      = '';
 
   $self->{is_subscriber} = 0;
 
@@ -202,7 +204,9 @@ sub __read_sock {
   my $rbuf = \($self->{rbuf});
 
   my ($data, $type) = ('', '');
-  my $read_size = defined $len ? $len + 2 : 8192;
+  my $read_size = $self->{read_size};
+  $read_size = $len + 2 if defined $len && $len + 2 > $read_size;
+
   while (1) {
     ## Read NN bytes, strip \r\n at the end
     if (defined $len) {
@@ -237,7 +241,7 @@ sub __can_read_sock {
 
   return 1 if $$rbuf;
   __fh_nonblocking($sock, 1);
-  my $bytes = sysread $sock, $$rbuf, 8192, length $$rbuf;
+  my $bytes = sysread $sock, $$rbuf, $self->{read_size}, length $$rbuf;
   __fh_nonblocking($sock, 0);
   return 1 if $bytes;
   return 0;
