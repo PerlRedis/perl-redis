@@ -55,6 +55,11 @@ sub new {
 	$self;
 }
 
+my $multi_bulk_command = {
+	mset => 1,
+	mget => 1
+};
+
 my $bulk_command = {
 	set => 1,	setnx => 1,
 	rpush => 1,	lpush => 1,
@@ -89,7 +94,15 @@ sub AUTOLOAD {
 
 	my $send;
 
-	if ( defined $bulk_command->{$command} ) {
+	if ( defined $multi_bulk_command->{$command} ) {
+		$send = 
+			  '*' . (scalar(@_) + 1)   . "\r\n" 
+			. '$' . (length($command)) . "\r\n"
+			. uc($command)             . "\r\n"
+			;
+		$send .= join "\r\n", map { '$' . length($_) . "\r\n" . $_ } @_;
+		$send .= "\r\n";
+	} elsif ( defined $bulk_command->{$command} ) {
 		my $value = pop;
 		$value = '' if ! defined $value;
 		$send
