@@ -158,6 +158,15 @@ cmp_ok(
 );
 
 
+## Commands operating on hashes
+
+my $hash = 'test-hash';
+$o->del($hash);
+
+ok($o->hset($hash, 'foo', 'bar'));
+is($o->hget($hash, 'foo'), 'bar');
+
+
 ## Multiple databases handling commands
 
 ok($o->select(1), 'select');
