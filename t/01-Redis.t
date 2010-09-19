@@ -163,8 +163,36 @@ cmp_ok(
 my $hash = 'test-hash';
 $o->del($hash);
 
-ok($o->hset($hash, 'foo', 'bar'));
+ok($o->hset($hash, foo => 'bar'));
 is($o->hget($hash, 'foo'), 'bar');
+ok($o->hexists($hash, 'foo'));
+ok($o->hdel($hash, 'foo'));
+ok(!$o->hexists($hash, 'foo'));
+
+ok($o->hincrby($hash, incrtest => 1));
+is($o->hget($hash, 'incrtest'), 1);
+
+is($o->hincrby($hash, incrtest => -1), 0);
+is($o->hget($hash, 'incrtest'), 0);
+
+ok($o->hdel($hash, 'incrtest')); #cleanup
+
+ok($o->hsetnx($hash, setnxtest => 'baz'));
+ok(!$o->hsetnx($hash, setnxtest => 'baz'));  # already exists, 0 returned
+
+ok($o->hdel($hash, 'setnxtest')); #cleanup
+
+ok($o->hmset($hash, foo => 1, bar => 2, baz => 3, qux => 4));
+
+is_deeply([$o->hmget($hash, qw/foo bar baz/)], [1, 2, 3]);
+
+is($o->hlen($hash), 4);
+
+is_deeply([$o->hkeys($hash)], [qw/foo bar baz qux/]);
+is_deeply([$o->hvals($hash)], [qw/1 2 3 4/]);
+is_deeply({$o->hgetall($hash)}, {foo => 1, bar => 2, baz => 3, qux => 4});
+
+ok($o->del($hash));  # remove entire hash
 
 
 ## Multiple databases handling commands
