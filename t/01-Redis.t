@@ -157,6 +157,69 @@ cmp_ok(
   'cardinality of intersection'
 );
 
+## Commands operating on zsets (sorted sets)
+# TODO: ZUNIONSTORE, ZINTERSTORE, SORT, tests w/multiple values having the same score
+
+my $zset = 'test-zset';
+$o->del($zset);
+
+ok($o->zadd($zset, 0, 'foo'));
+ok(!$o->zadd($zset, 1, 'foo')); # 0 returned because foo is already in the set
+
+is($o->zscore($zset, 'foo'), 1);
+
+ok($o->zincrby($zset, 1, 'foo'));
+is($o->zscore($zset, 'foo'), 2);
+
+ok($o->zincrby($zset, 1, 'bar'));
+is($o->zscore($zset, 'bar'), 1);  # bar was new, so its score got set to the increment
+
+is($o->zrank($zset, 'bar'), 0);
+is($o->zrank($zset, 'foo'), 1);
+
+is($o->zrevrank($zset, 'bar'), 1);
+is($o->zrevrank($zset, 'foo'), 0);
+
+ok($o->zadd($zset, 2.1, 'baz'));  # we now have bar foo baz
+
+is_deeply([$o->zrange($zset, 0, 1)], [qw/bar foo/]);
+is_deeply([$o->zrevrange($zset, 0, 1)], [qw/baz foo/]);
+
+
+my $withscores = { $o->zrevrange($zset, 0, 1, 'WITHSCORES') };
+
+# this uglyness gets around floating point weirdness in the return (I.E. 2.1000000000000001);
+my $rounded_withscores = { map { $_ => 0 + sprintf("%0.5f", $withscores->{$_}) }
+                                keys %$withscores
+                         };
+
+is_deeply($rounded_withscores, {baz => 2.1, foo => 2});
+
+is_deeply([$o->zrangebyscore($zset, 2, 3)], [qw/foo baz/]);
+
+is($o->zcount($zset, 2, 3), 2);
+
+is($o->zcard($zset), 3);
+
+ok($o->del($zset));  # cleanup
+
+my $score = 0.1;
+my @zkeys = (qw/foo bar baz qux quux quuux quuuux quuuuux/);
+
+ok($o->zadd($zset, $score++, $_ )) for @zkeys;
+is_deeply([$o->zrangebyscore($zset, 0, 8)], \@zkeys);
+
+is($o->zremrangebyrank($zset, 5, 8), 3); # remove quux and up
+is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[0..4]]);
+
+is($o->zremrangebyscore($zset, 0, 2), 2); # remove foo and bar
+is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[2..4]]);
+
+# only left with 3
+is($o->zcard($zset), 3);
+
+ok($o->del($zset));  # cleanup
+
 
 ## Commands operating on hashes
 
