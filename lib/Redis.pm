@@ -48,7 +48,8 @@ sub new {
   my $self  = {@_};
 
   $self->{debug} ||= $ENV{REDIS_DEBUG};
-  $self->{encoding} ||= 'utf8';    ## default to lax utf8
+  $self->{encoding} = 'utf8'
+    unless exists $self->{encoding};    ## default to lax utf8
 
   $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
   $self->{sock} = IO::Socket::INET->new(
