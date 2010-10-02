@@ -11,7 +11,7 @@ my $r = Redis->new;
 ## But kill if we block
 local $SIG{ALRM} = sub { kill 9, $$ };
 alarm(2);
-ok(!$r->__can_read_sock, "Nothing to read, didn't block");
+ok(!Redis::__try_read_sock($r->{sock}), "Nothing to read, didn't block");
 alarm(0);
 
 done_testing();

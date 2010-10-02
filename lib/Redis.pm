@@ -5,6 +5,7 @@ use strict;
 
 use IO::Socket::INET;
 use IO::Select;
+use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
@@ -56,9 +57,6 @@ sub new {
     PeerAddr => $self->{server},
     Proto    => 'tcp',
   ) || confess("Could not connect to Redis server at $self->{server}: $!");
-
-  $self->{read_size} = 8192;
-  $self->{rbuf}      = '';
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
@@ -116,7 +114,6 @@ sub quit {
 
   $self->__send_command('QUIT');
 
-  delete $self->{rbuf};
   close(delete $self->{sock}) || confess("Can't close socket: $!");
 
   return 1;
@@ -152,13 +149,14 @@ sub keys {
 ### PubSub
 sub wait_for_messages {
   my ($self, $timeout) = @_;
+  my $sock = $self->{sock};
 
   my $s = IO::Select->new;
-  $s->add($self->{sock});
+  $s->add($sock);
 
   my $count = 0;
   while ($s->can_read($timeout)) {
-    while ($self->__can_read_sock) {
+    while (__try_read_sock($sock)) {
       my @m = $self->__read_response('WAIT_FOR_MESSAGES');
       $self->__process_pubsub_msg(\@m);
       $count++;
@@ -270,10 +268,25 @@ sub __send_command {
 }
 
 sub __read_response {
-  confess("Not connected to any server") unless $_[0]{sock};
+  my ($self, $cmd) = @_;
+
+  confess("Not connected to any server") unless $self->{sock};
 
   local $/ = "\r\n";
-  return __read_response_r(@_);
+  
+  ## no debug => fast path
+  return __read_response_r(@_) unless $self->{debug};
+
+  if (wantarray) {
+    my @r = __read_response_r(@_);
+    warn "[RECV] $cmd ", Dumper(\@r);
+    return @r;
+  }
+  else {
+    my $r = __read_response_r(@_);
+    warn "[RECV] $cmd ", Dumper($r);
+    return $r;
+  }
 }
 
 sub __read_response_r {
@@ -310,61 +323,77 @@ sub __read_response_r {
 
 sub __read_line {
   my $self = $_[0];
-  my $rbuf = \($self->{rbuf});
+  my $sock = $self->{sock};
+ 
+  my $data = <$sock>;
+  confess("Error while reading from Redis server: $!")
+    unless defined $data;
+  
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
 
-  my ($type, $data);
-  while (1) {
-    if ($$rbuf =~ s/^(.)([^\015\012]*)\015\012//) {
-      ($type, $data) = ($1, $2);
-      last;
-    }
-
-    my $bytes = sysread $self->{sock}, $$rbuf, $self->{read_size}, length $$rbuf;
-    confess("Error while reading from Redis server: $!")
-      unless defined $bytes;
-    confess("Redis server closed connection") unless $bytes;
-  }
-
-  warn "[RECV] '$type$data'" if $self->{debug};
+  my $type = substr($data, 0, 1, '');
   return ($type, $data) unless $self->{encoding};
   return ($type, decode($self->{encoding}, $data));
 }
 
 sub __read_len {
   my ($self, $len) = @_;
-  my $rbuf = \($self->{rbuf});
 
-  my $read_size = $self->{read_size};
-  $read_size = $len if $len > $read_size;
-
-  my $l = length($$rbuf);
-  while ($l < $len) {
-    my $bytes = sysread $self->{sock}, $$rbuf, $read_size, $l;
+  my $data;
+  my $offset = 0;
+  while ($len) {
+    my $bytes = read $self->{sock}, $data, $len, $offset;
     confess("Error while reading from Redis server: $!")
       unless defined $bytes;
     confess("Redis server closed connection") unless $bytes;
 
-    $l += $bytes;
+    $offset += $bytes;
+    $len -= $bytes;
   }
  
-  my $data = substr($$rbuf, 0, $len, '');
-  chomp($data);
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
 
   return $data unless $self->{encoding};
   return decode($self->{encoding}, $data);
 }
 
-sub __can_read_sock {
-  my ($self) = @_;
-  my $sock   = $self->{sock};
-  my $rbuf   = \($self->{rbuf});
 
-  return 1 if $$rbuf;
+#
+# The reason for this code:
+#
+# IO::Select and buffered reads like <$sock> and read() dont mix
+# For example, if I receive two MESSAGE messages (from Redis PubSub),
+# the first read for the first message will probably empty to socket
+# buffer and move the data to the perl IO buffer.
+#
+# This means that IO::Select->can_read will return false (after all
+# the socket buffer is empty) but from the application point of view
+# there is still data to be read and process
+#
+# Hence this code. We try to do a non-blocking read() of 1 byte, and if
+# we succeed, we put it back and signal "yes, Virginia, there is still
+# stuff out there"
+#
+# We could just use sysread and leave the socket buffer with the second
+# message, and then use IO::Select as intended, and previous versions of
+# this code did that (check the git history for this file), but
+# performance suffers, about 20/30% slower, mostly because we do a lot
+# of "read one line", where <$sock> beats the crap of anything you can
+# write on Perl-land.
+#
+sub __try_read_sock {
+  my $sock = shift;
+  my $data;
+
   __fh_nonblocking($sock, 1);
-  my $bytes = sysread $sock, $$rbuf, $self->{read_size}, length $$rbuf;
+  my $result = read($sock, $data, 1);
   __fh_nonblocking($sock, 0);
-  return 1 if $bytes;
-  return 0;
+
+  return unless $result;
+  $sock->ungetc(ord($data));
+  return 1;
 }
 
 

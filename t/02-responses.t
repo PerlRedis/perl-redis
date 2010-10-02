@@ -5,12 +5,13 @@ use warnings;
 use Test::More;
 use Test::Exception;
 use Test::Deep;
+use IO::String;
 use Redis;
 
 my $r = Redis->new;
 
 sub r {
-  $r->{rbuf} = join('', map {"$_\r\n"} @_);
+  $r->{sock} = IO::String->new(join('', map {"$_\r\n"} @_));
 }
 
 ## -ERR responses
