@@ -270,9 +270,16 @@ sub __send_command {
 }
 
 sub __read_response {
+  confess("Not connected to any server") unless $_[0]{sock};
+
+  local $/ = "\r\n";
+  return __read_response_r(@_);
+}
+
+sub __read_response_r {
   my ($self, $command, $type_r) = @_;
 
-  my ($type, $result) = $self->__read_sock;
+  my ($type, $result) = $self->__read_line;
   $$type_r = $type if $type_r;
 
   if ($type eq '-') {
@@ -283,12 +290,12 @@ sub __read_response {
   }
   elsif ($type eq '$') {
     return if $result < 0;
-    return $self->__read_sock($result);
+    return $self->__read_len($result+2);
   }
   elsif ($type eq '*') {
     my @list;
     while ($result--) {
-      push @list, scalar($self->__read_response($command));
+      push @list, scalar($self->__read_response_r($command));
     }
     return @list if wantarray;
     return \@list;
@@ -301,42 +308,50 @@ sub __read_response {
   }
 }
 
-sub __read_sock {
-  my ($self, $len) = @_;
-  my $sock = $self->{sock} || confess("Not connected to any server");
-  my $enc  = $self->{encoding};
-  my $deb  = $self->{debug};
+sub __read_line {
+  my $self = $_[0];
   my $rbuf = \($self->{rbuf});
 
-  my ($data, $type) = ('', '');
-  my $read_size = $self->{read_size};
-  $read_size = $len + 2 if defined $len && $len + 2 > $read_size;
-
+  my ($type, $data);
   while (1) {
-    ## Read NN bytes, strip \r\n at the end
-    if (defined $len) {
-      if (length($$rbuf) >= $len + 2) {
-        $data = substr(substr($$rbuf, 0, $len + 2, ''), 0, -2);
-        last;
-      }
-    }
-    ## No len, means line more, read until \r\n
-    elsif ($$rbuf =~ s/^(.)([^\015\012]*)\015\012//) {
+    if ($$rbuf =~ s/^(.)([^\015\012]*)\015\012//) {
       ($type, $data) = ($1, $2);
       last;
     }
 
-    my $bytes = sysread $sock, $$rbuf, $read_size, length $$rbuf;
+    my $bytes = sysread $self->{sock}, $$rbuf, $self->{read_size}, length $$rbuf;
     confess("Error while reading from Redis server: $!")
       unless defined $bytes;
     confess("Redis server closed connection") unless $bytes;
   }
 
-  $data = decode($enc, $data) if $enc;
   warn "[RECV] '$type$data'" if $self->{debug};
+  return ($type, $data) unless $self->{encoding};
+  return ($type, decode($self->{encoding}, $data));
+}
 
-  return ($type, $data) if $type;
-  return $data;
+sub __read_len {
+  my ($self, $len) = @_;
+  my $rbuf = \($self->{rbuf});
+
+  my $read_size = $self->{read_size};
+  $read_size = $len if $len > $read_size;
+
+  my $l = length($$rbuf);
+  while ($l < $len) {
+    my $bytes = sysread $self->{sock}, $$rbuf, $read_size, $l;
+    confess("Error while reading from Redis server: $!")
+      unless defined $bytes;
+    confess("Redis server closed connection") unless $bytes;
+
+    $l += $bytes;
+  }
+ 
+  my $data = substr($$rbuf, 0, $len, '');
+  chomp($data);
+
+  return $data unless $self->{encoding};
+  return decode($self->{encoding}, $data);
 }
 
 sub __can_read_sock {
