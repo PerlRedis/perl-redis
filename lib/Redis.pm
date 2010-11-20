@@ -55,22 +55,6 @@ sub new {
 	$self;
 }
 
-my $bulk_command = {
-	set => 1,	setnx => 1,
-	rpush => 1,	lpush => 1,
-	lset => 1,	lrem => 1,
-	sadd => 1,	srem => 1,
-	sismember => 1,
-	echo => 1,
-	getset => 1,
-	smove => 1,
-	zadd => 1,
-	zrem => 1,
-	zscore => 1,
-	zincrby => 1,
-	append => 1,
-};
-
 # we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY {}
 
@@ -87,27 +71,13 @@ sub AUTOLOAD {
 
 	warn "## $command ",Dumper(@_) if $self->{debug};
 
-	my $send;
+	unshift @_, uc($command);
 
-	if ( defined $bulk_command->{$command} ) {
-		my $value = pop;
-		$value = '' if ! defined $value;
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. ' ' 
-			. length( $value )
-			. "\r\n$value\r\n"
-			;
-	} else {
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
+	my $send
+ 			= "*".(scalar @_)
 			. "\r\n"
+ 			. join("", map { "\$". length($_) ."\r\n". $_ ."\r\n" } @_)
 			;
-	}
 
 	warn ">> $send" if $self->{debug};
 	print $sock $send;
@@ -130,10 +100,6 @@ sub AUTOLOAD {
 			$hash->{$n} = $v;
 		}
 		return $hash;
-	} elsif ( $command eq 'keys' ) {
-		my $keys = $self->__read_bulk($result);
-		return split(/\s/, $keys) if $keys;
-		return;
 	}
 
 	if ( $type eq '-' ) {
