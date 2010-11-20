@@ -49,7 +49,10 @@ if ( $import ) {
 		print STDERR "$nr " if $nr % 1000 == 0;
 	}
 	warn "finished ", $redis->llen('lines'), " lines\n";
+	$redis->set( '_len' => $len );
 }
+
+$len = $redis->get('_len');
 
 print "search> ";
 
