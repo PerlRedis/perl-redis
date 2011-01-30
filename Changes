@@ -1,5 +1,12 @@
 Revision history for Redis
 
+1.900_01  Sun Jan 30 06:03:14 UTC 2011
+    * admin: change of maintainer to Pedro Melo <melo@simplicidade.org>
+    * feature: full support for Redis 2.x multi-bulk protocol
+    * feature: support for Redis PUBLISH/SUBSCRIBE commands
+    * feature: automatic encoding can be turned off, use encoding => undef on new() (performance++)
+    * performance: substantial performance improvements, specially with large responses
+
 1.2001	Wed Mar 17 17:22:01 CET 2010
     * feadure: Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
     * Version bump to be in-sync with Redis version
