@@ -2,7 +2,6 @@ package Redis::List;
 
 use strict;
 use warnings;
-
 use base qw/Redis Tie::Array/;
 
 =head1 NAME
@@ -11,77 +10,99 @@ Redis::List - tie perl arrays into Redis lists
 
 =head1 SYNOPSYS
 
-  tie @a, 'Redis::List', 'name';
+    tie @my_list, 'Redis::List', 'list_name', @Redis_new_parameters;
+
+    $value = $my_list[$index];
+    $my_list[$index] = $value;
+
+    $count = @my_list;
+
+    push @my_list, 'values';
+    $value = pop @my_list;
+    unshift @my_list, 'values';
+    $value = shift @my_list;
+
+    ## NOTE: fourth parameter of splice is *NOT* supported for now
+    @other_list = splice(@my_list, 2, 3);
+
+    @my_list = ();
+
 
 =cut
 
-# mandatory methods
+
 sub TIEARRAY {
-  my ($class, $name) = @_;
-  my $self = $class->new;
-  $self->{name} = $name;
-  bless $self => $class;
+  my ($class, $list, @rest) = @_;
+  my $self = $class->new(@rest);
+
+  $self->{list} = $list;
+
+  return $self;
 }
 
 sub FETCH {
   my ($self, $index) = @_;
-  $self->lindex($self->{name}, $index);
+  $self->lindex($self->{list}, $index);
 }
 
 sub FETCHSIZE {
   my ($self) = @_;
-  $self->llen($self->{name});
+  $self->llen($self->{list});
 }
 
 sub STORE {
   my ($self, $index, $value) = @_;
-  $self->lset($self->{name}, $index, $value);
+  $self->lset($self->{list}, $index, $value);
 }
 
 sub STORESIZE {
   my ($self, $count) = @_;
-  $self->ltrim($self->{name}, 0, $count);
+  $self->ltrim($self->{list}, 0, $count);
 
 #		if $count > $self->FETCHSIZE;
 }
 
 sub CLEAR {
   my ($self) = @_;
-  $self->del($self->{name});
+  $self->del($self->{list});
 }
 
 sub PUSH {
   my $self = shift;
-  $self->rpush($self->{name}, $_) foreach @_;
+  my $list = $self->{list};
+
+  $self->rpush($list, $_) for @_;
+}
+
+sub POP {
+  my $self = shift;
+  $self->rpop($self->{list});
 }
 
 sub SHIFT {
-  my $self = shift;
-  $self->lpop($self->{name});
+  my ($self) = @_;
+  $self->lpop($self->{list});
 }
 
 sub UNSHIFT {
   my $self = shift;
-  $self->lpush($self->{name}, $_) foreach @_;
+  my $list = $self->{list};
+
+  $self->lpush($list, $_) for @_;
 }
 
 sub SPLICE {
-  my $self   = shift;
-  my $offset = shift;
-  my $length = shift;
-  $self->lrange($self->{name}, $offset, $length);
+  my ($self, $offset, $length) = @_;
+  $self->lrange($self->{list}, $offset, $length);
 
   # FIXME rest of @_ ?
 }
 
 sub EXTEND {
   my ($self, $count) = @_;
-  $self->rpush($self->{name}, '') foreach ($self->FETCHSIZE .. ($count - 1));
+  $self->rpush($self->{list}, '') for ($self->FETCHSIZE .. ($count - 1));
 }
 
-sub DESTROY {
-  my $self = shift;
-  $self->quit;
-}
+sub DESTROY { $_[0]->quit }
 
 1;

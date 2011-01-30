@@ -6,6 +6,7 @@ Revision history for Redis
     * feature: support for Redis PUBLISH/SUBSCRIBE commands
     * feature: automatic encoding can be turned off, use encoding => undef on new() (performance++)
     * performance: substantial performance improvements, specially with large responses
+    * fix: add POP method to our List Tie interface
 
 1.2001	Wed Mar 17 17:22:01 CET 2010
     * feadure: Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
