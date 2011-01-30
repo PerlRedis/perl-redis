@@ -171,7 +171,8 @@ ok($o->zincrby($zset, 1, 'foo'));
 is($o->zscore($zset, 'foo'), 2);
 
 ok($o->zincrby($zset, 1, 'bar'));
-is($o->zscore($zset, 'bar'), 1);  # bar was new, so its score got set to the increment
+is($o->zscore($zset, 'bar'), 1)
+  ;    # bar was new, so its score got set to the increment
 
 is($o->zrank($zset, 'bar'), 0);
 is($o->zrank($zset, 'foo'), 1);
@@ -179,18 +180,19 @@ is($o->zrank($zset, 'foo'), 1);
 is($o->zrevrank($zset, 'bar'), 1);
 is($o->zrevrank($zset, 'foo'), 0);
 
-ok($o->zadd($zset, 2.1, 'baz'));  # we now have bar foo baz
+ok($o->zadd($zset, 2.1, 'baz'));    # we now have bar foo baz
 
 is_deeply([$o->zrange($zset, 0, 1)], [qw/bar foo/]);
 is_deeply([$o->zrevrange($zset, 0, 1)], [qw/baz foo/]);
 
 
-my $withscores = { $o->zrevrange($zset, 0, 1, 'WITHSCORES') };
+my $withscores = {$o->zrevrange($zset, 0, 1, 'WITHSCORES')};
 
 # this uglyness gets around floating point weirdness in the return (I.E. 2.1000000000000001);
-my $rounded_withscores = { map { $_ => 0 + sprintf("%0.5f", $withscores->{$_}) }
-                                keys %$withscores
-                         };
+my $rounded_withscores = {
+  map { $_ => 0 + sprintf("%0.5f", $withscores->{$_}) }
+    keys %$withscores
+};
 
 is_deeply($rounded_withscores, {baz => 2.1, foo => 2});
 
@@ -200,24 +202,24 @@ is($o->zcount($zset, 2, 3), 2);
 
 is($o->zcard($zset), 3);
 
-ok($o->del($zset));  # cleanup
+ok($o->del($zset));    # cleanup
 
 my $score = 0.1;
 my @zkeys = (qw/foo bar baz qux quux quuux quuuux quuuuux/);
 
-ok($o->zadd($zset, $score++, $_ )) for @zkeys;
+ok($o->zadd($zset, $score++, $_)) for @zkeys;
 is_deeply([$o->zrangebyscore($zset, 0, 8)], \@zkeys);
 
-is($o->zremrangebyrank($zset, 5, 8), 3); # remove quux and up
-is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[0..4]]);
+is($o->zremrangebyrank($zset, 5, 8), 3);    # remove quux and up
+is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[0 .. 4]]);
 
-is($o->zremrangebyscore($zset, 0, 2), 2); # remove foo and bar
-is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[2..4]]);
+is($o->zremrangebyscore($zset, 0, 2), 2);    # remove foo and bar
+is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[2 .. 4]]);
 
 # only left with 3
 is($o->zcard($zset), 3);
 
-ok($o->del($zset));  # cleanup
+ok($o->del($zset));                          # cleanup
 
 
 ## Commands operating on hashes
@@ -237,12 +239,12 @@ is($o->hget($hash, 'incrtest'), 1);
 is($o->hincrby($hash, incrtest => -1), 0);
 is($o->hget($hash, 'incrtest'), 0);
 
-ok($o->hdel($hash, 'incrtest')); #cleanup
+ok($o->hdel($hash, 'incrtest'));    #cleanup
 
 ok($o->hsetnx($hash, setnxtest => 'baz'));
-ok(!$o->hsetnx($hash, setnxtest => 'baz'));  # already exists, 0 returned
+ok(!$o->hsetnx($hash, setnxtest => 'baz'));    # already exists, 0 returned
 
-ok($o->hdel($hash, 'setnxtest')); #cleanup
+ok($o->hdel($hash, 'setnxtest'));              #cleanup
 
 ok($o->hmset($hash, foo => 1, bar => 2, baz => 3, qux => 4));
 
@@ -254,7 +256,7 @@ is_deeply([$o->hkeys($hash)], [qw/foo bar baz qux/]);
 is_deeply([$o->hvals($hash)], [qw/1 2 3 4/]);
 is_deeply({$o->hgetall($hash)}, {foo => 1, bar => 2, baz => 3, qux => 4});
 
-ok($o->del($hash));  # remove entire hash
+ok($o->del($hash));                            # remove entire hash
 
 
 ## Multiple databases handling commands
