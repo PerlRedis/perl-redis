@@ -19,28 +19,68 @@ Redis - perl binding for Redis database
 
 our $VERSION = '1.2001';
 
+=head1 SYNOPSIS
+
+    ## Defaults to $ENV{REDIS_SERVER} or 127.0.0.1:6379
+    my $redis = Redis->new;
+    
+    my $redis = Redis->new(server => 'redis.example.com:8080');
+    
+    ## Disable the automatic utf8 encoding => much more performance
+    my $redis = Redis->new(encoding => undef);
+    
+    ## Use all the regular Redis commands, they all accept a list of
+    ## arguments
+    ## See http://redis.io/commands for full list
+    $redis->get('key');
+    $redis->set('key' => 'value');
+    $redis->sort('list', 'DESC');
+    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC});
+    
+    ## Publish/Subscribe
+    $redis->subscribe(
+      'topic_1',
+      'topic_2',
+      sub {
+        my ($message, $topic, $subscribed_topic) = @_
+    
+          ## $subscribed_topic can be different from topic if
+          ## you use psubscribe() with wildcards
+      }
+    );
+    $redis->psubscribe('nasdaq.*', sub {...});
+    
+    ## Blocks and waits for messages, calls subscribe() callbacks
+    ##  ... forever
+    $redis->wait_for_messages($timeout) while 1;
+    
+    ##  ... until some condition
+    $redis->wait_for_messages($timeout) while $keep_going;
+    
+    $redis->publish('topic_1', 'message');
+
 
 =head1 DESCRIPTION
 
-Pure perl bindings for L<http://code.google.com/p/redis/>
+Pure perl bindings for L<http://redis.io/>
 
-This version supports protocol 1.2 or later of Redis available at
+This version supports protocol 2.x (multi-bulk) or later of Redis
+available at L<https://github.com/antirez/redis/>.
 
-L<git://github.com/antirez/redis>
+This documentation lists commands which are exercised in test suite, but
+additinal commands will work correctly since protocol specifies enough
+information to support almost all commands with same peace of code with
+a little help of C <AUTOLOAD> .
 
-This documentation
-lists commands which are exercised in test suite, but
-additinal commands will work correctly since protocol
-specifies enough information to support almost all commands
-with same peace of code with a little help of C<AUTOLOAD>.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =head2 new
 
-  my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
+    my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
 
-  my $r = Redis->new( server => '192.168.0.1:6379', debug = 0 );
+    my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
+    my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
 
 =cut
 
@@ -273,7 +313,7 @@ sub __read_response {
   confess("Not connected to any server") unless $self->{sock};
 
   local $/ = "\r\n";
-  
+
   ## no debug => fast path
   return __read_response_r(@_) unless $self->{debug};
 
@@ -303,7 +343,7 @@ sub __read_response_r {
   }
   elsif ($type eq '$') {
     return if $result < 0;
-    return $self->__read_len($result+2);
+    return $self->__read_len($result + 2);
   }
   elsif ($type eq '*') {
     my @list;
@@ -324,11 +364,11 @@ sub __read_response_r {
 sub __read_line {
   my $self = $_[0];
   my $sock = $self->{sock};
- 
+
   my $data = <$sock>;
   confess("Error while reading from Redis server: $!")
     unless defined $data;
-  
+
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
 
@@ -351,7 +391,7 @@ sub __read_len {
     $offset += $bytes;
     $len -= $bytes;
   }
- 
+
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
 
@@ -595,17 +635,27 @@ See also L<Redis::List> for tie interface.
 
   my $info_hash = $r->info;
 
+
 =head1 ENCODING
 
-Since Redis knows nothing about encoding, we are forcing utf-8 flag on all data received from Redis.
-This change is introduced in 1.2001 version.
+Since Redis knows nothing about encoding, we are forcing utf-8 flag on
+all data received from Redis. This change is introduced in 1.2001
+version. B<Please note> that this encoding option severely degrades
+performance
 
-This allows us to round-trip utf-8 encoded characters correctly, but might be problem if you push
-binary junk into Redis and expect to get it back without utf-8 flag turned on.
+You can disable this automatic encoding by passing an option to
+new: C<< encoding => undef >>.
 
-=head1 AUTHOR
+This allows us to round-trip utf-8 encoded characters correctly, but
+might be problem if you push binary junk into Redis and expect to get it
+back without utf-8 flag turned on.
 
-Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
+
+=head1 AUTHORS
+
+Pedro Melo, C<< <melo@cpan.org> >>
+
+Original author and maintainer: Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
 
 =head1 BUGS
 
@@ -621,8 +671,8 @@ automatically be notified of progress on your bug as I make changes.
 You can find documentation for this module with the perldoc command.
 
     perldoc Redis
-	perldoc Redis::List
-	perldoc Redis::Hash
+    perldoc Redis::List
+    perldoc Redis::Hash
 
 
 You can also look for information at:
@@ -650,10 +700,24 @@ L<http://search.cpan.org/dist/Redis>
 
 =head1 ACKNOWLEDGEMENTS
 
+The following persons contributed to this project (alphabetical order):
+
+=over 4
+
+=item Dirk Vleugels
+
+=item Jeremy Zawodny
+
+=item sunnavy at bestpractical.com
+
+=back
+
 
 =head1 COPYRIGHT & LICENSE
 
 Copyright 2009-2010 Dobrica Pavlinusic, all rights reserved.
+
+Copyright 2011 Pedro Melo, all rights reserved
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
