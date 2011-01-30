@@ -1,15 +1,25 @@
 #!perl
 
-use strict;
 use warnings;
+use strict;
 use Test::More;
-use Test::Deep;
 use Test::Exception;
+use Test::Deep;
 use Redis;
+use lib 't/tlib';
+use Test::SpawnRedisServer;
+
+my ($guard, $srv) = redis();
 
 my %got;
-my $pub = Redis->new();
-my $sub = Redis->new();
+ok(
+  my $pub = Redis->new(server => $srv),
+  'connected to our test redis-server (pub)'
+);
+ok(
+  my $sub = Redis->new(server => $srv),
+  'connected to our test redis-server (sub)'
+);
 
 is($pub->publish('aa', 'v1'), 0, "No subscribers to 'aa' topic");
 

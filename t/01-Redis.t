@@ -1,17 +1,16 @@
-#!/usr/bin/perl
+#!perl
 
 use warnings;
 use strict;
-
 use Test::More;
 use Test::Exception;
+use Redis;
+use lib 't/tlib';
+use Test::SpawnRedisServer;
 
-BEGIN { use_ok('Redis') }
+my ($guard, $srv) = redis();
 
-ok(my $o = Redis->new(), 'new with defaults');
-ok($o->ping, 'ping');
-
-ok($o = Redis->new(server => 'localhost:6379'), 'new with server');
+ok(my $o = Redis->new(server => $srv), 'connected to our test redis-server');
 ok($o->ping, 'ping');
 
 

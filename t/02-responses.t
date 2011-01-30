@@ -1,14 +1,18 @@
 #!perl
 
-use strict;
 use warnings;
+use strict;
 use Test::More;
 use Test::Exception;
 use Test::Deep;
 use IO::String;
 use Redis;
+use lib 't/tlib';
+use Test::SpawnRedisServer;
 
-my $r = Redis->new;
+my ($guard, $srv) = redis();
+
+ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
 
 sub r {
   $r->{sock} = IO::String->new(join('', map {"$_\r\n"} @_));
