@@ -1,13 +1,14 @@
 Revision history for Redis
 
-0.01    Sun Mar 22 19:02:17 CET 2009
-        First version, tracking git://github.com/antirez/redis
+1.2001	Wed Mar 17 17:22:01 CET 2010
+    * feadure: Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
+    * Version bump to be in-sync with Redis version
+    * bug: Correctly round-trip utf-8 encoded characters
 
 0.08	Tue Mar 24 22:38:59 CET 2009
-	This version supports new protocol introduced in beta 8
-	Version bump to be in-sync with Redis version
+    * This version supports new protocol introduced in beta 8
+    * Version bump to be in-sync with Redis version
 
-1.2001	Wed Mar 17 17:22:01 CET 2010
-	Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
-	Version bump to be in-sync with Redis version
-	Correctly round-trip utf-8 encoded characters
+0.01    Sun Mar 22 19:02:17 CET 2009
+    * First version, tracking git://github.com/antirez/redis
+
