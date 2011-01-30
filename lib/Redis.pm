@@ -4,6 +4,9 @@ use warnings;
 use strict;
 
 use IO::Socket::INET;
+use IO::Select;
+use IO::Handle;
+use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
@@ -42,145 +45,365 @@ with same peace of code with a little help of C<AUTOLOAD>.
 =cut
 
 sub new {
-	my $class = shift;
-	my $self = {@_};
-	$self->{debug} ||= $ENV{REDIS_DEBUG};
+  my $class = shift;
+  my $self  = {@_};
 
-	$self->{sock} = IO::Socket::INET->new(
-		PeerAddr => $self->{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379',
-		Proto => 'tcp',
-	) || die $!;
+  $self->{debug} ||= $ENV{REDIS_DEBUG};
+  $self->{encoding} = 'utf8'
+    unless exists $self->{encoding};    ## default to lax utf8
 
-	bless($self, $class);
-	$self;
+  $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+  $self->{sock} = IO::Socket::INET->new(
+    PeerAddr => $self->{server},
+    Proto    => 'tcp',
+  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+
+  $self->{is_subscriber} = 0;
+  $self->{subscribers}   = {};
+
+  return bless($self, $class);
 }
 
-my $bulk_command = {
-	set => 1,	setnx => 1,
-	rpush => 1,	lpush => 1,
-	lset => 1,	lrem => 1,
-	sadd => 1,	srem => 1,
-	sismember => 1,
-	echo => 1,
-	getset => 1,
-	smove => 1,
-	zadd => 1,
-	zrem => 1,
-	zscore => 1,
-	zincrby => 1,
-	append => 1,
-};
+sub is_subscriber { $_[0]{is_subscriber} }
 
-# we don't want DESTROY to fallback into AUTOLOAD
-sub DESTROY {}
 
+### we don't want DESTROY to fallback into AUTOLOAD
+sub DESTROY { }
+
+
+### Deal with common, general case, Redis commands
 our $AUTOLOAD;
+
 sub AUTOLOAD {
-	my $self = shift;
+  my $self = shift;
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
 
-	use bytes;
+  my $command = $AUTOLOAD;
+  $command =~ s/.*://;
+  $self->__is_valid_command($command);
 
-	my $sock = $self->{sock} || die "no server connected";
+  ## PubSub commands use a different answer handling
+  if (my ($pr, $unsub) = $command =~ /^(p)?(un)?subscribe$/i) {
+    $pr = '' unless $pr;
 
-	my $command = $AUTOLOAD;
-	$command =~ s/.*://;
+    my $cb = pop;
+    confess("Missing required callback in call to $command(), ")
+      unless ref($cb) eq 'CODE';
 
-	warn "## $command ",Dumper(@_) if $self->{debug};
+    my @subs = @_;
+    @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
+      if $unsub;
+    return unless @subs;
 
-	my $send;
+    $self->__send_command($command, @subs);
 
-	if ( defined $bulk_command->{$command} ) {
-		my $value = pop;
-		$value = '' if ! defined $value;
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. ' ' 
-			. length( $value )
-			. "\r\n$value\r\n"
-			;
-	} else {
-		$send
-			= uc($command)
-			. ' '
-			. join(' ', @_)
-			. "\r\n"
-			;
-	}
+    my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
+    return $self->__process_subscription_changes($command, \%cbs);
+  }
 
-	warn ">> $send" if $self->{debug};
-	print $sock $send;
-
-	if ( $command eq 'quit' ) {
-		close( $sock ) || die "can't close socket: $!";
-		return 1;
-	}
-
-	my $result = <$sock> || die "can't read socket: $!";
-	Encode::_utf8_on($result);
-	warn "<< $result" if $self->{debug};
-	my $type = substr($result,0,1);
-	$result = substr($result,1,-2);
-
-	if ( $command eq 'info' ) {
-		my $hash;
-		foreach my $l ( split(/\r\n/, $self->__read_bulk($result) ) ) {
-			my ($n,$v) = split(/:/, $l, 2);
-			$hash->{$n} = $v;
-		}
-		return $hash;
-	} elsif ( $command eq 'keys' ) {
-		my $keys = $self->__read_bulk($result);
-		return split(/\s/, $keys) if $keys;
-		return;
-	}
-
-	if ( $type eq '-' ) {
-		confess "[$command] $result";
-	} elsif ( $type eq '+' ) {
-		return $result;
-	} elsif ( $type eq '$' ) {
-		return $self->__read_bulk($result);
-	} elsif ( $type eq '*' ) {
-		return $self->__read_multi_bulk($result);
-	} elsif ( $type eq ':' ) {
-		return $result; # FIXME check if int?
-	} else {
-		confess "unknown type: $type", $self->__read_line();
-	}
+  $self->__send_command($command, @_);
+  return $self->__read_response($command);
 }
 
-sub __read_bulk {
-	my ($self,$len) = @_;
-	return if $len < 0;
 
-	my $v;
-	if ( $len > 0 ) {
-		read($self->{sock}, $v, $len) || die $!;
-		Encode::_utf8_on($v);
-		warn "<< ",Dumper($v),$/ if $self->{debug};
-	}
-	my $crlf;
-	read($self->{sock}, $crlf, 2); # skip cr/lf
-	return $v;
+### Commands with extra logic
+sub quit {
+  my ($self) = @_;
+
+  $self->__send_command('QUIT');
+
+  close(delete $self->{sock}) || confess("Can't close socket: $!");
+
+  return 1;
 }
 
-sub __read_multi_bulk {
-	my ($self,$size) = @_;
-	return if $size < 0;
-	my $sock = $self->{sock};
+sub info {
+  my ($self) = @_;
+  $self->__is_valid_command('INFO');
 
-	$size--;
+  $self->__send_command('INFO');
 
-	my @list = ( 0 .. $size );
-	foreach ( 0 .. $size ) {
-		$list[ $_ ] = $self->__read_bulk( substr(<$sock>,1,-2) );
-	}
+  my $info = $self->__read_response('INFO');
 
-	warn "## list = ", Dumper( @list ) if $self->{debug};
-	return @list;
+  return {map { split(/:/, $_, 2) } split(/\r\n/, $info)};
 }
+
+sub keys {
+  my $self = shift;
+  $self->__is_valid_command('KEYS');
+
+  $self->__send_command('KEYS', @_);
+
+  my @keys = $self->__read_response('KEYS', \my $type);
+  ## Support redis > 1.26
+  return @keys if $type eq '*';
+
+  ## Support redis <= 1.2.6
+  return split(/\s/, $keys[0]) if $keys[0];
+  return;
+}
+
+
+### PubSub
+sub wait_for_messages {
+  my ($self, $timeout) = @_;
+  my $sock = $self->{sock};
+
+  my $s = IO::Select->new;
+  $s->add($sock);
+
+  my $count = 0;
+  while ($s->can_read($timeout)) {
+    while (__try_read_sock($sock)) {
+      my @m = $self->__read_response('WAIT_FOR_MESSAGES');
+      $self->__process_pubsub_msg(\@m);
+      $count++;
+    }
+  }
+
+  return $count;
+}
+
+sub __process_unsubscribe_requests {
+  my ($self, $cb, $pr, @unsubs) = @_;
+  my $subs = $self->{subscribers};
+
+  my @subs_to_unsubscribe;
+  for my $sub (@unsubs) {
+    my $key = "${pr}message:$sub";
+    my $cbs = $subs->{$key} = [grep { $_ ne $cb } @{$subs->{$key}}];
+    next if @$cbs;
+
+    delete $subs->{$key};
+    push @subs_to_unsubscribe, $sub;
+  }
+
+  return @subs_to_unsubscribe;
+}
+
+sub __process_subscription_changes {
+  my ($self, $cmd, $expected) = @_;
+  my $subs = $self->{subscribers};
+
+  while (%$expected) {
+    my @m = $self->__read_response($cmd);
+
+    ## Deal with pending PUBLISH'ed messages
+    if ($m[0] =~ /^p?message$/) {
+      $self->__process_pubsub_msg(\@m);
+      next;
+    }
+
+    my ($key, $unsub) = $m[0] =~ m/^(p)?(un)?subscribe$/;
+    $key .= "message:$m[1]";
+    my $cb = delete $expected->{$key};
+
+    push @{$subs->{$key}}, $cb unless $unsub;
+
+    $self->{is_subscriber} = $m[2];
+  }
+}
+
+sub __process_pubsub_msg {
+  my ($self, $m) = @_;
+  my $subs = $self->{subscribers};
+
+  my $sub   = $m->[1];
+  my $cbid  = "$m->[0]:$sub";
+  my $data  = pop @$m;
+  my $topic = $m->[2] || $sub;
+
+  if (!exists $subs->{$cbid}) {
+    warn "Message for topic '$topic' ($cbid) without expected callback, ";
+    return;
+  }
+
+  $_->($data, $topic, $sub) for @{$subs->{$cbid}};
+
+  return 1;
+
+}
+
+
+### Mode validation
+sub __is_valid_command {
+  my ($self, $cmd) = @_;
+
+  return unless $self->{is_subscriber};
+  return if $cmd =~ /^P?(UN)?SUBSCRIBE$/i;
+  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ");
+}
+
+
+### Socket operations
+sub __send_command {
+  my $self = shift;
+  my $cmd  = uc(shift);
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
+
+  warn "[SEND] $cmd ", Dumper([@_]) if $deb;
+
+  ## Encode command using multi-bulk format
+  my $n_elems = scalar(@_) + 1;
+  my $buf     = "\*$n_elems\r\n";
+  for my $elem ($cmd, @_) {
+    my $bin = $enc ? encode($enc, $elem) : $elem;
+    $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
+  }
+
+  ## Send command, take care for partial writes
+  warn "[SEND RAW] $buf" if $deb;
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  while ($buf) {
+    my $len = syswrite $sock, $buf, length $buf;
+    confess("Could not write to Redis server: $!")
+      unless $len;
+    substr $buf, 0, $len, "";
+  }
+
+  return;
+}
+
+sub __read_response {
+  my ($self, $cmd) = @_;
+
+  confess("Not connected to any server") unless $self->{sock};
+
+  local $/ = "\r\n";
+  
+  ## no debug => fast path
+  return __read_response_r(@_) unless $self->{debug};
+
+  if (wantarray) {
+    my @r = __read_response_r(@_);
+    warn "[RECV] $cmd ", Dumper(\@r);
+    return @r;
+  }
+  else {
+    my $r = __read_response_r(@_);
+    warn "[RECV] $cmd ", Dumper($r);
+    return $r;
+  }
+}
+
+sub __read_response_r {
+  my ($self, $command, $type_r) = @_;
+
+  my ($type, $result) = $self->__read_line;
+  $$type_r = $type if $type_r;
+
+  if ($type eq '-') {
+    confess "[$command] $result, ";
+  }
+  elsif ($type eq '+') {
+    return $result;
+  }
+  elsif ($type eq '$') {
+    return if $result < 0;
+    return $self->__read_len($result+2);
+  }
+  elsif ($type eq '*') {
+    my @list;
+    while ($result--) {
+      push @list, scalar($self->__read_response_r($command));
+    }
+    return @list if wantarray;
+    return \@list;
+  }
+  elsif ($type eq ':') {
+    return $result;
+  }
+  else {
+    confess "unknown answer type: $type ($result), ";
+  }
+}
+
+sub __read_line {
+  my $self = $_[0];
+  my $sock = $self->{sock};
+ 
+  my $data = <$sock>;
+  confess("Error while reading from Redis server: $!")
+    unless defined $data;
+  
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
+
+  my $type = substr($data, 0, 1, '');
+  return ($type, $data) unless $self->{encoding};
+  return ($type, decode($self->{encoding}, $data));
+}
+
+sub __read_len {
+  my ($self, $len) = @_;
+
+  my $data;
+  my $offset = 0;
+  while ($len) {
+    my $bytes = read $self->{sock}, $data, $len, $offset;
+    confess("Error while reading from Redis server: $!")
+      unless defined $bytes;
+    confess("Redis server closed connection") unless $bytes;
+
+    $offset += $bytes;
+    $len -= $bytes;
+  }
+ 
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
+
+  return $data unless $self->{encoding};
+  return decode($self->{encoding}, $data);
+}
+
+
+#
+# The reason for this code:
+#
+# IO::Select and buffered reads like <$sock> and read() dont mix
+# For example, if I receive two MESSAGE messages (from Redis PubSub),
+# the first read for the first message will probably empty to socket
+# buffer and move the data to the perl IO buffer.
+#
+# This means that IO::Select->can_read will return false (after all
+# the socket buffer is empty) but from the application point of view
+# there is still data to be read and process
+#
+# Hence this code. We try to do a non-blocking read() of 1 byte, and if
+# we succeed, we put it back and signal "yes, Virginia, there is still
+# stuff out there"
+#
+# We could just use sysread and leave the socket buffer with the second
+# message, and then use IO::Select as intended, and previous versions of
+# this code did that (check the git history for this file), but
+# performance suffers, about 20/30% slower, mostly because we do a lot
+# of "read one line", where <$sock> beats the crap of anything you can
+# write on Perl-land.
+#
+sub __try_read_sock {
+  my $sock = shift;
+  my $data;
+
+  __fh_nonblocking($sock, 1);
+  my $result = read($sock, $data, 1);
+  __fh_nonblocking($sock, 0);
+
+  return unless $result;
+  $sock->ungetc(ord($data));
+  return 1;
+}
+
+
+### Copied from AnyEvent::Util
+BEGIN {
+  *__fh_nonblocking = ($^O eq 'MSWin32')
+    ? sub($$) { ioctl $_[0], 0x8004667e, pack "L", $_[1]; }    # FIONBIO
+    : sub($$) { fcntl $_[0], F_SETFL, $_[1] ? O_NONBLOCK : 0; };
+}
+
 
 1;
 

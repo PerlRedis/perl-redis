@@ -9,8 +9,11 @@ WriteMakefile(
     ABSTRACT_FROM       => 'lib/Redis.pm',
     PL_FILES            => {},
     PREREQ_PM => {
-        'Test::More' => 0,
+        'Test::More' => 0.92,
+        'Test::Exception' => 0,
+        'Test::Deep' => 0,
 		'IO::Socket::INET' => 0,
+		'IO::String' => 0,
 		'Data::Dumper' => 0,
 		'Carp' => 0,
 		'Encode' => 0,
