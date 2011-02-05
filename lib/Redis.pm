@@ -159,6 +159,15 @@ sub quit {
   return 1;
 }
 
+sub shutdown {
+  my ($self) = @_;
+
+  $self->__send_command('SHUTDOWN');
+  close(delete $self->{sock}) || confess("Can't close socket: $!");
+
+  return 1;
+}
+
 sub info {
   my ($self) = @_;
   $self->__is_valid_command('INFO');

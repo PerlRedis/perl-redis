@@ -302,8 +302,12 @@ isa_ok($info, 'HASH');
 
 ok($o->quit, 'quit');
 
-throws_ok sub { Redis->new(server => '127.0.0.1:1') },
-  qr/Could not connect to Redis server at 127[.]0[.]0[.]1:1:/,
+$o = Redis->new(server => $srv);
+$o->shutdown();
+
+sleep(1);
+throws_ok sub { Redis->new(server => $srv) },
+  qr/Could not connect to Redis server at $srv/,
   'Failed connection throws exception';
 
 
