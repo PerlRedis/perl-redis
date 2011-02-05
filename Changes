@@ -1,5 +1,8 @@
 Revision history for Redis
 
+1.901 Sat Feb  5 11:15:04 UTC 2011
+    * Released 1.900_01 as latest version
+
 1.900_01  Sun Jan 30 06:03:14 UTC 2011
     * admin: change of maintainer to Pedro Melo <melo@simplicidade.org>
     * feature: full support for Redis 2.x multi-bulk protocol
