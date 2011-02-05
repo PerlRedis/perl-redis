@@ -168,6 +168,23 @@ sub shutdown {
   return 1;
 }
 
+sub ping {
+  my ($self) = @_;
+  return unless exists $self->{sock};
+
+  my $reply;
+  eval {
+    $self->__send_command('PING');
+    $reply = $self->__read_response('PING');
+  };
+  if ($@) {
+    close(delete $self->{sock});
+    return;
+  }
+
+  return $reply;
+}
+
 sub info {
   my ($self) = @_;
   $self->__is_valid_command('INFO');
