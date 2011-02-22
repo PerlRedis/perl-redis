@@ -9,7 +9,9 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($guard, $srv) = redis();
+my ($c, $srv) = redis();
+END { $c->() if $c }
+
 
 my %got;
 ok(

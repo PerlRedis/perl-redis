@@ -15,7 +15,6 @@ WriteMakefile(
     'Exporter'         => 0,
     'Fcntl'            => 0,
     'File::Temp'       => 0,
-    'Guard'            => 0,
     'IO::Handle'       => 0,
     'IO::Select'       => 0,
     'IO::Socket::INET' => 0,

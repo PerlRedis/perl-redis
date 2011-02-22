@@ -7,7 +7,9 @@ use Redis::List;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($guard, $srv) = redis();
+my ($c, $srv) = redis();
+END { $c->() if $c }
+
 
 ## Setup
 my @my_list;

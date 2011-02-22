@@ -8,7 +8,9 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($guard, $srv) = redis();
+my ($c, $srv) = redis();
+END { $c->() if $c }
+
 
 ok(my $o = Redis->new(server => $srv), 'connected to our test redis-server');
 ok($o->ping, 'ping');
