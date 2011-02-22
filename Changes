@@ -1,5 +1,8 @@
 Revision history for Redis
 
+1.903 Tue Feb 22 13:04:24 UTC 2011
+    * remove the Guard dependency
+
 1.902 Sat Feb  5 12:38:57 UTC 2011
     * fix: ping() no longer dies (RT #62489)
     * fix: shutdown() no longer dies
