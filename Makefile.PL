@@ -23,7 +23,7 @@ WriteMakefile(
     'POSIX'            => 0,
     'Test::Deep'       => 0,
     'Test::Exception'  => 0,
-    'Test::More'       => 0.92,
+    'Test::More'       => 0.96,
     'Tie::Hash'        => 0,
   },
   dist  => {COMPRESS => 'gzip -9f', SUFFIX => 'gz'},
