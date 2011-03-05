@@ -1,5 +1,8 @@
 Revision history for Redis
 
+1.904 Sat Mar  5 23:10:48 UTC 2011
+    * Fix bug with NIL multi-bulk replies (Case 42) RT#64040
+
 1.903 Tue Feb 22 13:04:24 UTC 2011
     * remove the Guard dependency
 
