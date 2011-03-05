@@ -79,4 +79,10 @@ cmp_deeply(
 );
 
 
+## Nil multi-bulk responses
+r('*-1');
+lives_ok sub { $m = $r->__read_response('blpop') },
+  'Read a NIL multi-bulk response';
+is($m, undef, '... with the expected "undef" value');
+
 done_testing();
