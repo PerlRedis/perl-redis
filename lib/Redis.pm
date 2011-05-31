@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 use IO::Socket::INET;
+use IO::Socket::UNIX;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
@@ -82,6 +83,8 @@ a little help of C <AUTOLOAD> .
     my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
 
+    my $r = Redis->new( path => '/tmp/redis.sock' ); # Use UNIX sockets
+
 =cut
 
 sub new {
@@ -92,11 +95,17 @@ sub new {
   $self->{encoding} = 'utf8'
     unless exists $self->{encoding};    ## default to lax utf8
 
-  $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
-  $self->{sock} = IO::Socket::INET->new(
-    PeerAddr => $self->{server},
-    Proto    => 'tcp',
-  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+  if (exists $self->{path}) {
+    $self->{sock} = IO::Socket::UNIX->new($self->{path})
+      || confess("Could not connect to Redis server at $self->{path}: $!");
+  }
+  else {
+    $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+    $self->{sock} = IO::Socket::INET->new(
+      PeerAddr => $self->{server},
+      Proto    => 'tcp',
+    ) || confess("Could not connect to Redis server at $self->{server}: $!");
+  }
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
