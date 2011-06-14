@@ -7,6 +7,7 @@ use IO::Socket::INET;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
+use Try::Tiny;
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
@@ -127,37 +128,32 @@ our $AUTOLOAD;
 
 sub AUTOLOAD {
   my $self = shift;
-  my $ret;
+  my @args = @_;
 
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
   $self->__is_valid_command($command);
-
-  eval {
-      $ret = $self->__run_command($command, @_);
+  
+  try {
+    return $self->__run_command($command, @args);
+  } catch {
+   if ($self->{reconnect}) {
+        $self->{sock} = $self->__build_sock;
+        return $self->__run_command($command, @args);
+    }
+  } finally {
+      confess(@_);
   };
 
-  if ($@) {
-      if ($self->{reconnect}) {
-        $self->{sock} = $self->__build_sock;
-        return $self->__run_command($command, @_);
-      }
-  } else {
-    return $ret;
-  }
-
-  confess($@);
 }
 
 sub __run_command {
   my $self = shift;
   my $command = shift;
-
+  
   my $sock = $self->{sock} || confess("Not connected to any server");
   my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
-
-  my $ret;
 
   ## PubSub commands use a different answer handling
   if (my ($pr, $unsub) = $command =~ /^(p)?(un)?subscribe$/i) {
@@ -177,12 +173,9 @@ sub __run_command {
     my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
     return $self->__process_subscription_changes($command, \%cbs);
   }
-  else {
-    $self->__send_command($command, @_);
-    $ret = $self->__read_response($command);
-  }
+  $self->__send_command($command, @_);
+  return $self->__read_response($command);
 
-  return $ret;
 }
 
 
