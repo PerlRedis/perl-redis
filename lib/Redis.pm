@@ -7,7 +7,6 @@ use IO::Socket::INET;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
-use Try::Tiny;
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
@@ -128,23 +127,23 @@ our $AUTOLOAD;
 
 sub AUTOLOAD {
   my $self = shift;
-  my @args = @_;
 
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
   $self->__is_valid_command($command);
-  
-  try {
-    return $self->__run_command($command, @args);
-  } catch {
-   if ($self->{reconnect}) {
-        $self->{sock} = $self->__build_sock;
-        return $self->__run_command($command, @args);
-    }
-  } finally {
-      confess(@_);
+ 
+  my $ref;
+  eval {  
+    $ref = $self->__run_command($command, @_);
   };
-
+  if ($@) {
+    if ($self->{reconnect}) {
+        $self->{sock} = $self->__build_sock;
+        return $self->__run_command($command, @_);
+    }
+    return confess($@);
+  }
+  return ref($ref) eq 'ARRAY' ? @$ref : $ref;
 }
 
 sub __run_command {
