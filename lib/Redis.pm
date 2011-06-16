@@ -10,6 +10,7 @@ use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
+use Scalar::Util qw(looks_like_number);
 
 =head1 NAME
 
@@ -29,8 +30,8 @@ our $VERSION = '1.904';
     ## Disable the automatic utf8 encoding => much more performance
     my $redis = Redis->new(encoding => undef);
    
-    ## Try to reconnect if the server closed connection.
-    my $redis = Redis->new(reconnect => 1);
+    ## Try to reconnect if the server closed connection, while 60 seconds.
+    my $redis = Redis->new(reconnect => 60);
 
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
@@ -133,13 +134,18 @@ sub AUTOLOAD {
   $self->__is_valid_command($command);
  
   my $ref;
+
+RUN_CMD:
   eval {  
     $ref = $self->__run_command($command, @_);
   };
   if ($@) {
     if ($self->{reconnect}) {
+        my $time_to_sleep = looks_like_number($self->{reconnect}) ?
+        $self->{reconnect} : 60;
+        sleep($time_to_sleep);
         $self->{sock} = $self->__build_sock;
-        return $self->__run_command($command, @_);
+        goto RUN_CMD;
     }
     return confess($@);
   }
