@@ -10,7 +10,7 @@ use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
-use Scalar::Util qw(looks_like_number);
+use Try::Tiny;
 
 =head1 NAME
 
@@ -133,23 +133,20 @@ sub AUTOLOAD {
   $command =~ s/.*://;
   $self->__is_valid_command($command);
  
-  my $ref;
+  my @args = @_;
 
 RUN_CMD:
-  eval {  
-    $ref = $self->__run_command($command, @_);
-  };
-  if ($@) {
+  try {  
+    return $self->__run_command($command, @args);
+  } catch { 
     if ($self->{reconnect}) {
-        my $time_to_sleep = looks_like_number($self->{reconnect}) ?
-        $self->{reconnect} : 60;
-        sleep($time_to_sleep);
-        $self->{sock} = $self->__build_sock;
-        goto RUN_CMD;
+      sleep($self->{reconnect});
+      $self->{sock} = $self->__build_sock;
+      goto RUN_CMD;
     }
-    return confess($@);
-  }
-  return ref($ref) eq 'ARRAY' ? @$ref : $ref;
+    return confess($_);
+  };
+
 }
 
 sub __run_command {
