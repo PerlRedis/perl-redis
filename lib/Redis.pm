@@ -68,9 +68,9 @@ This version supports protocol 2.x (multi-bulk) or later of Redis
 available at L<https://github.com/antirez/redis/>.
 
 This documentation lists commands which are exercised in test suite, but
-additinal commands will work correctly since protocol specifies enough
-information to support almost all commands with same peace of code with
-a little help of C <AUTOLOAD> .
+additional commands will work correctly since protocol specifies enough
+information to support almost all commands with same piece of code with
+a little help of C<AUTOLOAD>.
 
 
 =head1 METHODS
