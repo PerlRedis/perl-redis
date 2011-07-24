@@ -141,12 +141,13 @@ ok($o->srem($set, 'foo'), 'srem');
 ok(!$o->srem($set, 'foo'), 'srem again');
 cmp_ok($o->scard($set), '==', 0, 'scard');
 
+$o->del($_) foreach qw( test-set1 test-set2 );
 $o->sadd('test-set1', $_) foreach ('foo', 'bar', 'baz');
 $o->sadd('test-set2', $_) foreach ('foo', 'baz', 'xxx');
 
-my $inter = ['foo', 'baz'];
+my $inter = [sort('foo', 'baz')];
 
-is_deeply([$o->sinter('test-set1', 'test-set2')], $inter, 'siter');
+is_deeply([sort $o->sinter('test-set1', 'test-set2')], $inter, 'sinter');
 
 ok($o->sinterstore('test-set-inter', 'test-set1', 'test-set2'),
   'sinterstore');
@@ -157,6 +158,35 @@ cmp_ok(
   $#$inter + 1,
   'cardinality of intersection'
 );
+
+is_deeply([$o->sdiff('test-set1', 'test-set2')], ['bar'], 'sdiff');
+ok($o->sdiffstore(qw( test-set-diff test-set1 test-set2 )), 'sdiffstore');
+is($o->scard('test-set-diff'), 1, 'cardinality of diff');
+
+my @union = sort qw( foo bar baz xxx );
+is_deeply([$o->sunion(qw( test-set1 test-set2 ))], \@union, 'sunion');
+ok($o->sunionstore(qw( test-set-union test-set1 test-set2 )), 'sunionstore');
+is($o->scard('test-set-union'), scalar(@union), 'cardinality of union');
+
+my $first_rand = $o->srandmember('test-set-union');
+ok(defined $first_rand, 'srandmember result is defined');
+ok(scalar grep { $_ eq $first_rand } @union, 'srandmember');
+my $second_rand = $o->spop('test-set-union');
+ok(defined $first_rand, 'spop result is defined');
+ok(scalar grep { $_ eq $second_rand } @union, 'spop');
+is($o->scard('test-set-union'), scalar(@union)-1, 'new cardinality of union');
+
+$o->del('test_set3');
+my @test_set3 = sort qw( foo bar baz );
+$o->sadd('test-set3', $_) foreach @test_set3;
+is_deeply([sort $o->smembers('test-set3')], \@test_set3, 'smembers');
+
+$o->del('test-set4');
+$o->smove(qw( test-set3 test-set4 ), $_) foreach @test_set3;
+is($o->scard('test-set3'), 0, 'repeated smove depleted source');
+is($o->scard('test-set4'), scalar(@test_set3), 'repeated smove populated destination');
+is_deeply([sort $o->smembers('test-set4')], \@test_set3, 'smembers');
+
 
 ## Commands operating on zsets (sorted sets)
 # TODO: ZUNIONSTORE, ZINTERSTORE, SORT, tests w/multiple values having the same score
