@@ -68,9 +68,9 @@ This version supports protocol 2.x (multi-bulk) or later of Redis
 available at L<https://github.com/antirez/redis/>.
 
 This documentation lists commands which are exercised in test suite, but
-additinal commands will work correctly since protocol specifies enough
-information to support almost all commands with same peace of code with
-a little help of C <AUTOLOAD> .
+additional commands will work correctly since protocol specifies enough
+information to support almost all commands with same piece of code with
+a little help of C<AUTOLOAD>.
 
 
 =head1 METHODS
@@ -593,27 +593,64 @@ See also L<Redis::List> for tie interface.
 
 =head2 sadd
 
-  $r->sadd( $key, $member );
+  my $ok = $r->sadd( $key, $member );
+
+=head2 scard
+
+  my $n_elements = $r->scard( $key );
+
+=head2 sdiff
+
+  my @elements = $r->sdiff( $key1, $key2, ... );
+  my $elements = $r->sdiff( $key1, $key2, ... ); # ARRAY ref
+
+=head2 sdiffstore
+
+  my $ok = $r->sdiffstore( $dstkey, $key1, $key2, ... );
+
+=head2 sinter
+
+  my @elements = $r->sinter( $key1, $key2, ... );
+  my $elements = $r->sinter( $key1, $key2, ... ); # ARRAY ref
+
+=head2 sinterstore
+
+  my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
+
+=head2 sismember
+
+  my $bool = $r->sismember( $key, $member );
+
+=head2 smembers
+
+  my @elements = $r->smembers( $key );
+  my $elements = $r->smembers( $key ); # ARRAY ref
+
+=head2 smove
+
+  my $ok = $r->smove( $srckey, $dstkey, $element );
+
+=head2 spop
+
+  my $element = $r->spop( $key );
+
+=head2 spop
+
+  my $element = $r->srandmember( $key );
 
 =head2 srem
 
   $r->srem( $key, $member );
 
-=head2 scard
+=head2 sunion
 
-  my $elements = $r->scard( $key );
+  my @elements = $r->sunion( $key1, $key2, ... );
+  my $elements = $r->sunion( $key1, $key2, ... ); # ARRAY ref
 
-=head2 sismember
+=head2 sunionstore
 
-  $r->sismember( $key, $member );
+  my $ok = $r->sunionstore( $dstkey, $key1, $key2, ... );
 
-=head2 sinter
-
-  $r->sinter( $key1, $key2, ... );
-
-=head2 sinterstore
-
-  my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
 
 =head1 Multiple databases handling commands
 
