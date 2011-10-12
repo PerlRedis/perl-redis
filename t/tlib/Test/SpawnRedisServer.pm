@@ -4,6 +4,7 @@ package    # Hide from PAUSE
 use strict;
 use warnings;
 use File::Temp;
+use IPC::Cmd qw(can_run);
 use POSIX ":sys_wait_h";
 use base qw( Exporter );
 
@@ -28,6 +29,11 @@ sub redis {
 
   ## My local redis PATH
   $ENV{PATH} = "$ENV{PATH}:/usr/local/redis/sbin";
+
+  if (! can_run('redis-server')) {
+    Test::More::plan skip_all => "Could not find binary redis-server";
+    return;
+  }
 
   my $c;
   eval { $c = spawn_server($ENV{REDIS_SERVER_PATH} || 'redis-server', $fn) };
