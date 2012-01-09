@@ -13,12 +13,14 @@ my ($c, $srv) = redis();
 END { $c->() if $c }
 
 
-ok(my $r = Redis->new(reconnect => 0, server => $srv), 'connected to our test redis-server');
+ok(my $r = Redis->new(reconnect => 0, server => $srv),
+  'connected to our test redis-server');
 ok($r->quit, 'close connection to the server');
-dies_ok { $r->set( reconnect => 1 )} 'send ping without reconnect';
+dies_ok { $r->set(reconnect => 1) } 'send ping without reconnect';
 
-ok($r = Redis->new(reconnect => 1, server => $srv), 'connected to our test redis-server');
+ok($r = Redis->new(reconnect => 1, server => $srv),
+  'connected to our test redis-server');
 ok($r->quit, 'close connection to the server');
-ok($r->set( reconnect => 1 ), 'send ping with reconnect');
+ok($r->set(reconnect => 1), 'send ping with reconnect');
 
 done_testing();
