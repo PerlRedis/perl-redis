@@ -941,7 +941,7 @@ The following persons contributed to this project (alphabetical order):
 
 Copyright 2009-2010 Dobrica Pavlinusic, all rights reserved.
 
-Copyright 2011 Pedro Melo, all rights reserved
+Copyright 2011-2012 Pedro Melo, all rights reserved
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
