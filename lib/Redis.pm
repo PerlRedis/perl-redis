@@ -777,6 +777,8 @@ The following persons contributed to this project (alphabetical order):
 
 =item sunnavy at bestpractical.com
 
+=item Thiago Berlitz Rondon
+
 =item Ulrich Habel
 
 =back
