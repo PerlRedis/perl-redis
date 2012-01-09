@@ -771,9 +771,13 @@ The following persons contributed to this project (alphabetical order):
 
 =item Dirk Vleugels
 
+=item Flavio Poletti
+
 =item Jeremy Zawodny
 
 =item sunnavy at bestpractical.com
+
+=item Ulrich Habel
 
 =back
 
