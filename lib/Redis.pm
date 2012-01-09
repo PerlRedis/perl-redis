@@ -10,6 +10,7 @@ use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
+use Try::Tiny;
 
 =head1 NAME
 
@@ -28,7 +29,10 @@ our $VERSION = '1.904';
     
     ## Disable the automatic utf8 encoding => much more performance
     my $redis = Redis->new(encoding => undef);
-    
+   
+    ## Try to reconnect if the server closed connection, while 60 seconds.
+    my $redis = Redis->new(reconnect => 60);
+
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
     ## See http://redis.io/commands for full list
@@ -93,15 +97,23 @@ sub new {
     unless exists $self->{encoding};    ## default to lax utf8
 
   $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
-  $self->{sock} = IO::Socket::INET->new(
-    PeerAddr => $self->{server},
-    Proto    => 'tcp',
-  ) || confess("Could not connect to Redis server at $self->{server}: $!");
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
+  $self->{reconnect} ||= 0;
 
-  return bless($self, $class);
+  bless($self, $class);
+  $self->{sock} = $self->__build_sock;
+  
+  return $self;
+}
+
+sub __build_sock {
+  my $self = shift;
+  return IO::Socket::INET->new(
+    PeerAddr => $self->{server},
+    Proto    => 'tcp',
+  ) || confess("Could not connect to Redis server at $self->{server}: $!");
 }
 
 sub is_subscriber { $_[0]{is_subscriber} }
@@ -116,13 +128,34 @@ our $AUTOLOAD;
 
 sub AUTOLOAD {
   my $self = shift;
-  my $sock = $self->{sock} || confess("Not connected to any server");
-  my $enc  = $self->{encoding};
-  my $deb  = $self->{debug};
 
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
   $self->__is_valid_command($command);
+ 
+  my @args = @_;
+
+RUN_CMD:
+  try {  
+    return $self->__run_command($command, @args);
+  } catch { 
+    if ($self->{reconnect}) {
+      sleep($self->{reconnect});
+      $self->{sock} = $self->__build_sock;
+      goto RUN_CMD;
+    }
+    return confess($_);
+  };
+
+}
+
+sub __run_command {
+  my $self = shift;
+  my $command = shift;
+  
+  my $sock = $self->{sock} || confess("Not connected to any server");
+  my $enc  = $self->{encoding};
+  my $deb  = $self->{debug};
 
   ## PubSub commands use a different answer handling
   if (my ($pr, $unsub) = $command =~ /^(p)?(un)?subscribe$/i) {
@@ -142,9 +175,9 @@ sub AUTOLOAD {
     my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
     return $self->__process_subscription_changes($command, \%cbs);
   }
-
   $self->__send_command($command, @_);
   return $self->__read_response($command);
+
 }
 
 

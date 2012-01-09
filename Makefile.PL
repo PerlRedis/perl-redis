@@ -24,6 +24,7 @@ WriteMakefile(
     'Test::Exception'  => 0,
     'Test::More'       => 0.96,
     'Tie::Hash'        => 0,
+    'Try::Tiny'        => 0,
   },
   dist  => {COMPRESS => 'gzip -9f', SUFFIX => 'gz'},
   clean => {FILES    => 'Redis-*'},
