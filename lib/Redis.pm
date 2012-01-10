@@ -120,7 +120,8 @@ If we cannot re-establish a connection after C<< reconnect >> seconds,
 an exception will be thrown.
 
 The C<< debug >> parameter enables debug information to STDERR,
-including all interactions with the server.
+including all interactions with the server. You can also enable debug
+with the C<REDIS_DEBUG> environment variable.
 
 =cut
 
