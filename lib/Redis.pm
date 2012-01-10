@@ -551,7 +551,7 @@ sub __read_line {
 sub __read_len {
   my ($self, $len) = @_;
 
-  my $data;
+  my $data = '';
   my $offset = 0;
   while ($len) {
     my $bytes = read $self->{sock}, $data, $len, $offset;
