@@ -50,8 +50,14 @@ sub spawn_server {
   if ($pid) {    ## Parent
     require Test::More;
     Test::More::diag("Starting server with pid $pid") if $ENV{REDIS_DEBUG};
-    sleep(1);    ## FIXME: we should PING it until he is ready
+
+    ## FIXME: we should PING it until he is ready
+    sleep(1);
+    my $alive = 1;
+
     return sub {
+      return unless $alive;
+
       Test::More::diag("Killing server at $pid") if $ENV{REDIS_DEBUG};
       kill(15, $pid);
 
@@ -65,6 +71,7 @@ sub spawn_server {
         if $ENV{REDIS_DEBUG} && $try > 0;
       unlink('redis-server.log');
       unlink('dump.rdb');
+      $alive = 0;
     };
   }
   elsif (defined $pid) {    ## Child
