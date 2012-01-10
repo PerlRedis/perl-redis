@@ -53,6 +53,7 @@ subtest "Reconnect gives up after timeout" => sub {
   ok(my $r = Redis->new(reconnect => 3, server => $srv),
     'connected to our test redis-server');
   $r->shutdown;    ## Make sure our test server is down
+  $c->(); ## Make sure the server is dead
 
   my $t0 = [gettimeofday];
   like(
