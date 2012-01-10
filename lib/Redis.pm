@@ -107,6 +107,20 @@ variable. If neither of those options are present, it defaults to
 Alternatively you can use the C<< sock >> parameter to specify the path
 of the UNIX domain socket where the Redis server is listening.
 
+The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following formats are supported:
+
+=over 4
+
+=item /path/to/sock
+
+=item unix:/path/to/sock
+
+=item 127.0.0.1:11011
+
+=item tcp:127.0.0.1:11011
+
+=back
+
 The C<< encoding >> parameter speficies the encoding we will use to
 decode all the data we receive and encode all the data sent to the redis
 server. Due to backwards-compatibility we default to C<< utf8 >>. To
@@ -143,12 +157,25 @@ sub new {
   ## default to lax utf8
   $self->{encoding} = exists $args{encoding}? $args{encoding} : 'utf8';
 
+  ## Deal with REDIS_SERVER ENV
+  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
+    if ($ENV{REDIS_SERVER} =~ m!^/!) {
+      $args{sock} = $ENV{REDIS_SERVER};
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
+      $args{sock} = $1;
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^(tcp:)?(.+)!) {
+      $args{server} = $2;
+    }
+  }
+
   if ($args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
   }
   else {
-    $self->{server} = $args{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+    $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
       IO::Socket::INET->new(
         PeerAddr => $_[0]->{server},
