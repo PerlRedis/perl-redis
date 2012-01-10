@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 use IO::Socket::INET;
+use IO::Socket::UNIX;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
@@ -27,6 +28,9 @@ our $VERSION = '1.904';
     my $redis = Redis->new;
     
     my $redis = Redis->new(server => 'redis.example.com:8080');
+    
+    ## Use UNIX domain socket
+    my $redis = Redis->new(sock => '/path/to/socket');
     
     ## Enable auto-reconnect
     ## Try to reconnect every 500ms up to 60 seconds until success
@@ -91,13 +95,17 @@ a little help of C<AUTOLOAD>.
 
     my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
 
 The C<< server >> parameter specifies the Redis server we should connect
-to. Use the 'IP:PORT' format. If no C<< server >> option is present,
-Redis will attempt to use the C<< REDIS_SERVER >> environment variable.
-If neither of those options are present, it defaults to
+to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
+present, we will attempt to use the C<< REDIS_SERVER >> environment
+variable. If neither of those options are present, it defaults to
 '127.0.0.1:6379'.
+
+Alternatively you can use the C<< sock >> parameter to specify the path
+of the UNIX domain socket where the Redis server is listening.
 
 The C<< encoding >> parameter speficies the encoding we will use to
 decode all the data we receive and encode all the data sent to the redis
@@ -135,7 +143,19 @@ sub new {
   ## default to lax utf8
   $self->{encoding} = exists $args{encoding}? $args{encoding} : 'utf8';
 
-  $self->{server} = $args{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+  if ($args{sock}) {
+    $self->{server} = $args{sock};
+    $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
+  }
+  else {
+    $self->{server} = $args{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379';
+    $self->{builder} = sub {
+      IO::Socket::INET->new(
+        PeerAddr => $_[0]->{server},
+        Proto    => 'tcp',
+      );
+    };
+  }
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
@@ -392,10 +412,8 @@ sub __connect {
 sub __build_sock {
   my ($self) = @_;
 
-  $self->{sock} = IO::Socket::INET->new(
-    PeerAddr => $self->{server},
-    Proto    => 'tcp',
-  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+  $self->{sock} = $self->{builder}->($self)
+    || confess("Could not connect to Redis server at $self->{server}: $!");
 
   return;
 }
