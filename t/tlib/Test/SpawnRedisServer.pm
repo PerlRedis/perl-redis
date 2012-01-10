@@ -27,9 +27,6 @@ sub redis {
 
   Test::More::diag("Redis port $port, cfg $fn") if $ENV{REDIS_DEBUG};
 
-  ## My local redis PATH
-  $ENV{PATH} = "$ENV{PATH}:/usr/local/redis/sbin";
-
   if (! can_run('redis-server')) {
     Test::More::plan skip_all => "Could not find binary redis-server";
     return;
