@@ -93,6 +93,35 @@ a little help of C<AUTOLOAD>.
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
     my $r = Redis->new( reconnect => 60, every => 5000 );
 
+The C<< server >> parameter specifies the Redis server we should connect
+to. Use the 'IP:PORT' format. If no C<< server >> option is present,
+Redis will attempt to use the C<< REDIS_SERVER >> environment variable.
+If neither of those options are present, it defaults to
+'127.0.0.1:6379'.
+
+The C<< encoding >> parameter speficies the encoding we will use to
+decode all the data we receive and encode all the data sent to the redis
+server. Due to backwards-compatibility we default to C<< utf8 >>. To
+disable all this encoding/decoding, you must use C<<encoding => undef>>.
+B<< This is the recommended option >>.
+
+B<< Warning >>: this option has several problems and it is
+B<deprecated>. A future version will add a safer option.
+
+The C<< reconnect >> option enables auto-reconnection mode. If we cannot
+connect to the Redis server, or if a network write fails, we enter retry
+mode. We will try a new connection every C<< every >> miliseconds
+(1000ms by default), up-to C<< reconnect >> seconds.
+
+Be aware that read errors will always thrown an exception, and will not
+trigger a retry until the new command is sent.
+
+If we cannot re-establish a connection after C<< reconnect >> seconds,
+an exception will be thrown.
+
+The C<< debug >> parameter enables debug information to STDERR,
+including all interactions with the server.
+
 =cut
 
 sub new {
