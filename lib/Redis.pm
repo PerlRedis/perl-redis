@@ -20,7 +20,7 @@ Redis - perl binding for Redis database
 
 =cut
 
-our $VERSION = '1.904';
+our $VERSION = '1.925';
 
 =head1 SYNOPSIS
 

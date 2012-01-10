@@ -1,5 +1,13 @@
 Revision history for Redis
 
+1.925 Tue Jan 10 16:02:04 UTC 2012
+    * Implemented auto-reconnect
+    * Add support for UNIX domain sockets
+    * Make REDIS_SERVER work with both TCP and UNIX domain sockets
+    * Make the test suite workaround a missing redis-server binary
+    * Assorted small bug fixes
+    * Improve documentation
+
 1.904 Sat Mar  5 23:10:48 UTC 2011
     * Fix bug with NIL multi-bulk replies (Case 42) RT#64040
 
