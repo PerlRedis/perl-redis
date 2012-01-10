@@ -10,6 +10,8 @@ use Fcntl qw( O_NONBLOCK F_SETFL );
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
+use Try::Tiny;
+use Scalar::Util ();
 
 =head1 NAME
 
@@ -25,6 +27,14 @@ our $VERSION = '1.904';
     my $redis = Redis->new;
     
     my $redis = Redis->new(server => 'redis.example.com:8080');
+    
+    ## Enable auto-reconnect
+    ## Try to reconnect every 500ms up to 60 seconds until success
+    ## Die if you can't after that
+    my $redis = Redis->new(reconnect => 60);
+    
+    ## Try each 100ms upto 2 seconds (every is in milisecs)
+    my $redis = Redis->new(reconnect => 2, every => 100);
     
     ## Disable the automatic utf8 encoding => much more performance
     my $redis = Redis->new(encoding => undef);
@@ -81,27 +91,59 @@ a little help of C<AUTOLOAD>.
 
     my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( reconnect => 60, every => 5000 );
+
+The C<< server >> parameter specifies the Redis server we should connect
+to. Use the 'IP:PORT' format. If no C<< server >> option is present,
+Redis will attempt to use the C<< REDIS_SERVER >> environment variable.
+If neither of those options are present, it defaults to
+'127.0.0.1:6379'.
+
+The C<< encoding >> parameter speficies the encoding we will use to
+decode all the data we receive and encode all the data sent to the redis
+server. Due to backwards-compatibility we default to C<< utf8 >>. To
+disable all this encoding/decoding, you must use C<<encoding => undef>>.
+B<< This is the recommended option >>.
+
+B<< Warning >>: this option has several problems and it is
+B<deprecated>. A future version will add a safer option.
+
+The C<< reconnect >> option enables auto-reconnection mode. If we cannot
+connect to the Redis server, or if a network write fails, we enter retry
+mode. We will try a new connection every C<< every >> miliseconds
+(1000ms by default), up-to C<< reconnect >> seconds.
+
+Be aware that read errors will always thrown an exception, and will not
+trigger a retry until the new command is sent.
+
+If we cannot re-establish a connection after C<< reconnect >> seconds,
+an exception will be thrown.
+
+The C<< debug >> parameter enables debug information to STDERR,
+including all interactions with the server.
 
 =cut
 
 sub new {
   my $class = shift;
-  my $self  = {@_};
+  my %args  = @_;
+  my $self  = bless {}, $class;
 
-  $self->{debug} ||= $ENV{REDIS_DEBUG};
-  $self->{encoding} = 'utf8'
-    unless exists $self->{encoding};    ## default to lax utf8
+  $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
-  $self->{server} ||= $ENV{REDIS_SERVER} || '127.0.0.1:6379';
-  $self->{sock} = IO::Socket::INET->new(
-    PeerAddr => $self->{server},
-    Proto    => 'tcp',
-  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+  ## default to lax utf8
+  $self->{encoding} = exists $args{encoding}? $args{encoding} : 'utf8';
+
+  $self->{server} = $args{server} || $ENV{REDIS_SERVER} || '127.0.0.1:6379';
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
+  $self->{reconnect}     = $args{reconnect} || 0;
+  $self->{every}         = $args{every} || 1000;
 
-  return bless($self, $class);
+  $self->__connect;
+
+  return $self;
 }
 
 sub is_subscriber { $_[0]{is_subscriber} }
@@ -116,13 +158,32 @@ our $AUTOLOAD;
 
 sub AUTOLOAD {
   my $self = shift;
-  my $sock = $self->{sock} || confess("Not connected to any server");
-  my $enc  = $self->{encoding};
-  my $deb  = $self->{debug};
 
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
   $self->__is_valid_command($command);
+
+  ## Fast path, no reconnect
+  return $self->__run_cmd($command, @_) unless $self->{reconnect};
+
+  my @cmd_args = @_;
+  return try {
+    $self->__run_cmd($command, @cmd_args);
+  }
+  catch {
+    die $_ unless ref($_) eq 'Redis::X::Reconnect';
+
+    $self->__connect;
+    $self->__run_cmd($command, @cmd_args);
+  };
+}
+
+sub __run_cmd {
+  my $self    = shift;
+  my $command = shift;
+  my $sock    = $self->{sock} || $self->__try_reconnect('Not connected to any server');
+  my $enc     = $self->{encoding};
+  my $deb     = $self->{debug};
 
   ## PubSub commands use a different answer handling
   if (my ($pr, $unsub) = $command =~ /^(p)?(un)?subscribe$/i) {
@@ -304,6 +365,40 @@ sub __is_valid_command {
 
 
 ### Socket operations
+sub __connect {
+  my ($self) = @_;
+  delete $self->{sock};
+
+  ## Fast path, no reconnect
+  return $self->__build_sock() unless $self->{reconnect};
+
+  ## Use precise timers on reconnections
+  require Time::HiRes;
+  my $t0 = [Time::HiRes::gettimeofday()];
+
+  ## Reconnect...
+  while (1) {
+    eval { $self->__build_sock };
+
+    last unless $@;    ## Connected!
+    die if Time::HiRes::tv_interval($t0) > $self->{reconnect};    ## Timeout
+    Time::HiRes::usleep($self->{every});                          ## Retry in...
+  }
+
+  return;
+}
+
+sub __build_sock {
+  my ($self) = @_;
+
+  $self->{sock} = IO::Socket::INET->new(
+    PeerAddr => $self->{server},
+    Proto    => 'tcp',
+  ) || confess("Could not connect to Redis server at $self->{server}: $!");
+
+  return;
+}
+
 sub __send_command {
   my $self = shift;
   my $cmd  = uc(shift);
@@ -322,10 +417,11 @@ sub __send_command {
 
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
-  my $sock = $self->{sock} || confess("Not connected to any server");
+  my $sock = $self->{sock}
+    || $self->__try_reconnect('Not connected to any server');
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
-    confess("Could not write to Redis server: $!")
+    $self->__try_reconnect("Could not write to Redis server: $!")
       unless $len;
     substr $buf, 0, $len, "";
   }
@@ -470,6 +566,16 @@ BEGIN {
   *__fh_nonblocking = ($^O eq 'MSWin32')
     ? sub($$) { ioctl $_[0], 0x8004667e, pack "L", $_[1]; }    # FIONBIO
     : sub($$) { fcntl $_[0], F_SETFL, $_[1] ? O_NONBLOCK : 0; };
+}
+
+
+##########################
+# I take exception to that
+
+sub __try_reconnect {
+  my ($self, $m) = @_;
+  die bless(\$m, 'Redis::X::Reconnect') if $self->{reconnect};
+  die $m;
 }
 
 
@@ -776,6 +882,8 @@ The following persons contributed to this project (alphabetical order):
 =item Jeremy Zawodny
 
 =item sunnavy at bestpractical.com
+
+=item Thiago Berlitz Rondon
 
 =item Ulrich Habel
 
