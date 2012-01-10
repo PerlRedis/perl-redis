@@ -233,9 +233,9 @@ sub __run_cmd {
 ### Commands with extra logic
 sub quit {
   my ($self) = @_;
+  return unless $self->{sock};
 
   $self->__send_command('QUIT');
-
   close(delete $self->{sock}) || confess("Can't close socket: $!");
 
   return 1;
@@ -243,6 +243,7 @@ sub quit {
 
 sub shutdown {
   my ($self) = @_;
+  return unless $self->{sock};
 
   $self->__send_command('SHUTDOWN');
   close(delete $self->{sock}) || confess("Can't close socket: $!");

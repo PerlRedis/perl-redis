@@ -334,11 +334,13 @@ isa_ok($info, 'HASH');
 
 ok($o->ping,  'ping() is true');
 ok($o->quit,  'quit');
+ok(!$o->quit,  'quit again, ok');
 ok(!$o->ping, '... but after quit() returns false');
 
 $o = Redis->new(server => $srv);
-$o->shutdown();
-ok(!$o->ping(), 'ping() also false after shutdown()');
+ok($o->shutdown(), 'shutdown() once is ok');
+ok(!$o->shutdown(), '... twice also lives, but returns false');
+ok(!$o->ping(), 'ping() will be false after shutdown()');
 
 sleep(1);
 throws_ok sub { Redis->new(server => $srv) },
