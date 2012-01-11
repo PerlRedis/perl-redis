@@ -15,6 +15,7 @@ sub redis {
   my $port = 11011 + ($$ % 127);
 
   $fh->print("
+    timeout 1
     appendonly no
     vm-enabled no
     daemonize no

@@ -452,6 +452,9 @@ sub __send_command {
   my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
 
+  my $sock = $self->{sock}
+    || $self->__try_reconnect('Not connected to any server');
+
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
   ## Encode command using multi-bulk format
@@ -462,10 +465,14 @@ sub __send_command {
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
+  ## Check to see if socket was closed: reconnect on EOF
+  my $status = __try_read_sock($sock);
+  $self->__try_reconnect('Not connected to any server')
+    if defined $status && $status == 0;
+
+  print "### DO WRITE\n";
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
-  my $sock = $self->{sock}
-    || $self->__try_reconnect('Not connected to any server');
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
     $self->__try_reconnect("Could not write to Redis server: $!")
@@ -596,13 +603,20 @@ sub __read_len {
 #
 sub __try_read_sock {
   my $sock = shift;
-  my $data;
+  my $data = '';
 
   __fh_nonblocking($sock, 1);
   my $result = read($sock, $data, 1);
+  my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
-  return unless $result;
+  ## No errno?? This happens sometimes on my tests when the server
+  ## timesout the client. I traced the system calls and I see the read()
+  ## system call return 0 for EOF, but on this side of perl, we get
+  ## undef...
+  return 0 if !defined($result) && $err == 0;
+
+  return $result unless $result;
   $sock->ungetc(ord($data));
   return 1;
 }

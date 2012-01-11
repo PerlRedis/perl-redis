@@ -26,12 +26,19 @@ subtest 'Command without connection, no reconnect' => sub {
 };
 
 
-subtest 'Command without connection, with reconnect' => sub {
+subtest 'Command without connection or timeout, with reconnect' => sub {
   ok(my $r = Redis->new(reconnect => 2, server => $srv),
     'connected to our test redis-server');
-  ok($r->quit, 'close connection to the server');
 
-  ok($r->set(reconnect => 1), 'send command with reconnect');
+  ok($r->quit, 'close connection to the server');
+  ok($r->set(reconnect => $$), 'send command with reconnect');
+
+  ## Redis will timeout clients after 100 internal server loops, at
+  ## least 10 seconds (even with a timeout 1 on the config) so we sleep
+  ## a bit more hoping the timeout did happen. Not perfect, patches
+  ## welcome
+  sleep(11);
+  is($r->get('reconnect'), $$, 'reconnect with read errors before write');
 };
 
 
@@ -52,8 +59,7 @@ subtest "Bad commnands don't trigger reconnect" => sub {
 subtest "Reconnect gives up after timeout" => sub {
   ok(my $r = Redis->new(reconnect => 3, server => $srv),
     'connected to our test redis-server');
-  $r->shutdown;    ## Make sure our test server is down
-  $c->(); ## Make sure the server is dead
+  $c->();    ## Make sure the server is dead
 
   my $t0 = [gettimeofday];
   like(
