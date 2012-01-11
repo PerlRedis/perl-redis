@@ -20,7 +20,7 @@ sub redis {
     daemonize no
     port $port
     bind 127.0.0.1
-    loglevel notice
+    loglevel debug
     logfile redis-server.log
   ");
   $fh->flush;
