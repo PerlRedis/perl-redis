@@ -14,7 +14,7 @@ tie %hash, 'Redis::Hash', 'hash';
 
 my $i = 0;
 
-timethese( 100000, {
+timethese( -5, {
 	'00_ping'	=> sub { $r->ping },
 	'10_set'	=> sub { $r->set( 'foo', $i++ ) },
 	'11_set_r'	=> sub { $r->set( 'bench-' . rand(), rand() ) },
