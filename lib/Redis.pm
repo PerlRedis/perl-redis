@@ -470,7 +470,6 @@ sub __send_command {
   $self->__try_reconnect('Not connected to any server')
     if defined $status && $status == 0;
 
-  print "### DO WRITE\n";
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
   while ($buf) {
