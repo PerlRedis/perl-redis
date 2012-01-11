@@ -1,5 +1,10 @@
 Revision history for Redis
 
+1.926 Wed Jan 11 15:48:11 UTC 2012
+    * Fix auto-reconnect when the server is dead or a
+      client timeout.
+      See https://github.com/melo/perl-redis/issues/1#issuecomment-3444989
+
 1.925 Tue Jan 10 16:02:04 UTC 2012
     * Implemented auto-reconnect
     * Add support for UNIX domain sockets
