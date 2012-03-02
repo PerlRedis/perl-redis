@@ -205,10 +205,22 @@ sub DESTROY { }
 our $AUTOLOAD;
 
 sub AUTOLOAD {
-  my $self = shift;
-
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
+
+  my $method = sub { shift->__std_cmd($command, @_) };
+
+  # Save this method for future calls
+  no strict 'refs';
+  *$AUTOLOAD = $method;
+
+  goto $method;
+}
+
+sub __std_cmd {
+  my $self    = shift;
+  my $command = shift;
+
   $self->__is_valid_command($command);
 
   ## Fast path, no reconnect
