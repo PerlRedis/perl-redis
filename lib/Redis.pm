@@ -319,26 +319,31 @@ sub info {
   my ($self) = @_;
   $self->__is_valid_command('INFO');
 
-  $self->__send_command('INFO');
+  $self->__with_reconnect(sub {
+    $self->__send_command('INFO');
 
-  my $info = $self->__read_response('INFO');
+    my $info = $self->__read_response('INFO');
 
-  return {map { split(/:/, $_, 2) } split(/\r\n/, $info)};
+    return {map { split(/:/, $_, 2) } split(/\r\n/, $info)};
+  });
 }
 
 sub keys {
   my $self = shift;
   $self->__is_valid_command('KEYS');
 
-  $self->__send_command('KEYS', @_);
+  my @cmd_args = @_;
+  $self->__with_reconnect(sub {
+    $self->__send_command('KEYS', @cmd_args);
 
-  my @keys = $self->__read_response('KEYS', \my $type);
-  ## Support redis > 1.26
-  return @keys if $type eq '*';
+    my @keys = $self->__read_response('KEYS', \my $type);
+    ## Support redis > 1.26
+    return @keys if $type eq '*';
 
-  ## Support redis <= 1.2.6
-  return split(/\s/, $keys[0]) if $keys[0];
-  return;
+    ## Support redis <= 1.2.6
+    return split(/\s/, $keys[0]) if $keys[0];
+    return;
+  });
 }
 
 
