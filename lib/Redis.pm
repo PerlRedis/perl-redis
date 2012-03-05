@@ -249,28 +249,6 @@ sub __with_reconnect {
 sub __run_cmd {
   my $self    = shift;
   my $command = shift;
-  my $sock    = $self->{sock} || $self->__try_reconnect('Not connected to any server');
-  my $enc     = $self->{encoding};
-  my $deb     = $self->{debug};
-
-  ## PubSub commands use a different answer handling
-  if (my ($pr, $unsub) = $command =~ /^(p)?(un)?subscribe$/i) {
-    $pr = '' unless $pr;
-
-    my $cb = pop;
-    confess("Missing required callback in call to $command(), ")
-      unless ref($cb) eq 'CODE';
-
-    my @subs = @_;
-    @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
-      if $unsub;
-    return unless @subs;
-
-    $self->__send_command($command, @subs);
-
-    my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
-    return $self->__process_subscription_changes($command, \%cbs);
-  }
 
   $self->__send_command($command, @_);
   return $self->__read_response($command);
@@ -371,6 +349,37 @@ sub wait_for_messages {
   return $count;
 }
 
+sub __subscription_cmd {
+  my $self    = shift;
+  my $pr      = shift;
+  my $unsub   = shift;
+  my $command = shift;
+  my $cb      = pop;
+
+  confess("Missing required callback in call to $command(), ")
+    unless ref($cb) eq 'CODE';
+
+  my @subs = @_;
+  $self->__with_reconnect(sub {
+    $self->__try_reconnect('Not connected to any server')
+      unless $self->{sock};
+
+    @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
+      if $unsub;
+    return unless @subs;
+
+    $self->__send_command($command, @subs);
+
+    my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
+    return $self->__process_subscription_changes($command, \%cbs);
+  });
+}
+
+sub    subscribe { shift->__subscription_cmd('',  0,    subscribe => @_) }
+sub   psubscribe { shift->__subscription_cmd('p', 0,   psubscribe => @_) }
+sub  unsubscribe { shift->__subscription_cmd('',  1,  unsubscribe => @_) }
+sub punsubscribe { shift->__subscription_cmd('p', 1, punsubscribe => @_) }
+
 sub __process_unsubscribe_requests {
   my ($self, $cb, $pr, @unsubs) = @_;
   my $subs = $self->{subscribers};
@@ -436,9 +445,8 @@ sub __process_pubsub_msg {
 sub __is_valid_command {
   my ($self, $cmd) = @_;
 
-  return unless $self->{is_subscriber};
-  return if $cmd =~ /^P?(UN)?SUBSCRIBE$/i;
-  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ");
+  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ")
+    if $self->{is_subscriber};
 }
 
 
