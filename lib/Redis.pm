@@ -727,6 +727,7 @@ __END__
 =head2 keys
 
   my @keys = $r->keys( '*glob_pattern*' );
+  my $keys = $r->keys( '*glob_pattern*' ); # count of matching keys
 
 =head2 randomkey
 
