@@ -361,7 +361,7 @@ sub __subscription_cmd {
 
   my @subs = @_;
   $self->__with_reconnect(sub {
-    $self->__try_reconnect('Not connected to any server')
+    $self->__throw_reconnect('Not connected to any server')
       unless $self->{sock};
 
     @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
@@ -490,7 +490,7 @@ sub __send_command {
   my $deb  = $self->{debug};
 
   my $sock = $self->{sock}
-    || $self->__try_reconnect('Not connected to any server');
+    || $self->__throw_reconnect('Not connected to any server');
 
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
@@ -504,14 +504,14 @@ sub __send_command {
 
   ## Check to see if socket was closed: reconnect on EOF
   my $status = __try_read_sock($sock);
-  $self->__try_reconnect('Not connected to any server')
+  $self->__throw_reconnect('Not connected to any server')
     if defined $status && $status == 0;
 
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
-    $self->__try_reconnect("Could not write to Redis server: $!")
+    $self->__throw_reconnect("Could not write to Redis server: $!")
       unless $len;
     substr $buf, 0, $len, "";
   }
@@ -669,7 +669,7 @@ BEGIN {
 ##########################
 # I take exception to that
 
-sub __try_reconnect {
+sub __throw_reconnect {
   my ($self, $m) = @_;
   die bless(\$m, 'Redis::X::Reconnect') if $self->{reconnect};
   die $m;
