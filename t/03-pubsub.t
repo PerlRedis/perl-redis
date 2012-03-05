@@ -116,9 +116,11 @@ is($sub->wait_for_messages(1), 0, '... yep, no messages delivered');
 cmp_deeply(\%got, {}, '... and an empty messages recorded set');
 
 is($sub->is_subscriber, 1, 'Still some pending subcriptions active');
-throws_ok sub { $sub->info },
-  qr/Cannot use command 'INFO' while in SUBSCRIBE mode/,
-  '... still an error to try commands in subscribe mode';
+for my $cmd (qw<ping info keys dbsize shutdown>) {
+  throws_ok sub { $sub->$cmd },
+  qr/Cannot use command '(?i:$cmd)' while in SUBSCRIBE mode/,
+  ".. still an error to try \U$cmd\E while in SUBSCRIBE mode";
+}
 $sub->punsubscribe('c*', $psub_cb);
 is($sub->is_subscriber, 0, '... but none anymore');
 

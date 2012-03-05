@@ -290,6 +290,8 @@ sub quit {
 
 sub shutdown {
   my ($self) = @_;
+  $self->__is_valid_command('SHUTDOWN');
+
   return unless $self->{sock};
 
   $self->__send_command('SHUTDOWN');
@@ -300,6 +302,8 @@ sub shutdown {
 
 sub ping {
   my ($self) = @_;
+  $self->__is_valid_command('PING');
+
   return unless exists $self->{sock};
 
   my $reply;
