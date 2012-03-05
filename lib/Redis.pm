@@ -223,18 +223,26 @@ sub __std_cmd {
 
   $self->__is_valid_command($command);
 
-  ## Fast path, no reconnect
-  return $self->__run_cmd($command, @_) unless $self->{reconnect};
-
   my @cmd_args = @_;
-  return try {
+  return $self->__with_reconnect(sub {
     $self->__run_cmd($command, @cmd_args);
+  });
+}
+
+sub __with_reconnect {
+  my ($self, $cb) = @_;
+
+  ## Fast path, no reconnect
+  return $cb->() unless $self->{reconnect};
+
+  return try {
+    $cb->();
   }
   catch {
     die $_ unless ref($_) eq 'Redis::X::Reconnect';
 
     $self->__connect;
-    $self->__run_cmd($command, @cmd_args);
+    $cb->();
   };
 }
 
