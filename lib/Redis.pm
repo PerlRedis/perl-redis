@@ -535,10 +535,9 @@ sub __read_response {
 }
 
 sub __read_response_r {
-  my ($self, $command, $type_r) = @_;
+  my ($self, $command) = @_;
 
   my ($type, $result) = $self->__read_line;
-  $$type_r = $type if $type_r;
 
   if ($type eq '-') {
     confess "[$command] $result, ";
