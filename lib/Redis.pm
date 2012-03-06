@@ -520,15 +520,15 @@ sub __read_response {
   local $/ = "\r\n";
 
   ## no debug => fast path
-  return __read_response_r(@_) unless $self->{debug};
+  return $self->__read_response_r($cmd) unless $self->{debug};
 
   if (wantarray) {
-    my @r = __read_response_r(@_);
+    my @r = $self->__read_response_r($cmd);
     warn "[RECV] $cmd ", Dumper(\@r);
     return @r;
   }
   else {
-    my $r = __read_response_r(@_);
+    my $r = $self->__read_response_r($cmd);
     warn "[RECV] $cmd ", Dumper($r);
     return $r;
   }
