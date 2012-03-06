@@ -284,17 +284,13 @@ sub ping {
 
   return unless exists $self->{sock};
 
-  my $reply;
-  eval {
-    $self->__send_command('PING');
-    $reply = $self->__read_response('PING');
-  };
-  if ($@) {
+  return scalar try {
+    $self->__run_cmd('PING');
+  }
+  catch {
     close(delete $self->{sock});
     return;
-  }
-
-  return $reply;
+  };
 }
 
 sub info {
@@ -302,9 +298,7 @@ sub info {
   $self->__is_valid_command('INFO');
 
   $self->__with_reconnect(sub {
-    $self->__send_command('INFO');
-
-    my $info = $self->__read_response('INFO');
+    my $info = $self->__run_cmd('INFO');
 
     return {map { split(/:/, $_, 2) } split(/\r\n/, $info)};
   });
@@ -316,14 +310,13 @@ sub keys {
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__send_command('KEYS', @cmd_args);
+    my $keys = $self->__run_cmd('KEYS', @cmd_args);
 
-    my @keys = $self->__read_response('KEYS', \my $type);
     ## Support redis > 1.26
-    return @keys if $type eq '*';
+    return @$keys if ref $keys eq 'ARRAY';
 
     ## Support redis <= 1.2.6
-    return split(/\s/, $keys[0]) if $keys[0];
+    return split(/\s/, $keys) if $keys;
     return;
   });
 }
