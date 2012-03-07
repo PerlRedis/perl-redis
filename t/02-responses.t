@@ -22,67 +22,75 @@ sub r {
 
 ## -ERR responses
 r('-you must die!!');
-throws_ok sub { $r->__read_response('cmd') }, qr/\[cmd\] you must die!!/,
-  'Error response must throw exception';
+is_deeply([$r->__read_response('cmd')], [undef, 'you must die!!'],
+          'Error response detected');
 
 
 ## +TEXT responses
 my $m;
 r('+all your text are belong to us');
-lives_ok sub { $m = $r->__read_response('cmd') }, 'Text response ok';
-is($m, 'all your text are belong to us', '... with the expected message');
+is_deeply([$r->__read_response('cmd')],
+          ['all your text are belong to us', undef],
+          'Text response ok');
 
 
 ## :NUMBER responses
 r(':234');
-lives_ok sub { $m = $r->__read_response('cmd') }, 'Integer response ok';
-is($m, 234, '... with the expected value');
+is_deeply([$r->__read_response('cmd')], [234, undef],
+          'Integer response ok');
 
 
 ## $SIZE PAYLOAD responses
 r('$19', "Redis\r\nis\r\ngreat!\r\n");
-lives_ok sub { $m = $r->__read_response('cmd') }, 'Size+payload response ok';
-is($m, "Redis\r\nis\r\ngreat!\r\n", '... with the expected message');
+is_deeply([$r->__read_response('cmd')], ["Redis\r\nis\r\ngreat!\r\n", undef],
+          'Size+payload response ok');
 
 r('$0', "");
-lives_ok sub { $m = $r->__read_response('cmd') },
-  'Zero-size+payload response ok';
-is($m, "", '... with the expected message');
+is_deeply([$r->__read_response('cmd')], ['', undef],
+          'Zero-size+payload response ok');
 
 r('$-1');
-lives_ok sub { $m = $r->__read_response('cmd') },
-  'Negative-size+payload response ok';
-ok(!defined($m), '... with the expected undefined message');
+is_deeply([$r->__read_response('cmd')], [undef, undef],
+          'Negative-size+payload response ok');
 
 
 ## Multi-bulk responses
 my @m;
 r('*4', '$5', 'Redis', ':42', '$-1', '+Cool stuff');
-lives_ok sub { @m = $r->__read_response('cmd') },
-  'Simple multi-bulk response ok';
-cmp_deeply(
-  \@m,
-  ['Redis', 42, undef, 'Cool stuff'],
-  '... with the expected list of values'
-);
+cmp_deeply([$r->__read_response('cmd')],
+           [['Redis', 42, undef, 'Cool stuff'], undef],
+           'Simple multi-bulk response ok');
 
 
 ## Nested Multi-bulk responses
 r('*5', '$5', 'Redis', ':42', '*4', ':1', ':2', '$4', 'hope', '*2', ':4',
   ':5', '$-1', '+Cool stuff');
-lives_ok sub { @m = $r->__read_response('cmd') },
-  'Nested multi-bulk response ok';
 cmp_deeply(
-  \@m,
-  ['Redis', 42, [1, 2, 'hope', [4, 5]], undef, 'Cool stuff'],
-  '... with the expected list of values'
+  [$r->__read_response('cmd')],
+  [['Redis', 42, [1, 2, 'hope', [4, 5]], undef, 'Cool stuff'], undef],
+  'Nested multi-bulk response ok'
 );
 
 
 ## Nil multi-bulk responses
 r('*-1');
-lives_ok sub { $m = $r->__read_response('blpop') },
-  'Read a NIL multi-bulk response';
-is($m, undef, '... with the expected "undef" value');
+is_deeply([$r->__read_response('cmd')], [undef, undef],
+          'Read a NIL multi-bulk response');
+
+
+## Multi-bulk responses with nested error
+r('*3', '$5', 'Redis', '-you must die!!', ':42');
+throws_ok sub { $r->__read_response('cmd') },
+  qr/\[cmd\] you must die!!/,
+  'Nested errors must usually throw exceptions';
+
+r('*3', '$5', 'Redis', '-you must die!!', ':42');
+is_deeply([$r->__read_response('cmd', 1)], [
+  [['Redis', undef],
+   [undef, 'you must die!!'],
+   [42, undef]],
+  undef,
+], 'Nested errors must be collected in collect-errors mode');
+
 
 done_testing();

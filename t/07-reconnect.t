@@ -42,6 +42,20 @@ subtest 'Command without connection or timeout, with reconnect' => sub {
 };
 
 
+subtest 'Reconnection discards pending commands' => sub {
+  ok(my $r = Redis->new(reconnect => 2, server => $srv),
+     'connected to our test redis-server');
+
+  my $processed_pending = 0;
+  $r->dbsize(sub { $processed_pending++ });
+
+  ok(close(delete $r->{sock}), 'evilly close connection to the server');
+  ok($r->set(foo => 'bar'), 'send command with reconnect');
+
+  is($processed_pending, 0, 'pending command discarded on reconnect');
+};
+
+
 subtest 'INFO commands with extra logic triggers reconnect' => sub {
   ok(my $r = Redis->new(reconnect => 2, server => $srv),
      'connected to our test redis-server');
