@@ -22,6 +22,17 @@ sub pipeline_ok {
     $r->$method(@$args, sub { push @responses, [@_] });
   }
   $r->wait_all_responses;
+
+  # An expected response consisting of a hashref means that any non-empty
+  # hashref should be accepted.  But reimplementing is_deeply() sounds like
+  # a pain, so fake it:
+  for my $i (0 .. $#expected_responses) {
+    $expected_responses[$i] = $responses[$i]
+      if ref $expected_responses[$i][0] eq 'HASH'
+      && ref $responses[$i][0] eq 'HASH'
+      && keys %{ $responses[$i][0] };
+  }
+
   is_deeply(\@responses, \@expected_responses, $desc);
 }
 
@@ -33,6 +44,16 @@ pipeline_ok 'pipeline with embedded error', (
   [set  => [clunk => 'eth'], 'OK'],
   [oops => [], undef, q[ERR unknown command 'OOPS']],
   [get  => ['clunk'], 'eth'],
+);
+
+pipeline_ok 'keys in pipelined mode', (
+  [keys => ['*'], [qw<foo clunk>]],
+  [keys => [], undef, q[ERR wrong number of arguments for 'keys' command]],
+);
+
+pipeline_ok 'info in pipelined mode', (
+  [info => [], {}],             # any non-empty hashref
+  [info => ['oops'], undef, q[ERR wrong number of arguments for 'info' command]],
 );
 
 pipeline_ok 'pipeline with multi-bulk reply', (
