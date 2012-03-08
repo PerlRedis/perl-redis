@@ -267,24 +267,14 @@ sub __run_cmd {
     $ret = $reply;
   };
 
-  $self->__queue_cmd($command, $collect_errors, @args, $wrapper);
+  $self->__send_command($command, @args);
+  push @{ $self->{queue} }, [$command, $wrapper, $collect_errors];
 
   return 1 if $cb;
 
   $self->wait_all_responses;
   return $custom_decode ? $custom_decode->($ret, !wantarray)
        : wantarray && ref $ret eq 'ARRAY' ? @$ret : $ret;
-}
-
-sub __queue_cmd {
-  my $self    = shift;
-  my $command = shift;
-  my $collect = shift;
-  my $cb      = pop;
-
-  $self->__send_command($command, @_);
-  push @{ $self->{queue} }, [$command, $cb, $collect];
-  return;
 }
 
 sub wait_all_responses {
