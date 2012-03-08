@@ -231,6 +231,10 @@ sub __std_cmd {
   # from that command, rather than throwing an exception immediately.
   my $collect_errors = $cb && uc($command) eq 'EXEC';
 
+  ## Fast path, no reconnect;
+  return $self->__run_cmd($command, $collect_errors, undef, $cb, @_)
+    unless $self->{reconnect};
+
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
     $self->__run_cmd($command, $collect_errors, undef, $cb, @cmd_args);
@@ -348,6 +352,10 @@ sub info {
 
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
 
+  ## Fast path, no reconnect
+  return $self->__run_cmd('INFO', 0, $custom_decode, $cb, @_)
+    unless $self->{reconnect};
+
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
     $self->__run_cmd('INFO', 0, $custom_decode, $cb, @cmd_args);
@@ -368,6 +376,10 @@ sub keys {
   };
 
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
+
+  ## Fast path, no reconnect
+  return $self->__run_cmd('KEYS', 0, $custom_decode, $cb, @_)
+    unless $self->{reconnect};
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
