@@ -225,19 +225,19 @@ sub __std_cmd {
 
   my $ret;
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
+
+  # If this is an EXEC command, in pipelined mode, and one of the commands
+  # executed in the transaction yields an error, we must collect all errors
+  # from that command, rather than throwing an exception immediately.
+  my $collect_errors = $cb && uc($command) eq 'EXEC';
+
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__run_cmd($command, @cmd_args, $cb || sub {
+    $self->__queue_cmd($command, $collect_errors, @cmd_args, $cb || sub {
       my ($reply, $error) = @_;
       confess "[$command] $error, " if defined $error;
       $ret = $reply;
     });
-
-    # If this is an EXEC command, in pipelined mode, and one of the commands
-    # executed in the transaction yields an error, we must collect the error
-    # from that command, rather than throwing an exception immediately.
-    $self->{queue}[-1][2] = 1
-      if $cb && uc($command) eq 'EXEC';
   });
 
   return 1 if $cb;
@@ -263,13 +263,14 @@ sub __with_reconnect {
   };
 }
 
-sub __run_cmd {
+sub __queue_cmd {
   my $self    = shift;
   my $command = shift;
+  my $collect = shift;
   my $cb      = pop;
 
   $self->__send_command($command, @_);
-  push @{ $self->{queue} }, [$command, $cb];
+  push @{ $self->{queue} }, [$command, $cb, $collect];
   return;
 }
 
@@ -343,7 +344,7 @@ sub __decode_info {
 }
 
 sub info {
-  my ($self) = @_;
+  my $self = shift;
   $self->__is_valid_command('INFO');
 
   my $info;
@@ -358,8 +359,9 @@ sub info {
     $info = $reply;
   };
 
+  my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__run_cmd('INFO', $real_cb);
+    $self->__queue_cmd('INFO', 0, @cmd_args, $real_cb);
   });
 
   return 1 if $cb;
@@ -392,7 +394,7 @@ sub keys {
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__run_cmd('KEYS', @cmd_args, $real_cb);
+    $self->__queue_cmd('KEYS', 0, @cmd_args, $real_cb);
   });
 
   return 1 if $cb;
