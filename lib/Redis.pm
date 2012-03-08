@@ -233,17 +233,8 @@ sub __std_cmd {
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__queue_cmd($command, $collect_errors, @cmd_args, $cb || sub {
-      my ($reply, $error) = @_;
-      confess "[$command] $error, " if defined $error;
-      $ret = $reply;
-    });
+    $self->__run_cmd($command, $collect_errors, undef, $cb, @cmd_args);
   });
-
-  return 1 if $cb;
-
-  $self->wait_all_responses;
-  return wantarray && ref $ret eq 'ARRAY' ? @$ret : $ret;
 }
 
 sub __with_reconnect {
@@ -261,6 +252,28 @@ sub __with_reconnect {
     $self->__connect;
     $cb->();
   };
+}
+
+sub __run_cmd {
+  my ($self, $command, $collect_errors, $custom_decode, $cb, @args) = @_;
+
+  my $ret;
+  my $wrapper = $cb && $custom_decode ? sub {
+    my ($reply, $error) = @_;
+    $cb->(scalar $custom_decode->($reply), $error);
+  } : $cb || sub {
+    my ($reply, $error) = @_;
+    confess "[$command] $error, " if defined $error;
+    $ret = $reply;
+  };
+
+  $self->__queue_cmd($command, $collect_errors, @args, $wrapper);
+
+  return 1 if $cb;
+
+  $self->wait_all_responses;
+  return $custom_decode ? $custom_decode->($ret, !wantarray)
+       : wantarray && ref $ret eq 'ARRAY' ? @$ret : $ret;
 }
 
 sub __queue_cmd {
@@ -336,71 +349,43 @@ sub ping {
   };
 }
 
-sub __decode_info {
-  my ($self, $raw) = @_;
-  return @$raw if wantarray && ref $raw eq 'ARRAY'; # very unlikely
-  return { map { split(/:/, $_, 2) } split(/\r\n/, $raw) } if defined $raw;
-  return $raw;
-}
-
 sub info {
   my $self = shift;
   $self->__is_valid_command('INFO');
 
-  my $info;
-  my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
-  my $real_cb = $cb ? sub {
-    my ($reply, $error) = @_;
-    my $decoded = $self->__decode_info($reply);
-    $cb->($decoded, $error);
-  } : sub {
-    my ($reply, $error) = @_;
-    confess "[INFO] $error, " if defined $error;
-    $info = $reply;
+  my $custom_decode = sub {
+    my ($reply) = @_;
+    return $reply if !defined $reply || ref $reply;
+    return { map { split(/:/, $_, 2) } split(/\r\n/, $reply) };
   };
+
+  my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__queue_cmd('INFO', 0, @cmd_args, $real_cb);
+    $self->__run_cmd('INFO', 0, $custom_decode, $cb, @cmd_args);
   });
-
-  return 1 if $cb;
-
-  $self->wait_all_responses;
-  return $self->__decode_info($info);
 }
 
 sub keys {
   my $self = shift;
   $self->__is_valid_command('KEYS');
 
-  my $keys;
-  my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
-  my $real_cb = $cb ? sub {
-    my ($reply, $error) = @_;
-
-    ## Support redis > 1.26
-    my $decoded = $reply;
+  my $custom_decode = sub {
+    my ($reply, $synchronous_scalar) = @_;
 
     ## Support redis <= 1.2.6
-    $decoded = [split(/\s/, $reply)] if defined $reply && !ref $reply;
+    $reply = [split(/\s/, $reply)] if defined $reply && !ref $reply;
 
-    $cb->($decoded, $error);
-  } : sub {
-    my ($reply, $error) = @_;
-    confess "[KEYS] $error, " if defined $error;
-    $keys = defined $reply && !ref $reply ? [split(/\s/, $reply)] : $reply;
+    return ref $reply && ($synchronous_scalar || wantarray) ? @$reply : $reply;
   };
+
+  my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
 
   my @cmd_args = @_;
   $self->__with_reconnect(sub {
-    $self->__queue_cmd('KEYS', 0, @cmd_args, $real_cb);
+    $self->__run_cmd('KEYS', 0, $custom_decode, $cb, @cmd_args);
   });
-
-  return 1 if $cb;
-
-  $self->wait_all_responses;
-  return ref $keys eq 'ARRAY' ? @$keys : $keys;
 }
 
 
