@@ -51,6 +51,19 @@ our $VERSION = '1.926';
     $redis->sort('list', 'DESC');
     $redis->sort(qw{list LIMIT 0 5 ALPHA DESC});
     
+    ## Add a coderef argument to run a command in the background
+    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC}, sub {
+      my ($reply, $error) = @_;
+      die "Oops, got an error: $error\n" if defined $error;
+      print "$_\n" for @$reply;
+    });
+    long_computation();
+    $redis->wait_all_responses;
+    
+    ## Or run a large batch of commands in a pipeline
+    $redis->hset('h', $_, $hash{$_}, sub {}) for keys %hash;
+    $redis->wait_all_responses;
+    
     ## Publish/Subscribe
     $redis->subscribe(
       'topic_1',
@@ -743,15 +756,26 @@ sub __throw_reconnect {
 
 __END__
 
+=head1 Pipeline management
+
+=head2 wait_all_responses
+
+Waits until all pending pipelined responses have been received, and invokes
+the pipeline callback for each one.  See L</PIPELINING>.
+
 =head1 Connection Handling
 
 =head2 quit
 
   $r->quit;
 
+The C<quit> method does not support pipelined operation.
+
 =head2 ping
 
   $r->ping || die "no server?";
+
+The C<ping> method does not support pipelined operation.
 
 =head1 Commands operating on string values
 
@@ -799,6 +823,12 @@ __END__
 
   my @keys = $r->keys( '*glob_pattern*' );
   my $keys = $r->keys( '*glob_pattern*' ); # count of matching keys
+
+Note that synchronous C<keys> calls in a scalar context return the number of
+matching keys (not an array ref of matching keys as you might expect).  This
+does not apply in pipelined mode: assuming the server returns a list of
+keys, as expected, it is always passed to the pipeline callback as an array
+ref.
 
 =head2 randomkey
 
@@ -961,11 +991,84 @@ See also L<Redis::List> for tie interface.
 
   $r->shutdown;
 
+The C<shutdown> method does not support pipelined operation.
+
 =head1 Remote server control commands
 
 =head2 info
 
   my $info_hash = $r->info;
+
+The C<info> method is unique in that it decodes the server's response into a
+hashref, if possible.  This decoding happens in both synchronous and
+pipelined modes.
+
+=head1 Transaction-handling commands
+
+=head2 multi
+
+  $r->multi;
+
+=head2 discard
+
+  $r->discard;
+
+=head2 exec
+
+  my @individual_replies = $r->exec;
+
+C<exec> has special behaviour when run in a pipeline: the C<$reply> argument
+to the pipeline callback is an array ref whose elements are themselves
+C<[$reply, $error]> pairs.  This means that you can accurately detect errors
+yielded by any command in the transaction, and without any exceptions being
+thrown.
+
+
+=head1 PIPELINING
+
+Usually, running a command will wait for a response.  However, if you're
+doing large numbers of requests, it can be more efficient to use what Redis
+calls I<pipelining>: send multiple commands to Redis without waiting for a
+response, then wait for the responses that come in.
+
+To use pipelining, add a coderef argument as the last argument to a command
+method call:
+
+  $r->set('foo', 'bar', sub {});
+
+Pending responses to pipelined commands are processed in a single batch, as
+soon as at least one of the following conditions holds:
+
+=over 4
+
+=item *
+
+A non-pipelined (synchronous) command has been sent on the same connection
+
+=item *
+
+A pub/sub subscription command (one of C<subscribe>, C<unsubscribe>,
+C<psubscribe>, or C<punsubscribe>) is about to be sent on the same
+connection.
+
+=item *
+
+The L</wait_all_responses> method is called explicitly.
+
+=back
+
+The coderef you supply to a pipelined command method is invoked once the
+response is available.  It takes two arguments, C<$reply> and C<$error>.  If
+C<$error> is defined, it contains the text of an error reply sent by the
+Redis server.  Otherwise, C<$reply> is the non-error reply.  For almost all
+commands, that means it's C<undef>, or a defined but non-reference scalar,
+or an array ref of any of those; but see L</keys>, L</info>, and L</exec>.
+
+Note the contrast with synchronous commands, which throw an exception on
+receipt of an error reply, or return a non-error reply directly.
+
+The fact that pipelined commands never throw an exception can be
+particularly useful for Redis transactions; see L</exec>.
 
 
 =head1 ENCODING
