@@ -243,15 +243,12 @@ sub __with_reconnect {
   ## Fast path, no reconnect
   return $cb->() unless $self->{reconnect};
 
-  return try {
-    $cb->();
-  }
-  catch {
+  return &try($cb, catch {
     die $_ unless ref($_) eq 'Redis::X::Reconnect';
 
     $self->__connect;
     $cb->();
-  };
+  });
 }
 
 sub __run_cmd {
