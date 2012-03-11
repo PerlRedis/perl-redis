@@ -41,6 +41,7 @@ our $VERSION = '1.926';
     my $redis = Redis->new(reconnect => 2, every => 100);
     
     ## Disable the automatic utf8 encoding => much more performance
+    ## !!!! This will be the default after 2.000, see ENCODING below
     my $redis = Redis->new(encoding => undef);
     
     ## Use all the regular Redis commands, they all accept a list of
@@ -1072,6 +1073,10 @@ particularly useful for Redis transactions; see L</exec>.
 
 
 =head1 ENCODING
+
+B<This feature is deprecated and will be removed before 2.000>. You
+should start testing your code with C<< encoding => undef >> because
+that will be the new default with 2.000.
 
 Since Redis knows nothing about encoding, we are forcing utf-8 flag on
 all data received from Redis. This change is introduced in 1.2001
