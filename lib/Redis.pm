@@ -1150,6 +1150,8 @@ The following persons contributed to this project (alphabetical order):
 
 =over 4
 
+=item Aaron Crane (pipelining and AUTOLOAD caching support)
+
 =item Dirk Vleugels
 
 =item Flavio Poletti
