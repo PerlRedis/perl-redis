@@ -17,7 +17,6 @@ sub redis {
   $fh->print("
     timeout 1
     appendonly no
-    vm-enabled no
     daemonize no
     port $port
     bind 127.0.0.1
