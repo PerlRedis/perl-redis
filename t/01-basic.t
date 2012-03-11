@@ -92,6 +92,10 @@ ok($@, 'rename to existing key');
 
 ok(my $nr_keys = $o->dbsize, 'dbsize');
 
+throws_ok sub { $o->lpush('foo', 'bar') },
+  qr/\[lpush\] ERR Operation against a key holding the wrong kind of value,/,
+  'Error responses throw exception';
+
 
 ## Commands operating on lists
 
