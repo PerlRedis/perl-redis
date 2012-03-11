@@ -1,5 +1,16 @@
 Revision history for Redis
 
+1.950
+    * DEPRECATED: the encoding attribute to new() - we will not support
+      automatic decoding after 2.000, so please test your code with
+      encoding => undef now.
+    * Add pipeline support: Aaron Crane arc@github++!
+    * Cache AUTOLOAD calls: improves performance a bit, fixes #2
+    * Fix: apply reconnect logic to KEYS and INFO
+    * Fix: forbid PING and SHUTDOWN in SUBSCRIBE mode
+    * Updated docs covering pipelining and multi/exec
+    * Updated docs to point users to Github for code and issues
+
 1.926 Wed Jan 11 15:48:11 UTC 2012
     * Fix auto-reconnect when the server is dead or a
       client timeout.
