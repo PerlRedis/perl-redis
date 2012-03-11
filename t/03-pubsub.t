@@ -25,10 +25,15 @@ ok(
 
 is($pub->publish('aa', 'v1'), 0, "No subscribers to 'aa' topic");
 
+my $db_size = -1;
+$sub->dbsize(sub { $db_size = $_[0] });
+
 ## Basic pubsub
 my $sub_cb = sub { my ($v, $t, $s) = @_; $got{$s} = "$v:$t" };
 $sub->subscribe('aa', 'bb', $sub_cb);
 is($pub->publish('aa', 'v1'), 1, "Delivered to 1 subscriber of topic 'aa'");
+
+is($db_size, 0, 'subscribing processes pending queued commands');
 
 is($sub->wait_for_messages(1), 1, '... yep, got the expected 1 message');
 cmp_deeply(\%got, {'aa' => 'v1:aa'}, "... for the expected topic, 'aa'");
@@ -116,9 +121,11 @@ is($sub->wait_for_messages(1), 0, '... yep, no messages delivered');
 cmp_deeply(\%got, {}, '... and an empty messages recorded set');
 
 is($sub->is_subscriber, 1, 'Still some pending subcriptions active');
-throws_ok sub { $sub->info },
-  qr/Cannot use command 'INFO' while in SUBSCRIBE mode/,
-  '... still an error to try commands in subscribe mode';
+for my $cmd (qw<ping info keys dbsize shutdown>) {
+  throws_ok sub { $sub->$cmd },
+  qr/Cannot use command '(?i:$cmd)' while in SUBSCRIBE mode/,
+  ".. still an error to try \U$cmd\E while in SUBSCRIBE mode";
+}
 $sub->punsubscribe('c*', $psub_cb);
 is($sub->is_subscriber, 0, '... but none anymore');
 
