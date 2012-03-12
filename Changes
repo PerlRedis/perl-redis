@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.950     2012-03-12T13:54:10Z
     * DEPRECATED: the encoding attribute to new() - we will not support
       automatic decoding after 2.000, so please test your code with
       encoding => undef now.
