@@ -655,6 +655,7 @@ __END__
     $redis->wait_all_responses;
 
     ## Or run a large batch of commands in a pipeline
+    my %hash = _get_large_batch_of_commands();
     $redis->hset('h', $_, $hash{$_}, sub {}) for keys %hash;
     $redis->wait_all_responses;
 
@@ -673,9 +674,11 @@ __END__
 
     ## Blocks and waits for messages, calls subscribe() callbacks
     ##  ... forever
+    my $timeout = 10;
     $redis->wait_for_messages($timeout) while 1;
 
     ##  ... until some condition
+    my $keep_going = 1; ## other code will set to false to quit
     $redis->wait_for_messages($timeout) while $keep_going;
 
     $redis->publish('topic_1', 'message');
