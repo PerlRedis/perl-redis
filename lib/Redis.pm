@@ -14,152 +14,8 @@ use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
-=head1 NAME
-
-Redis - perl binding for Redis database
-
-=cut
 
 our $VERSION = '1.950';
-
-=head1 SYNOPSIS
-
-    ## Defaults to $ENV{REDIS_SERVER} or 127.0.0.1:6379
-    my $redis = Redis->new;
-    
-    my $redis = Redis->new(server => 'redis.example.com:8080');
-    
-    ## Use UNIX domain socket
-    my $redis = Redis->new(sock => '/path/to/socket');
-    
-    ## Enable auto-reconnect
-    ## Try to reconnect every 500ms up to 60 seconds until success
-    ## Die if you can't after that
-    my $redis = Redis->new(reconnect => 60);
-    
-    ## Try each 100ms upto 2 seconds (every is in milisecs)
-    my $redis = Redis->new(reconnect => 2, every => 100);
-    
-    ## Disable the automatic utf8 encoding => much more performance
-    ## !!!! This will be the default after 2.000, see ENCODING below
-    my $redis = Redis->new(encoding => undef);
-    
-    ## Use all the regular Redis commands, they all accept a list of
-    ## arguments
-    ## See http://redis.io/commands for full list
-    $redis->get('key');
-    $redis->set('key' => 'value');
-    $redis->sort('list', 'DESC');
-    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC});
-    
-    ## Add a coderef argument to run a command in the background
-    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC}, sub {
-      my ($reply, $error) = @_;
-      die "Oops, got an error: $error\n" if defined $error;
-      print "$_\n" for @$reply;
-    });
-    long_computation();
-    $redis->wait_all_responses;
-    
-    ## Or run a large batch of commands in a pipeline
-    $redis->hset('h', $_, $hash{$_}, sub {}) for keys %hash;
-    $redis->wait_all_responses;
-    
-    ## Publish/Subscribe
-    $redis->subscribe(
-      'topic_1',
-      'topic_2',
-      sub {
-        my ($message, $topic, $subscribed_topic) = @_
-    
-          ## $subscribed_topic can be different from topic if
-          ## you use psubscribe() with wildcards
-      }
-    );
-    $redis->psubscribe('nasdaq.*', sub {...});
-    
-    ## Blocks and waits for messages, calls subscribe() callbacks
-    ##  ... forever
-    $redis->wait_for_messages($timeout) while 1;
-    
-    ##  ... until some condition
-    $redis->wait_for_messages($timeout) while $keep_going;
-    
-    $redis->publish('topic_1', 'message');
-
-
-=head1 DESCRIPTION
-
-Pure perl bindings for L<http://redis.io/>
-
-This version supports protocol 2.x (multi-bulk) or later of Redis
-available at L<https://github.com/antirez/redis/>.
-
-This documentation lists commands which are exercised in test suite, but
-additional commands will work correctly since protocol specifies enough
-information to support almost all commands with same piece of code with
-a little help of C<AUTOLOAD>.
-
-
-=head1 METHODS
-
-=head2 new
-
-    my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
-
-    my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
-    my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
-    my $r = Redis->new( sock => '/path/to/sock' );
-    my $r = Redis->new( reconnect => 60, every => 5000 );
-
-The C<< server >> parameter specifies the Redis server we should connect
-to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
-present, we will attempt to use the C<< REDIS_SERVER >> environment
-variable. If neither of those options are present, it defaults to
-'127.0.0.1:6379'.
-
-Alternatively you can use the C<< sock >> parameter to specify the path
-of the UNIX domain socket where the Redis server is listening.
-
-The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following formats are supported:
-
-=over 4
-
-=item /path/to/sock
-
-=item unix:/path/to/sock
-
-=item 127.0.0.1:11011
-
-=item tcp:127.0.0.1:11011
-
-=back
-
-The C<< encoding >> parameter speficies the encoding we will use to
-decode all the data we receive and encode all the data sent to the redis
-server. Due to backwards-compatibility we default to C<< utf8 >>. To
-disable all this encoding/decoding, you must use C<<encoding => undef>>.
-B<< This is the recommended option >>.
-
-B<< Warning >>: this option has several problems and it is
-B<deprecated>. A future version will add a safer option.
-
-The C<< reconnect >> option enables auto-reconnection mode. If we cannot
-connect to the Redis server, or if a network write fails, we enter retry
-mode. We will try a new connection every C<< every >> miliseconds
-(1000ms by default), up-to C<< reconnect >> seconds.
-
-Be aware that read errors will always thrown an exception, and will not
-trigger a retry until the new command is sent.
-
-If we cannot re-establish a connection after C<< reconnect >> seconds,
-an exception will be thrown.
-
-The C<< debug >> parameter enables debug information to STDERR,
-including all interactions with the server. You can also enable debug
-with the C<REDIS_DEBUG> environment variable.
-
-=cut
 
 sub new {
   my $class = shift;
@@ -753,276 +609,87 @@ sub __throw_reconnect {
 }
 
 
-1;
+1; # End of Redis.pm
 
 __END__
 
-=head1 Pipeline management
-
-=head2 wait_all_responses
-
-Waits until all pending pipelined responses have been received, and invokes
-the pipeline callback for each one.  See L</PIPELINING>.
-
-=head1 Connection Handling
-
-=head2 quit
-
-  $r->quit;
-
-The C<quit> method does not support pipelined operation.
-
-=head2 ping
-
-  $r->ping || die "no server?";
-
-The C<ping> method does not support pipelined operation.
-
-=head1 Commands operating on string values
-
-=head2 set
-
-  $r->set( foo => 'bar' );
-
-  $r->setnx( foo => 42 );
-
-=head2 get
-
-  my $value = $r->get( 'foo' );
-
-=head2 mget
-
-  my @values = $r->mget( 'foo', 'bar', 'baz' );
-
-=head2 incr
-
-  $r->incr('counter');
-
-  $r->incrby('tripplets', 3);
-
-=head2 decr
-
-  $r->decr('counter');
-
-  $r->decrby('tripplets', 3);
-
-=head2 exists
-
-  $r->exists( 'key' ) && print "got key!";
-
-=head2 del
-
-  $r->del( 'key' ) || warn "key doesn't exist";
-
-=head2 type
-
-  $r->type( 'key' ); # = string
-
-=head1 Commands operating on the key space
-
-=head2 keys
-
-  my @keys = $r->keys( '*glob_pattern*' );
-  my $keys = $r->keys( '*glob_pattern*' ); # count of matching keys
-
-Note that synchronous C<keys> calls in a scalar context return the number of
-matching keys (not an array ref of matching keys as you might expect).  This
-does not apply in pipelined mode: assuming the server returns a list of
-keys, as expected, it is always passed to the pipeline callback as an array
-ref.
-
-=head2 randomkey
-
-  my $key = $r->randomkey;
-
-=head2 rename
-
-  my $ok = $r->rename( 'old-key', 'new-key', $new );
-
-=head2 dbsize
-
-  my $nr_keys = $r->dbsize;
-
-=head1 Commands operating on lists
-
-See also L<Redis::List> for tie interface.
-
-=head2 rpush
-
-  $r->rpush( $key, $value );
-
-=head2 lpush
-
-  $r->lpush( $key, $value );
-
-=head2 llen
-
-  $r->llen( $key );
-
-=head2 lrange
-
-  my @list = $r->lrange( $key, $start, $end );
-
-=head2 ltrim
-
-  my $ok = $r->ltrim( $key, $start, $end );
-
-=head2 lindex
-
-  $r->lindex( $key, $index );
-
-=head2 lset
-
-  $r->lset( $key, $index, $value );
-
-=head2 lrem
-
-  my $modified_count = $r->lrem( $key, $count, $value );
-
-=head2 lpop
-
-  my $value = $r->lpop( $key );
-
-=head2 rpop
-
-  my $value = $r->rpop( $key );
-
-=head1 Commands operating on sets
-
-=head2 sadd
-
-  my $ok = $r->sadd( $key, $member );
-
-=head2 scard
-
-  my $n_elements = $r->scard( $key );
-
-=head2 sdiff
-
-  my @elements = $r->sdiff( $key1, $key2, ... );
-  my $elements = $r->sdiff( $key1, $key2, ... ); # ARRAY ref
-
-=head2 sdiffstore
-
-  my $ok = $r->sdiffstore( $dstkey, $key1, $key2, ... );
-
-=head2 sinter
-
-  my @elements = $r->sinter( $key1, $key2, ... );
-  my $elements = $r->sinter( $key1, $key2, ... ); # ARRAY ref
-
-=head2 sinterstore
-
-  my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
-
-=head2 sismember
-
-  my $bool = $r->sismember( $key, $member );
-
-=head2 smembers
-
-  my @elements = $r->smembers( $key );
-  my $elements = $r->smembers( $key ); # ARRAY ref
-
-=head2 smove
-
-  my $ok = $r->smove( $srckey, $dstkey, $element );
-
-=head2 spop
-
-  my $element = $r->spop( $key );
-
-=head2 spop
-
-  my $element = $r->srandmember( $key );
-
-=head2 srem
-
-  $r->srem( $key, $member );
-
-=head2 sunion
-
-  my @elements = $r->sunion( $key1, $key2, ... );
-  my $elements = $r->sunion( $key1, $key2, ... ); # ARRAY ref
-
-=head2 sunionstore
-
-  my $ok = $r->sunionstore( $dstkey, $key1, $key2, ... );
-
-
-=head1 Multiple databases handling commands
-
-=head2 select
-
-  $r->select( $dbindex ); # 0 for new clients
-
-=head2 move
-
-  $r->move( $key, $dbindex );
-
-=head2 flushdb
-
-  $r->flushdb;
-
-=head2 flushall
-
-  $r->flushall;
-
-=head1 Sorting
-
-=head2 sort
-
-  $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
-
-=head1 Persistence control commands
-
-=head2 save
-
-  $r->save;
-
-=head2 bgsave
-
-  $r->bgsave;
-
-=head2 lastsave
-
-  $r->lastsave;
-
-=head2 shutdown
-
-  $r->shutdown;
-
-The C<shutdown> method does not support pipelined operation.
-
-=head1 Remote server control commands
-
-=head2 info
-
-  my $info_hash = $r->info;
-
-The C<info> method is unique in that it decodes the server's response into a
-hashref, if possible.  This decoding happens in both synchronous and
-pipelined modes.
-
-=head1 Transaction-handling commands
-
-=head2 multi
-
-  $r->multi;
-
-=head2 discard
-
-  $r->discard;
-
-=head2 exec
-
-  my @individual_replies = $r->exec;
-
-C<exec> has special behaviour when run in a pipeline: the C<$reply> argument
-to the pipeline callback is an array ref whose elements are themselves
-C<[$reply, $error]> pairs.  This means that you can accurately detect errors
-yielded by any command in the transaction, and without any exceptions being
-thrown.
+=head1 SYNOPSIS
+
+    ## Defaults to $ENV{REDIS_SERVER} or 127.0.0.1:6379
+    my $redis = Redis->new;
+
+    my $redis = Redis->new(server => 'redis.example.com:8080');
+
+    ## Use UNIX domain socket
+    my $redis = Redis->new(sock => '/path/to/socket');
+
+    ## Enable auto-reconnect
+    ## Try to reconnect every 500ms up to 60 seconds until success
+    ## Die if you can't after that
+    my $redis = Redis->new(reconnect => 60);
+
+    ## Try each 100ms upto 2 seconds (every is in milisecs)
+    my $redis = Redis->new(reconnect => 2, every => 100);
+
+    ## Disable the automatic utf8 encoding => much more performance
+    ## !!!! This will be the default after 2.000, see ENCODING below
+    my $redis = Redis->new(encoding => undef);
+
+    ## Use all the regular Redis commands, they all accept a list of
+    ## arguments
+    ## See http://redis.io/commands for full list
+    $redis->get('key');
+    $redis->set('key' => 'value');
+    $redis->sort('list', 'DESC');
+    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC});
+
+    ## Add a coderef argument to run a command in the background
+    $redis->sort(qw{list LIMIT 0 5 ALPHA DESC}, sub {
+      my ($reply, $error) = @_;
+      die "Oops, got an error: $error\n" if defined $error;
+      print "$_\n" for @$reply;
+    });
+    long_computation();
+    $redis->wait_all_responses;
+
+    ## Or run a large batch of commands in a pipeline
+    $redis->hset('h', $_, $hash{$_}, sub {}) for keys %hash;
+    $redis->wait_all_responses;
+
+    ## Publish/Subscribe
+    $redis->subscribe(
+      'topic_1',
+      'topic_2',
+      sub {
+        my ($message, $topic, $subscribed_topic) = @_
+
+          ## $subscribed_topic can be different from topic if
+          ## you use psubscribe() with wildcards
+      }
+    );
+    $redis->psubscribe('nasdaq.*', sub {...});
+
+    ## Blocks and waits for messages, calls subscribe() callbacks
+    ##  ... forever
+    $redis->wait_for_messages($timeout) while 1;
+
+    ##  ... until some condition
+    $redis->wait_for_messages($timeout) while $keep_going;
+
+    $redis->publish('topic_1', 'message');
+
+
+=head1 DESCRIPTION
+
+Pure perl bindings for L<http://redis.io/>
+
+This version supports protocol 2.x (multi-bulk) or later of Redis
+available at L<https://github.com/antirez/redis/>.
+
+This documentation lists commands which are exercised in test suite, but
+additional commands will work correctly since protocol specifies enough
+information to support almost all commands with same piece of code with
+a little help of C<AUTOLOAD>.
 
 
 =head1 PIPELINING
@@ -1079,16 +746,363 @@ should start testing your code with C<< encoding => undef >> because
 that will be the new default with 2.000.
 
 Since Redis knows nothing about encoding, we are forcing utf-8 flag on
-all data received from Redis. This change is introduced in 1.2001
+all data received from Redis. This change was introduced in 1.2001
 version. B<Please note> that this encoding option severely degrades
-performance
+performance.
 
 You can disable this automatic encoding by passing an option to
-new: C<< encoding => undef >>.
+L</new>: C<< encoding => undef >>.
 
 This allows us to round-trip utf-8 encoded characters correctly, but
 might be problem if you push binary junk into Redis and expect to get it
 back without utf-8 flag turned on.
+
+
+=head1 METHODS
+
+=head2 Constructors
+
+=head3 new
+
+    my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
+
+    my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
+    my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( sock => '/path/to/sock' );
+    my $r = Redis->new( reconnect => 60, every => 5000 );
+
+The C<< server >> parameter specifies the Redis server we should connect
+to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
+present, we will attempt to use the C<< REDIS_SERVER >> environment
+variable. If neither of those options are present, it defaults to
+'127.0.0.1:6379'.
+
+Alternatively you can use the C<< sock >> parameter to specify the path
+of the UNIX domain socket where the Redis server is listening.
+
+The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following formats are supported:
+
+=over 4
+
+=item *
+
+/path/to/sock
+
+=item *
+
+unix:/path/to/sock
+
+=item *
+
+127.0.0.1:11011
+
+=item *
+
+tcp:127.0.0.1:11011
+
+=back
+
+The C<< encoding >> parameter speficies the encoding we will use to
+decode all the data we receive and encode all the data sent to the redis
+server. Due to backwards-compatibility we default to C<< utf8 >>. To
+disable all this encoding/decoding, you must use C<<encoding => undef>>.
+B<< This is the recommended option >>.
+
+B<< Warning >>: this option has several problems and it is
+B<deprecated>. A future version might add other filtering options though.
+
+The C<< reconnect >> option enables auto-reconnection mode. If we cannot
+connect to the Redis server, or if a network write fails, we enter retry
+mode. We will try a new connection every C<< every >> miliseconds
+(1000ms by default), up-to C<< reconnect >> seconds.
+
+Be aware that read errors will always thrown an exception, and will not
+trigger a retry until the new command is sent.
+
+If we cannot re-establish a connection after C<< reconnect >> seconds,
+an exception will be thrown.
+
+The C<< debug >> parameter enables debug information to STDERR,
+including all interactions with the server. You can also enable debug
+with the C<REDIS_DEBUG> environment variable.
+
+
+=head2 Connection Handling
+
+=head3 quit
+
+  $r->quit;
+
+Closes the connection to the server. The C<quit> method does not support
+pipelined operation.
+
+=head3 ping
+
+  $r->ping || die "no server?";
+
+The C<ping> method does not support pipelined operation.
+
+
+=head2 Pipeline management
+
+=head3 wait_all_responses
+
+Waits until all pending pipelined responses have been received, and invokes
+the pipeline callback for each one.  See L</PIPELINING>.
+
+
+=head2 Transaction-handling commands
+
+=head3 multi
+
+  $r->multi;
+
+=head3 discard
+
+  $r->discard;
+
+=head3 exec
+
+  my @individual_replies = $r->exec;
+
+C<exec> has special behaviour when run in a pipeline: the C<$reply> argument
+to the pipeline callback is an array ref whose elements are themselves
+C<[$reply, $error]> pairs.  This means that you can accurately detect errors
+yielded by any command in the transaction, and without any exceptions being
+thrown.
+
+
+=head2 Commands operating on string values
+
+=head3 set
+
+  $r->set( foo => 'bar' );
+
+  $r->setnx( foo => 42 );
+
+=head3 get
+
+  my $value = $r->get( 'foo' );
+
+=head3 mget
+
+  my @values = $r->mget( 'foo', 'bar', 'baz' );
+
+=head3 incr
+
+  $r->incr('counter');
+
+  $r->incrby('tripplets', 3);
+
+=head3 decr
+
+  $r->decr('counter');
+
+  $r->decrby('tripplets', 3);
+
+=head3 exists
+
+  $r->exists( 'key' ) && print "got key!";
+
+=head3 del
+
+  $r->del( 'key' ) || warn "key doesn't exist";
+
+=head3 type
+
+  $r->type( 'key' ); # = string
+
+
+=head2 Commands operating on the key space
+
+=head3 keys
+
+  my @keys = $r->keys( '*glob_pattern*' );
+  my $keys = $r->keys( '*glob_pattern*' ); # count of matching keys
+
+Note that synchronous C<keys> calls in a scalar context return the number of
+matching keys (not an array ref of matching keys as you might expect).  This
+does not apply in pipelined mode: assuming the server returns a list of
+keys, as expected, it is always passed to the pipeline callback as an array
+ref.
+
+=head3 randomkey
+
+  my $key = $r->randomkey;
+
+=head3 rename
+
+  my $ok = $r->rename( 'old-key', 'new-key', $new );
+
+=head3 dbsize
+
+  my $nr_keys = $r->dbsize;
+
+
+=head2 Commands operating on lists
+
+See also L<Redis::List> for tie interface.
+
+=head3 rpush
+
+  $r->rpush( $key, $value );
+
+=head3 lpush
+
+  $r->lpush( $key, $value );
+
+=head3 llen
+
+  $r->llen( $key );
+
+=head3 lrange
+
+  my @list = $r->lrange( $key, $start, $end );
+
+=head3 ltrim
+
+  my $ok = $r->ltrim( $key, $start, $end );
+
+=head3 lindex
+
+  $r->lindex( $key, $index );
+
+=head3 lset
+
+  $r->lset( $key, $index, $value );
+
+=head3 lrem
+
+  my $modified_count = $r->lrem( $key, $count, $value );
+
+=head3 lpop
+
+  my $value = $r->lpop( $key );
+
+=head3 rpop
+
+  my $value = $r->rpop( $key );
+
+
+=head2 Commands operating on sets
+
+=head3 sadd
+
+  my $ok = $r->sadd( $key, $member );
+
+=head3 scard
+
+  my $n_elements = $r->scard( $key );
+
+=head3 sdiff
+
+  my @elements = $r->sdiff( $key1, $key2, ... );
+  my $elements = $r->sdiff( $key1, $key2, ... ); # ARRAY ref
+
+=head3 sdiffstore
+
+  my $ok = $r->sdiffstore( $dstkey, $key1, $key2, ... );
+
+=head3 sinter
+
+  my @elements = $r->sinter( $key1, $key2, ... );
+  my $elements = $r->sinter( $key1, $key2, ... ); # ARRAY ref
+
+=head3 sinterstore
+
+  my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
+
+=head3 sismember
+
+  my $bool = $r->sismember( $key, $member );
+
+=head3 smembers
+
+  my @elements = $r->smembers( $key );
+  my $elements = $r->smembers( $key ); # ARRAY ref
+
+=head3 smove
+
+  my $ok = $r->smove( $srckey, $dstkey, $element );
+
+=head3 spop
+
+  my $element = $r->spop( $key );
+
+=head3 spop
+
+  my $element = $r->srandmember( $key );
+
+=head3 srem
+
+  $r->srem( $key, $member );
+
+=head3 sunion
+
+  my @elements = $r->sunion( $key1, $key2, ... );
+  my $elements = $r->sunion( $key1, $key2, ... ); # ARRAY ref
+
+=head3 sunionstore
+
+  my $ok = $r->sunionstore( $dstkey, $key1, $key2, ... );
+
+
+=head2 Sorting
+
+=head3 sort
+
+  $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
+
+
+=head2 Persistence control commands
+
+=head3 save
+
+  $r->save;
+
+=head3 bgsave
+
+  $r->bgsave;
+
+=head3 lastsave
+
+  $r->lastsave;
+
+
+=head2 Remote server control commands
+
+=head3 info
+
+  my $info_hash = $r->info;
+
+The C<info> method is unique in that it decodes the server's response into a
+hashref, if possible.  This decoding happens in both synchronous and
+pipelined modes.
+
+=head3 shutdown
+
+  $r->shutdown;
+
+The C<shutdown> method does not support pipelined operation.
+
+
+=head2 Multiple databases handling commands
+
+=head3 select
+
+  $r->select( $dbindex ); # 0 for new clients
+
+=head3 move
+
+  $r->move( $key, $dbindex );
+
+=head3 flushdb
+
+  $r->flushdb;
+
+=head3 flushall
+
+  $r->flushall;
 
 
 =head1 AUTHORS
@@ -1150,33 +1164,34 @@ The following persons contributed to this project (alphabetical order):
 
 =over 4
 
-=item Aaron Crane (pipelining and AUTOLOAD caching support)
+=item *
 
-=item Dirk Vleugels
+Aaron Crane (pipelining and AUTOLOAD caching support)
 
-=item Flavio Poletti
+=item *
 
-=item Jeremy Zawodny
+Dirk Vleugels
 
-=item sunnavy at bestpractical.com
+=item *
 
-=item Thiago Berlitz Rondon
+Flavio Poletti
 
-=item Ulrich Habel
+=item *
+
+Jeremy Zawodny
+
+=item *
+
+sunnavy at bestpractical.com
+
+=item *
+
+Thiago Berlitz Rondon
+
+=item *
+
+Ulrich Habel
 
 =back
 
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009-2010 Dobrica Pavlinusic, all rights reserved.
-
-Copyright 2011-2012 Pedro Melo, all rights reserved
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-
 =cut
-
-1; # End of Redis
