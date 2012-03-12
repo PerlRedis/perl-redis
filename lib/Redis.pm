@@ -858,6 +858,12 @@ the pipeline callback for each one.  See L</PIPELINING>.
 
 =head2 Transaction-handling commands
 
+B<Warning:> the behaviour of these commands when combined with
+pipelining is still under discussion, and you should B<NOT> use them at
+the same time just now.
+
+You can L<follow the discussion to see the open issues with this|https://github.com/melo/perl-redis/issues/17>.
+
 =head3 multi
 
   $r->multi;
