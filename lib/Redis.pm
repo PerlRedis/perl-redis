@@ -1065,6 +1065,109 @@ See also L<Redis::List> for tie interface.
   $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
 
 
+=head2 Publish/Subscribe commands
+
+When one of L</subscribe> or L</psubscribe> is used, the Redis object
+will enter I<PubSub> mode. When in I<PubSub> mode only commands in this
+section, plus L</quit>, will be accepted.
+
+If you plan on using PubSub and other Redis functions, you should
+use two Redis objects, one dedicated to PubSub and the other for
+regular commands.
+
+All Pub/Sub commands receive a callback as the last parameter. This callback receives three arguments:
+
+=over 4
+
+=item *
+
+The published message.
+
+=item *
+
+The topic over which the message was sent.
+
+=item *
+
+The subscribed topic that matched the topic for the message. With
+L</subscribe> these last two are the same, always. But with
+L</psubscribe>, this parameter tells you the pattern that matched.
+
+=back
+
+See the L<Pub/Sub notes|http://redis.io/topics/pubsub> for more
+information about the messages you will receive on your callbacks after
+each L</subscribe>, L</unsubscribe>, L</psubscribe> and
+L</punsubscribe>.
+
+=head3 publish
+
+  $r->publish($topic, $message);
+
+Publishes the C<< $message >> to the C<< $topic >>.
+
+=head3 subscribe
+
+  $r->subscribe(
+      @topics_to_subscribe_to,
+      sub {
+        my ($message, $topic, $subscribed_topic) = @_;
+        ...
+      },
+  );
+
+Subscribe one or more topics. Messages published into one of them will
+be received by Redis, and the specificed callback will be executed.
+
+=head3 unsubscribe
+
+  $r->unsubscribe(@topic_list, sub { my ($m, $t, $s) = @_; ... });
+
+Stops receiving messages for all the topics in C<@topic_list>.
+
+=head3 psubscribe
+
+  my @topic_matches = ('prefix1.*', 'prefix2.*');
+  $r->psubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
+
+Subscribes a pattern of topics. All messages to topics that match the
+pattern will be delivered to the callback.
+
+=head3 punsubscribe
+
+  my @topic_matches = ('prefix1.*', 'prefix2.*');
+  $r->punsubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
+
+Stops receiving messages for all the topics pattern matches in C<@topic_list>.
+
+=head3 is_subscriber
+
+  if ($r->is_subscriber) { say "We are in Pub/Sub mode!" }
+
+Returns true if we are in I<Pub/Sub> mode.
+
+=head3 wait_for_messages
+
+  my $keep_going = 1; ## Set to false somewhere to leave the loop
+  my $timeout = 5;
+  $r->wait_for_messages($timeout) while $keep_going;
+
+Blocks, waits for incoming messages and delivers them to the appropriate callbacks.
+
+Requires a single parameter, the number of seconds to wait for messages.
+Use 0 to wait for ever. If a positive non-zero value is used, it will
+return after that ammount of seconds without a single notification.
+
+Please note that the timeout is not a commitement to return control to
+the caller at most each C<timeout> seconds, but more a idle timeout,
+were control will return to the caller if Redis is idle (as in no
+messages were received during the timeout period) for more than
+C<timeout> seconds.
+
+The L</wait_for_messages> call returns the number of messages processed
+during the run.
+
+
 =head2 Persistence control commands
 
 =head3 save
