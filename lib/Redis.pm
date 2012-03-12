@@ -96,7 +96,6 @@ sub __std_cmd {
 
   $self->__is_valid_command($command);
 
-  my $ret;
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
 
   # If this is an EXEC command, in pipelined mode, and one of the commands
