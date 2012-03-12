@@ -43,6 +43,8 @@ sub new {
     }
   }
 
+  $self->{password} = $args{password} if $args{password};
+
   if ($args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
@@ -419,6 +421,10 @@ sub __build_sock {
 
   $self->{sock} = $self->{builder}->($self)
     || confess("Could not connect to Redis server at $self->{server}: $!");
+
+  ## FIXME: die on bad password, but what to do when in reconnect mode?
+  ## Abort reconnect? Really really die?
+  $self->auth($self->{password}) if exists $self->{password};
 
   return;
 }
@@ -826,6 +832,10 @@ trigger a retry until the new command is sent.
 
 If we cannot re-establish a connection after C<< reconnect >> seconds,
 an exception will be thrown.
+
+If your Redis server requires authentication, you can use the
+C<< password >> attribute. After each connection established, the Redis
+C<< AUTH >> command will be send to the server.
 
 The C<< debug >> parameter enables debug information to STDERR,
 including all interactions with the server. You can also enable debug
