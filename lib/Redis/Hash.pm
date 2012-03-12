@@ -1,45 +1,13 @@
 package Redis::Hash;
 
+# ABSTRACT: tie Perl hashes to Redis hashes
+# VERSION
+# AUTHORITY
+
 use strict;
 use warnings;
 use Tie::Hash;
 use base qw/Redis Tie::StdHash/;
-
-=head1 NAME
-
-Redis::Hash - tie perl hashes into Redis
-
-=head1 SYNOPSYS
-
-    ## Create fake hash using keys like 'hash_prefix:KEY'
-    tie %my_hash, 'Redis::Hash', 'hash_prefix', @Redis_new_parameters;
-    
-    ## Treat the entire Redis database as a hash
-    tie %my_hash, 'Redis::Hash', undef, @Redis_new_parameters;
-    
-    $value = $my_list{$key};
-    $my_list{$key} = $value;
-    
-    @keys   = keys %my_hash;
-    @values = values %my_hash;
-    
-    %my_hash = reverse %my_hash;
-    
-    %my_hash = ();
-
-
-=head1 DESCRIPTION
-
-Ties a Perl hash to Redis. Note that it doesn't use Redis Hashes, but
-implements a fake hash using regular keys like "prefix:KEY".
-
-If no C<prefix> is given, it will tie the entire Redis database
-as a hash.
-
-Future versions will also allow you to use real Redis hash structures.
-
-
-=cut
 
 
 sub TIEHASH {
@@ -94,4 +62,38 @@ sub CLEAR {
   $self->{prefix_keys} = [];
 }
 
-1;
+
+1; ## End of Redis::Hash
+
+
+=head1 SYNOPSYS
+
+    ## Create fake hash using keys like 'hash_prefix:KEY'
+    tie %my_hash, 'Redis::Hash', 'hash_prefix', @Redis_new_parameters;
+    
+    ## Treat the entire Redis database as a hash
+    tie %my_hash, 'Redis::Hash', undef, @Redis_new_parameters;
+    
+    $value = $my_list{$key};
+    $my_list{$key} = $value;
+    
+    @keys   = keys %my_hash;
+    @values = values %my_hash;
+    
+    %my_hash = reverse %my_hash;
+    
+    %my_hash = ();
+
+
+=head1 DESCRIPTION
+
+Ties a Perl hash to Redis. Note that it doesn't use Redis Hashes, but
+implements a fake hash using regular keys like "prefix:KEY".
+
+If no C<prefix> is given, it will tie the entire Redis database
+as a hash.
+
+Future versions will also allow you to use real Redis hash structures.
+
+
+=cut

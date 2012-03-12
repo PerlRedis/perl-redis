@@ -6,3 +6,5 @@ Makefile.old
 *.sw[op]
 *.tar.gz
 dump.rdb
+Redis-*
+.build/

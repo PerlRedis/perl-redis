@@ -1,5 +1,9 @@
 package Redis;
 
+# ABSTRACT: Perl binding for Redis database
+# VERSION
+# AUTHORITY
+
 use warnings;
 use strict;
 
@@ -15,7 +19,6 @@ use Try::Tiny;
 use Scalar::Util ();
 
 
-our $VERSION = '1.950';
 
 sub new {
   my $class = shift;
@@ -1103,59 +1106,6 @@ The C<shutdown> method does not support pipelined operation.
 =head3 flushall
 
   $r->flushall;
-
-
-=head1 AUTHORS
-
-Pedro Melo, C<< <melo@cpan.org> >>
-
-Original author and maintainer: Dobrica Pavlinusic, C<< <dpavlin at rot13.org> >>
-
-
-=head1 SOURCE
-
-The code is available at L<https://github.com/melo/perl-redis/>. You can
-clone a local copy using:
-
-    git clone git://github.com/melo/perl-redis.git
-
-
-=head1 BUGS
-
-Bugs or feature requests should be posted to the Github Issues web
-interface at L<https://github.com/melo/perl-redis/issues>.
-
-Alternatively, you can also send them to C<bug-redis at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Redis>.
-I will be notified, and move them to the Github issues system.
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Redis
-    perldoc Redis::List
-    perldoc Redis::Hash
-
-
-You can also look for information at:
-
-=over 4
-
-=item * Github Issues
-
-L<https://github.com/melo/perl-redis/issues>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Redis>
-
-=item * MetaCPAN
-
-L<http://metacpan.org/dist/Redis>
-
-=back
 
 
 =head1 ACKNOWLEDGEMENTS
