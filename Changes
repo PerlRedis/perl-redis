@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.951     2012-03-13T10:17:09Z
     * Remove Tie::StdHash from our dependencies list, its part of core
       and it creates problems with some CPAN clients
 
