@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Remove Tie::StdHash from our dependencies list, its part of core
+      and it creates problems with some CPAN clients
 
 1.950     2012-03-12T13:54:10Z
     * DEPRECATED: the encoding attribute to new() - we will not support
