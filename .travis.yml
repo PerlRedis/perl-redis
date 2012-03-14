@@ -4,8 +4,8 @@ perl:
   - "5.12"
   - "5.10"
 before_install:
-  - "cpanm Dist::Zilla"
-  - "cpanm Dist::Zilla::PluginBundle::Author::MELO"
+  - "cpanm --notest Dist::Zilla"
+  - "cpanm --notest Dist::Zilla::PluginBundle::Author::MELO"
   - "git config --global github.user melo"
-install: "dzil authordeps | xargs cpanm && dzil listdeps | xargs cpanm"
+install: "dzil authordeps | xargs cpanm --notest && dzil listdeps | xargs cpanm --notest"
 script: "dzil test --release"
