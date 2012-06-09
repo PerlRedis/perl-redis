@@ -785,6 +785,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
+    my $r = Redis->new( password => 'boo' );
 
 The C<< server >> parameter specifies the Redis server we should connect
 to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
@@ -838,8 +839,10 @@ If we cannot re-establish a connection after C<< reconnect >> seconds,
 an exception will be thrown.
 
 If your Redis server requires authentication, you can use the
-C<< password >> attribute. After each connection established, the Redis
-C<< AUTH >> command will be send to the server.
+C<< password >> attribute. After each established connection (at the
+start or when reconnecting), the Redis C<< AUTH >> command will be send
+to the server. If the password is wrong, an exception will be thrown and
+reconnect will be disabled.
 
 The C<< debug >> parameter enables debug information to STDERR,
 including all interactions with the server. You can also enable debug
