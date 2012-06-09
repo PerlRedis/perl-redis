@@ -422,9 +422,13 @@ sub __build_sock {
   $self->{sock} = $self->{builder}->($self)
     || confess("Could not connect to Redis server at $self->{server}: $!");
 
-  ## FIXME: die on bad password, but what to do when in reconnect mode?
-  ## Abort reconnect? Really really die?
-  $self->auth($self->{password}) if exists $self->{password};
+  if (exists $self->{password}) {
+    try { $self->auth($self->{password}) }
+    catch {
+      $self->{reconnect} = 0;
+      confess("Redis server refused password");
+    };
+  }
 
   return;
 }
