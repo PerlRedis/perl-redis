@@ -331,7 +331,11 @@ ok($o->lastsave, 'lastsave');
 ## Remote server control commands
 
 ok(my $info = $o->info, 'info');
-isa_ok($info, 'HASH');
+isa_ok($info, 'HASH', '... yields a hash');
+ok(keys %$info, '... nonempty');
+unlike(join("\n", keys %$info), qr/#/, '... with no comments in the keys');
+unlike(join("\n", keys %$info), qr/\n\n|\A\n|\n\z/,
+       '... with no blank lines in the keys');
 
 
 ## Connection handling

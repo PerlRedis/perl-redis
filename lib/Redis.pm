@@ -221,7 +221,7 @@ sub info {
   my $custom_decode = sub {
     my ($reply) = @_;
     return $reply if !defined $reply || ref $reply;
-    return { map { split(/:/, $_, 2) } split(/\r\n/, $reply) };
+    return { map { split(/:/, $_, 2) } grep { /^[^#]/ } split(/\r\n/, $reply) };
   };
 
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
