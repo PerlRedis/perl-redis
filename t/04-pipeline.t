@@ -7,6 +7,7 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 use Test::Exception;
+use Test::Deep;
 
 my ($c, $srv) = redis();
 END { $c->() if $c }
@@ -23,17 +24,7 @@ sub pipeline_ok {
   }
   $r->wait_all_responses;
 
-  # An expected response consisting of a hashref means that any non-empty
-  # hashref should be accepted.  But reimplementing is_deeply() sounds like
-  # a pain, so fake it:
-  for my $i (0 .. $#expected_responses) {
-    $expected_responses[$i] = $responses[$i]
-      if ref $expected_responses[$i][0] eq 'HASH'
-      && ref $responses[$i][0] eq 'HASH'
-      && keys %{ $responses[$i][0] };
-  }
-
-  is_deeply(\@responses, \@expected_responses, $desc);
+  cmp_deeply(\@responses, \@expected_responses, $desc);
 }
 
 pipeline_ok 'single-command pipeline', (
@@ -47,13 +38,14 @@ pipeline_ok 'pipeline with embedded error', (
 );
 
 pipeline_ok 'keys in pipelined mode', (
-  [keys => ['*'], [qw<foo clunk>]],
+  [keys => ['*'], bag(qw<foo clunk>)],
   [keys => [], undef, q[ERR wrong number of arguments for 'keys' command]],
 );
 
 pipeline_ok 'info in pipelined mode', (
-  [info => [], {}],             # any non-empty hashref
-  [info => ['oops'], undef, q[ERR wrong number of arguments for 'info' command]],
+  [info => [], code(sub { ref $_[0] eq 'HASH' && keys %{ $_[0] } })],
+  [info => [qw<oops oops>], undef,
+   re(qr/^ERR (?:syntax error|wrong number of arguments for 'info' command)$/)],
 );
 
 pipeline_ok 'pipeline with multi-bulk reply', (

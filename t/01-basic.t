@@ -80,7 +80,7 @@ ok(!$o->del('non-existing'), 'del non-existing');
 cmp_ok($o->type('foo'), 'eq', 'string', 'type');
 
 is($o->keys('key-*'), $key_next + 1, 'key-*');
-is_deeply([$o->keys('key-*')], [@keys], 'keys');
+is_deeply([sort $o->keys('key-*')], [sort @keys], 'keys');
 
 ok(my $key = $o->randomkey, 'randomkey');
 
@@ -168,7 +168,7 @@ ok($o->sdiffstore(qw( test-set-diff test-set1 test-set2 )), 'sdiffstore');
 is($o->scard('test-set-diff'), 1, 'cardinality of diff');
 
 my @union = sort qw( foo bar baz xxx );
-is_deeply([$o->sunion(qw( test-set1 test-set2 ))], \@union, 'sunion');
+is_deeply([sort $o->sunion(qw( test-set1 test-set2 ))], \@union, 'sunion');
 ok($o->sunionstore(qw( test-set-union test-set1 test-set2 )), 'sunionstore');
 is($o->scard('test-set-union'), scalar(@union), 'cardinality of union');
 
@@ -331,7 +331,11 @@ ok($o->lastsave, 'lastsave');
 ## Remote server control commands
 
 ok(my $info = $o->info, 'info');
-isa_ok($info, 'HASH');
+isa_ok($info, 'HASH', '... yields a hash');
+ok(keys %$info, '... nonempty');
+unlike(join("\n", keys %$info), qr/#/, '... with no comments in the keys');
+unlike(join("\n", keys %$info), qr/\n\n|\A\n|\n\z/,
+       '... with no blank lines in the keys');
 
 
 ## Connection handling
