@@ -2,6 +2,7 @@ Revision history for Redis
 
 {{$NEXT}}
     * Added automatic authentication after connection establishment
+    * Support Redis 2.6: Aaron Crane <arc@cpan.org>
 
 1.951     2012-03-13T10:17:09Z
     * Remove Tie::StdHash from our dependencies list, its part of core
