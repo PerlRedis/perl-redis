@@ -38,7 +38,7 @@ pipeline_ok 'pipeline with embedded error', (
 );
 
 pipeline_ok 'keys in pipelined mode', (
-  [keys => ['*'], [qw<foo clunk>]],
+  [keys => ['*'], bag(qw<foo clunk>)],
   [keys => [], undef, q[ERR wrong number of arguments for 'keys' command]],
 );
 
