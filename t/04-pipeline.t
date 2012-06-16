@@ -44,7 +44,8 @@ pipeline_ok 'keys in pipelined mode', (
 
 pipeline_ok 'info in pipelined mode', (
   [info => [], code(sub { ref $_[0] eq 'HASH' && keys %{ $_[0] } })],
-  [info => ['oops'], undef, q[ERR wrong number of arguments for 'info' command]],
+  [info => [qw<oops oops>], undef,
+   re(qr/^ERR (?:syntax error|wrong number of arguments for 'info' command)$/)],
 );
 
 pipeline_ok 'pipeline with multi-bulk reply', (
