@@ -11,6 +11,10 @@ use base qw( Exporter );
 our @EXPORT = qw( redis );
 
 sub redis {
+  my %params = (
+    timeout => 120,
+    @_,
+  );
   my ($fh, $fn) = File::Temp::tempfile();
   my $port = 11011 + ($$ % 127);
 
@@ -18,7 +22,7 @@ sub redis {
   unlink('dump.rdb');
 
   $fh->print("
-    timeout 1
+    timeout $params{timeout}
     appendonly no
     daemonize no
     port $port

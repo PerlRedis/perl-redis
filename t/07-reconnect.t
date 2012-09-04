@@ -9,7 +9,7 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($c, $srv) = redis();
+my ($c, $srv) = redis(timeout => 1);
 END { $c->() if $c }
 
 
