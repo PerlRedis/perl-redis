@@ -14,6 +14,9 @@ sub redis {
   my ($fh, $fn) = File::Temp::tempfile();
   my $port = 11011 + ($$ % 127);
 
+  unlink('redis-server.log');
+  unlink('dump.rdb');
+
   $fh->print("
     timeout 1
     appendonly no
