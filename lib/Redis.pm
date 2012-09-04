@@ -18,6 +18,7 @@ use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
+use constant WIN32 => $^O eq 'MSWin32';
 
 
 sub new {
@@ -605,7 +606,7 @@ sub __try_read_sock {
 
 ### Copied from AnyEvent::Util
 BEGIN {
-  *__fh_nonblocking = ($^O eq 'MSWin32')
+  *__fh_nonblocking = (WIN32)
     ? sub($$) { ioctl $_[0], 0x8004667e, pack "L", $_[1]; }    # FIONBIO
     : sub($$) { fcntl $_[0], F_SETFL, $_[1] ? O_NONBLOCK : 0; };
 }
