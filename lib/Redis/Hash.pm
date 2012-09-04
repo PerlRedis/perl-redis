@@ -74,8 +74,8 @@ sub CLEAR {
     ## Treat the entire Redis database as a hash
     tie %my_hash, 'Redis::Hash', undef, @Redis_new_parameters;
     
-    $value = $my_list{$key};
-    $my_list{$key} = $value;
+    $value = $my_hash{$key};
+    $my_hash{$key} = $value;
     
     @keys   = keys %my_hash;
     @values = values %my_hash;
