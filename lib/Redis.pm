@@ -18,7 +18,7 @@ use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
-use constant WIN32 => $^O eq 'MSWin32';
+use constant WIN32 => $^O =~ /mswin32/i;
 
 
 sub new {
