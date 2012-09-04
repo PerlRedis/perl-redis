@@ -588,7 +588,26 @@ sub __try_read_sock {
   my $data = '';
 
   __fh_nonblocking($sock, 1);
-  my $result = read($sock, $data, 1);
+
+  ## Lots of problems with Windows here. This is a temporary fix until I
+  ## figure out what is happening there. It looks like the wrong fix
+  ## because we should not mix sysread (unbuffered I/O) with ungetc()
+  ## below (buffered I/O), so I do expect to revert this soon.
+  ## Call it a run through the CPAN Testers Gautlet fix. If I had to
+  ## guess (and until my Windows box has a new power supply I do have to
+  ## guess), I would say that the problems lies with the call
+  ## __fh_nonblocking(), where on Windows we don't end up with a non-
+  ## blocking socket.
+  ## See
+  ##  * https://github.com/melo/perl-redis/issues/20
+  ##  * https://github.com/melo/perl-redis/pull/21
+  my $result;
+  if (WIN32) {
+    $result = sysread($sock, $data, 1);
+  }
+  else {
+    $result = read($sock, $data, 1);
+  }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
