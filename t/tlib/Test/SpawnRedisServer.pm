@@ -27,13 +27,14 @@ sub redis {
 
   Test::More::diag("Redis port $port, cfg $fn") if $ENV{REDIS_DEBUG};
 
-  if (! can_run('redis-server')) {
+  my $redis_server_path = $ENV{REDIS_SERVER_PATH} || 'redis-server';
+  if (! can_run($redis_server_path)) {
     Test::More::plan skip_all => "Could not find binary redis-server";
     return;
   }
 
   my $c;
-  eval { $c = spawn_server($ENV{REDIS_SERVER_PATH} || 'redis-server', $fn) };
+  eval { $c = spawn_server($redis_server_path, $fn) };
   if (my $e = $@) {
     Test::More::plan skip_all => "Could not start redis-server: $@";
     return;
