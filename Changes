@@ -1,0 +1,72 @@
+Revision history for Redis
+
+1.953     2012-09-05T00:49:11Z
+    * Tweak travis.ci setup
+
+1.952     2012-09-04T11:22:18Z
+    * Added automatic authentication after connection establishment
+    * Support Redis 2.6: Aaron Crane <arc@cpan.org>
+    * Attempt to fix non-blocking read on Windows
+    * Enable travis.ci support on the repository
+
+1.951     2012-03-13T10:17:09Z
+    * Remove Tie::StdHash from our dependencies list, its part of core
+      and it creates problems with some CPAN clients
+
+1.950     2012-03-12T13:54:10Z
+    * DEPRECATED: the encoding attribute to new() - we will not support
+      automatic decoding after 2.000, so please test your code with
+      encoding => undef now.
+    * Add pipeline support: Aaron Crane arc@github++!
+    * Cache AUTOLOAD calls: improves performance a bit, fixes #2
+    * Fix: apply reconnect logic to KEYS and INFO
+    * Fix: forbid PING and SHUTDOWN in SUBSCRIBE mode
+    * Updated docs covering pipelining and multi/exec
+    * Updated docs to point users to Github for code and issues
+
+1.926 Wed Jan 11 15:48:11 UTC 2012
+    * Fix auto-reconnect when the server is dead or a
+      client timeout.
+      See https://github.com/melo/perl-redis/issues/1#issuecomment-3444989
+
+1.925 Tue Jan 10 16:02:04 UTC 2012
+    * Implemented auto-reconnect
+    * Add support for UNIX domain sockets
+    * Make REDIS_SERVER work with both TCP and UNIX domain sockets
+    * Make the test suite workaround a missing redis-server binary
+    * Assorted small bug fixes
+    * Improve documentation
+
+1.904 Sat Mar  5 23:10:48 UTC 2011
+    * Fix bug with NIL multi-bulk replies (Case 42) RT#64040
+
+1.903 Tue Feb 22 13:04:24 UTC 2011
+    * remove the Guard dependency
+
+1.902 Sat Feb  5 12:38:57 UTC 2011
+    * fix: ping() no longer dies (RT #62489)
+    * fix: shutdown() no longer dies
+
+1.901 Sat Feb  5 11:15:04 UTC 2011
+    * Released 1.900_01 as latest version
+
+1.900_01  Sun Jan 30 06:03:14 UTC 2011
+    * admin: change of maintainer to Pedro Melo <melo@simplicidade.org>
+    * feature: full support for Redis 2.x multi-bulk protocol
+    * feature: support for Redis PUBLISH/SUBSCRIBE commands
+    * feature: automatic encoding can be turned off, use encoding => undef on new() (performance++)
+    * performance: substantial performance improvements, specially with large responses
+    * fix: add POP method to our List Tie interface
+
+1.2001	Wed Mar 17 17:22:01 CET 2010
+    * feadure: Redis protocol 1.2 support by Jeremy Zawodny <Jeremy@Zawodny.com> CPAN RT #54841
+    * Version bump to be in-sync with Redis version
+    * bug: Correctly round-trip utf-8 encoded characters
+
+0.08	Tue Mar 24 22:38:59 CET 2009
+    * This version supports new protocol introduced in beta 8
+    * Version bump to be in-sync with Redis version
+
+0.01    Sun Mar 22 19:02:17 CET 2009
+    * First version, tracking git://github.com/antirez/redis
+

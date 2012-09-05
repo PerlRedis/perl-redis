@@ -1,0 +1,15 @@
+
+\B\.git\b
+\B\.gitignore$
+^.prove/
+^.proverc$
+^[\._]build
+^blib/
+^_build/
+^cover_db/
+^Makefile$
+\bpm_to_blib$
+^MYMETA\.
+^.DS_Store$
+
+
