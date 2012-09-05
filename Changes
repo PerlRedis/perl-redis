@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Tweak travis.ci setup
 
 1.952     2012-09-04T11:22:18Z
     * Added automatic authentication after connection establishment
