@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Support for multi-word commands such as "SCRIPT LOAD".
 
 1.953     2012-09-05T00:49:11Z
     * Tweak travis.ci setup
