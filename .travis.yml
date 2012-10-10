@@ -1,0 +1,14 @@
+language: perl
+perl:
+  - "5.16"
+  - "5.14"
+  - "5.12"
+  - "5.10"
+before_install:
+  - "git config --global github.user melo"
+  - "cpanm --quiet --notest Dist::Zilla"
+  - "cpanm --quiet --notest --installdeps Dist::Zilla::PluginBundle::Author::MELO"
+  - "cpanm --quiet --notest Dist::Zilla::PluginBundle::Author::MELO"
+install: "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps | xargs cpanm --quiet --notest"
+script: "dzil test && dzil xtest"
+
