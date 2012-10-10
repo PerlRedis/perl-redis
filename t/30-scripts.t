@@ -26,7 +26,6 @@ $o->script_flush;
 
 my $script = "return 1";
 my $script_sha = sha1_hex($script);
-die ($script_sha);
 my @ret = $o->script_exists($script_sha);
 ok(@ret && $ret[0] == 0, "script exists returns false");
 ok($o->script_load($script), "script load returns true");
