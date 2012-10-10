@@ -446,9 +446,10 @@ sub __send_command {
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
   ## Encode command using multi-bulk format
-  my $n_elems = scalar(@_) + 1;
+  my @cmd = split /_/, $cmd;
+  my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
-  for my $elem ($cmd, @_) {
+  for my $elem (@cmd, @_) {
     my $bin = $enc ? encode($enc, $elem) : $elem;
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
