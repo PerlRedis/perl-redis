@@ -28,9 +28,10 @@ my $script = "return 1";
 my $script_sha = sha1_hex($script);
 my @ret = $o->script_exists($script_sha);
 ok(@ret && $ret[0] == 0, "script exists returns false");
-ok($o->script_load($script), "script load returns true");
+@ret = $o->script_load($script);
+ok(@ret && $ret[0] eq $script_sha, "script load returns the sha1 of the script");
 ok($o->script_exists($script_sha), "script exists returns true after loading");
-ok($o->evalsha($script_sha, 0), "eval returns true");
+ok($o->evalsha($script_sha, 0), "evalsha returns true with the sha1 of the script");
 ok($o->eval($script, 0), "eval returns true");
 
 ## All done
