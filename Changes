@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.955     2012-10-10T11:43:44Z
     * Skip 30-scripts.t if the redis-server found lacks script support
 
 1.954     2012-10-10T11:16:22Z
