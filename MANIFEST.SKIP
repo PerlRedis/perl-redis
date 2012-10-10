@@ -1,4 +1,4 @@
-
+^.travis.yml$
 \B\.git\b
 \B\.gitignore$
 ^.prove/
