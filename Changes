@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Skip 30-scripts.t if the redis-server found lacks script support
 
 1.954     2012-10-10T11:16:22Z
     * Support for multi-word commands such as "SCRIPT LOAD".
