@@ -589,7 +589,7 @@ sub __try_read_sock {
   my $data = '';
 
   __fh_nonblocking($sock, 1);
-  my $result = read($sock, $data, 1);
+  my $result = sysread($sock, $data, 1);
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
