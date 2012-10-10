@@ -70,18 +70,18 @@ sub CLEAR {
 
     ## Create fake hash using keys like 'hash_prefix:KEY'
     tie %my_hash, 'Redis::Hash', 'hash_prefix', @Redis_new_parameters;
-    
+
     ## Treat the entire Redis database as a hash
     tie %my_hash, 'Redis::Hash', undef, @Redis_new_parameters;
-    
+
     $value = $my_hash{$key};
     $my_hash{$key} = $value;
-    
+
     @keys   = keys %my_hash;
     @values = values %my_hash;
-    
+
     %my_hash = reverse %my_hash;
-    
+
     %my_hash = ();
 
 
@@ -94,6 +94,5 @@ If no C<prefix> is given, it will tie the entire Redis database
 as a hash.
 
 Future versions will also allow you to use real Redis hash structures.
-
 
 =cut
