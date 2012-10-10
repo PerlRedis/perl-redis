@@ -23,6 +23,7 @@ t/08-unix-socket.t
 t/09-env-redis-server.t
 t/10-tie-list.t
 t/20-tie-hash.t
+t/30-scripts.t
 t/tlib/Test/SpawnRedisServer.pm
 xt/author/test-eol.t
 xt/release/cpan-changes.t

@@ -1,7 +1,7 @@
 package Redis;
 
 # ABSTRACT: Perl binding for Redis database
-our $VERSION = '1.953'; # VERSION
+our $VERSION = '1.954'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use warnings;
@@ -446,9 +446,10 @@ sub __send_command {
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
   ## Encode command using multi-bulk format
-  my $n_elems = scalar(@_) + 1;
+  my @cmd = split /_/, $cmd;
+  my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
-  for my $elem ($cmd, @_) {
+  for my $elem (@cmd, @_) {
     my $bin = $enc ? encode($enc, $elem) : $elem;
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
@@ -588,7 +589,26 @@ sub __try_read_sock {
   my $data = '';
 
   __fh_nonblocking($sock, 1);
-  my $result = read($sock, $data, 1);
+
+  ## Lots of problems with Windows here. This is a temporary fix until I
+  ## figure out what is happening there. It looks like the wrong fix
+  ## because we should not mix sysread (unbuffered I/O) with ungetc()
+  ## below (buffered I/O), so I do expect to revert this soon.
+  ## Call it a run through the CPAN Testers Gautlet fix. If I had to
+  ## guess (and until my Windows box has a new power supply I do have to
+  ## guess), I would say that the problems lies with the call
+  ## __fh_nonblocking(), where on Windows we don't end up with a non-
+  ## blocking socket.
+  ## See
+  ##  * https://github.com/melo/perl-redis/issues/20
+  ##  * https://github.com/melo/perl-redis/pull/21
+  my $result;
+  if (WIN32) {
+    $result = sysread($sock, $data, 1);
+  }
+  else {
+    $result = read($sock, $data, 1);
+  }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
@@ -639,7 +659,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.953
+version 1.954
 
 =head1 SYNOPSIS
 
@@ -1200,6 +1220,50 @@ during the run.
 =head3 lastsave
 
   $r->lastsave;
+
+=head2 Scripting commands
+
+=head3 eval
+
+  $r->eval($lua_script, $num_keys, $key1, ..., $arg1, $arg2);
+
+Executes a Lua script server side.
+
+Note that this commands sends the Lua script every time you call it. See
+L</evalsha> and L</script_load> for an alternative.
+
+=head3 evalsha
+
+  $r->eval($lua_script_sha1, $num_keys, $key1, ..., $arg1, $arg2);
+
+Executes a Lua script cached on the server side by its SHA1 digest.
+
+See L</script_load>.
+
+=head3 script_load
+
+  my ($sha1) = $r->script_load($lua_script);
+
+Cache Lua script, returns SHA1 digest that can be used with L</evalsha>.
+
+=head3 script_exists
+
+  my ($exists1, $exists2, ...) = $r->script_exists($scrip1_sha, $script2_sha, ...);
+
+Given a list of SHA1 digests, returns a list of booleans, one for each
+SHA1, that report the existence of each script in the server cache.
+
+=head3 script_kill
+
+  $r->script_kill;
+
+Kills the currently running script.
+
+=head3 script_flush
+
+  $r->script_flush;
+
+Flush the Lua scripts cache.
 
 =head2 Remote server control commands
 

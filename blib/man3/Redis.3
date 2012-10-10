@@ -133,7 +133,7 @@
 .\" ========================================================================
 .\"
 .IX Title "Redis 3"
-.TH Redis 3 "2012-09-05" "perl v5.14.2" "User Contributed Perl Documentation"
+.TH Redis 3 "2012-10-10" "perl v5.14.1" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -142,7 +142,7 @@
 Redis \- Perl binding for Redis database
 .SH "VERSION"
 .IX Header "VERSION"
-version 1.953
+version 1.954
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 2
@@ -820,6 +820,67 @@ during the run.
 .Vb 1
 \&  $r\->lastsave;
 .Ve
+.SS "Scripting commands"
+.IX Subsection "Scripting commands"
+\fIeval\fR
+.IX Subsection "eval"
+.PP
+.Vb 1
+\&  $r\->eval($lua_script, $num_keys, $key1, ..., $arg1, $arg2);
+.Ve
+.PP
+Executes a Lua script server side.
+.PP
+Note that this commands sends the Lua script every time you call it. See
+\&\*(L"evalsha\*(R" and \*(L"script_load\*(R" for an alternative.
+.PP
+\fIevalsha\fR
+.IX Subsection "evalsha"
+.PP
+.Vb 1
+\&  $r\->eval($lua_script_sha1, $num_keys, $key1, ..., $arg1, $arg2);
+.Ve
+.PP
+Executes a Lua script cached on the server side by its \s-1SHA1\s0 digest.
+.PP
+See \*(L"script_load\*(R".
+.PP
+\fIscript_load\fR
+.IX Subsection "script_load"
+.PP
+.Vb 1
+\&  my ($sha1) = $r\->script_load($lua_script);
+.Ve
+.PP
+Cache Lua script, returns \s-1SHA1\s0 digest that can be used with \*(L"evalsha\*(R".
+.PP
+\fIscript_exists\fR
+.IX Subsection "script_exists"
+.PP
+.Vb 1
+\&  my ($exists1, $exists2, ...) = $r\->script_exists($scrip1_sha, $script2_sha, ...);
+.Ve
+.PP
+Given a list of \s-1SHA1\s0 digests, returns a list of booleans, one for each
+\&\s-1SHA1\s0, that report the existence of each script in the server cache.
+.PP
+\fIscript_kill\fR
+.IX Subsection "script_kill"
+.PP
+.Vb 1
+\&  $r\->script_kill;
+.Ve
+.PP
+Kills the currently running script.
+.PP
+\fIscript_flush\fR
+.IX Subsection "script_flush"
+.PP
+.Vb 1
+\&  $r\->script_flush;
+.Ve
+.PP
+Flush the Lua scripts cache.
 .SS "Remote server control commands"
 .IX Subsection "Remote server control commands"
 \fIinfo\fR

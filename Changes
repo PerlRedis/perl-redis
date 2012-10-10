@@ -1,5 +1,9 @@
 Revision history for Redis
 
+1.954     2012-10-10T11:16:22Z
+    * Support for multi-word commands such as "SCRIPT LOAD".
+    * Try another fix for Windows non-blocking reads
+
 1.953     2012-09-05T00:49:11Z
     * Tweak travis.ci setup
 

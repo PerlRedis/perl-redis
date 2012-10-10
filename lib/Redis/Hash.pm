@@ -1,7 +1,7 @@
 package Redis::Hash;
 
 # ABSTRACT: tie Perl hashes to Redis hashes
-our $VERSION = '1.953'; # VERSION
+our $VERSION = '1.954'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use strict;
@@ -79,7 +79,7 @@ Redis::Hash - tie Perl hashes to Redis hashes
 
 =head1 VERSION
 
-version 1.953
+version 1.954
 
 =head1 DESCRIPTION
 
@@ -95,18 +95,18 @@ Future versions will also allow you to use real Redis hash structures.
 
     ## Create fake hash using keys like 'hash_prefix:KEY'
     tie %my_hash, 'Redis::Hash', 'hash_prefix', @Redis_new_parameters;
-    
+
     ## Treat the entire Redis database as a hash
     tie %my_hash, 'Redis::Hash', undef, @Redis_new_parameters;
-    
+
     $value = $my_hash{$key};
     $my_hash{$key} = $value;
-    
+
     @keys   = keys %my_hash;
     @values = values %my_hash;
-    
+
     %my_hash = reverse %my_hash;
-    
+
     %my_hash = ();
 
 =head1 AUTHOR

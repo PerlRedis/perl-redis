@@ -12,6 +12,7 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "Perl binding for Redis database",
   "AUTHOR" => "Pedro Melo <melo\@cpan.org>",
   "BUILD_REQUIRES" => {
+    "Digest::SHA1" => 0,
     "IO::String" => 0,
     "IPC::Cmd" => 0,
     "Test::Deep" => 0,
@@ -29,7 +30,7 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Try::Tiny" => 0
   },
-  "VERSION" => "1.953",
+  "VERSION" => "1.954",
   "test" => {
     "TESTS" => "t/*.t"
   }

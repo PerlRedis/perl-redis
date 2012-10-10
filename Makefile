@@ -13,14 +13,14 @@
 
 #     ABSTRACT => q[Perl binding for Redis database]
 #     AUTHOR => [q[Pedro Melo <melo@cpan.org>]]
-#     BUILD_REQUIRES => { Test::More=>q[0.98], Test::Exception=>q[0], IO::String=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
+#     BUILD_REQUIRES => { Test::More=>q[0.98], Test::Exception=>q[0], IO::String=>q[0], Digest::SHA1=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
 #     CONFIGURE_REQUIRES => { ExtUtils::MakeMaker=>q[6.30] }
 #     DISTNAME => q[Redis]
 #     EXE_FILES => []
 #     LICENSE => q[artistic_2]
 #     NAME => q[Redis]
-#     PREREQ_PM => { Test::More=>q[0.98], Try::Tiny=>q[0], Test::Exception=>q[0], IO::String=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
-#     VERSION => q[1.953]
+#     PREREQ_PM => { Test::More=>q[0.98], Try::Tiny=>q[0], Test::Exception=>q[0], Digest::SHA1=>q[0], IO::String=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
+#     VERSION => q[1.954]
 #     test => { TESTS=>q[t/*.t] }
 
 # --- MakeMaker post_initialize section:
@@ -28,7 +28,7 @@
 
 # --- MakeMaker const_config section:
 
-# These definitions are from config.sh (via /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2/darwin-2level/Config.pm).
+# These definitions are from config.sh (via /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1/darwin-2level/Config.pm).
 # They may have been overridden via Makefile.PL or on the command line.
 AR = ar
 CC = cc
@@ -41,14 +41,14 @@ FULL_AR = /usr/bin/ar
 LD = env MACOSX_DEPLOYMENT_TARGET=10.3 cc
 LDDLFLAGS =  -bundle -undefined dynamic_lookup -L/usr/local/lib -fstack-protector
 LDFLAGS =  -fstack-protector -L/usr/local/lib
-LIBC = 
+LIBC = /usr/lib/libc.dylib
 LIB_EXT = .a
 OBJ_EXT = .o
 OSNAME = darwin
-OSVERS = 10.8.0
+OSVERS = 10.6.0
 RANLIB = ranlib
-SITELIBEXP = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2
-SITEARCHEXP = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2/darwin-2level
+SITELIBEXP = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/site_perl/5.14.1
+SITEARCHEXP = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/site_perl/5.14.1/darwin-2level
 SO = dylib
 VENDORARCHEXP = 
 VENDORLIBEXP = 
@@ -60,11 +60,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Redis
 NAME_SYM = Redis
-VERSION = 1.953
+VERSION = 1.954
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_953
+VERSION_SYM = 1_954
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.953
+XS_VERSION = 1.954
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -78,55 +78,55 @@ MAN3EXT = 3
 INSTALLDIRS = site
 DESTDIR = 
 PREFIX = $(SITEPREFIX)
-PERLPREFIX = /Users/melo/perl5/perlbrew/perls/perl-5.14.2
-SITEPREFIX = /Users/melo/perl5/perlbrew/perls/perl-5.14.2
+PERLPREFIX = /Users/melo/perl5/perlbrew/perls/perl-5.14.1
+SITEPREFIX = /Users/melo/perl5/perlbrew/perls/perl-5.14.1
 VENDORPREFIX = 
-INSTALLPRIVLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2
+INSTALLPRIVLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1
 DESTINSTALLPRIVLIB = $(DESTDIR)$(INSTALLPRIVLIB)
-INSTALLSITELIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2
+INSTALLSITELIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/site_perl/5.14.1
 DESTINSTALLSITELIB = $(DESTDIR)$(INSTALLSITELIB)
 INSTALLVENDORLIB = 
 DESTINSTALLVENDORLIB = $(DESTDIR)$(INSTALLVENDORLIB)
-INSTALLARCHLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2/darwin-2level
+INSTALLARCHLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1/darwin-2level
 DESTINSTALLARCHLIB = $(DESTDIR)$(INSTALLARCHLIB)
-INSTALLSITEARCH = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2/darwin-2level
+INSTALLSITEARCH = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/site_perl/5.14.1/darwin-2level
 DESTINSTALLSITEARCH = $(DESTDIR)$(INSTALLSITEARCH)
 INSTALLVENDORARCH = 
 DESTINSTALLVENDORARCH = $(DESTDIR)$(INSTALLVENDORARCH)
-INSTALLBIN = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin
+INSTALLBIN = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin
 DESTINSTALLBIN = $(DESTDIR)$(INSTALLBIN)
-INSTALLSITEBIN = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin
+INSTALLSITEBIN = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin
 DESTINSTALLSITEBIN = $(DESTDIR)$(INSTALLSITEBIN)
 INSTALLVENDORBIN = 
 DESTINSTALLVENDORBIN = $(DESTDIR)$(INSTALLVENDORBIN)
-INSTALLSCRIPT = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin
+INSTALLSCRIPT = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin
 DESTINSTALLSCRIPT = $(DESTDIR)$(INSTALLSCRIPT)
-INSTALLSITESCRIPT = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin
+INSTALLSITESCRIPT = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin
 DESTINSTALLSITESCRIPT = $(DESTDIR)$(INSTALLSITESCRIPT)
 INSTALLVENDORSCRIPT = 
 DESTINSTALLVENDORSCRIPT = $(DESTDIR)$(INSTALLVENDORSCRIPT)
-INSTALLMAN1DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/man/man1
+INSTALLMAN1DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/man/man1
 DESTINSTALLMAN1DIR = $(DESTDIR)$(INSTALLMAN1DIR)
-INSTALLSITEMAN1DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/man/man1
+INSTALLSITEMAN1DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/man/man1
 DESTINSTALLSITEMAN1DIR = $(DESTDIR)$(INSTALLSITEMAN1DIR)
 INSTALLVENDORMAN1DIR = 
 DESTINSTALLVENDORMAN1DIR = $(DESTDIR)$(INSTALLVENDORMAN1DIR)
-INSTALLMAN3DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/man/man3
+INSTALLMAN3DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/man/man3
 DESTINSTALLMAN3DIR = $(DESTDIR)$(INSTALLMAN3DIR)
-INSTALLSITEMAN3DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/man/man3
+INSTALLSITEMAN3DIR = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/man/man3
 DESTINSTALLSITEMAN3DIR = $(DESTDIR)$(INSTALLSITEMAN3DIR)
 INSTALLVENDORMAN3DIR = 
 DESTINSTALLVENDORMAN3DIR = $(DESTDIR)$(INSTALLVENDORMAN3DIR)
-PERL_LIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2
-PERL_ARCHLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2/darwin-2level
+PERL_LIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1
+PERL_ARCHLIB = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1/darwin-2level
 LIBPERL_A = libperl.a
 FIRST_MAKEFILE = Makefile
 MAKEFILE_OLD = Makefile.old
 MAKE_APERL_FILE = Makefile.aperl
 PERLMAINCC = $(CC)
-PERL_INC = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2/darwin-2level/CORE
-PERL = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin/perl
-FULLPERL = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin/perl
+PERL_INC = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1/darwin-2level/CORE
+PERL = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin/perl
+FULLPERL = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin/perl
 ABSPERL = $(PERL)
 PERLRUN = $(PERL)
 FULLPERLRUN = $(FULLPERL)
@@ -139,7 +139,7 @@ PERM_DIR = 755
 PERM_RW = 644
 PERM_RWX = 755
 
-MAKEMAKER   = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/lib/5.14.2/ExtUtils/MakeMaker.pm
+MAKEMAKER   = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/lib/5.14.1/ExtUtils/MakeMaker.pm
 MM_VERSION  = 6.62
 MM_REVISION = 66200
 
@@ -266,7 +266,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Redis
-DISTVNAME = Redis-1.953
+DISTVNAME = Redis-1.954
 
 
 # --- MakeMaker macro section:
@@ -495,6 +495,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) 'author:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  - '\''Pedro Melo <melo@cpan.org>'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'build_requires:' >> META_new.yml
+	$(NOECHO) $(ECHO) '  Digest::SHA1: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  IO::String: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  IPC::Cmd: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Test::Deep: 0' >> META_new.yml
@@ -516,7 +517,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Try::Tiny: 0' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: 1.953' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: 1.954' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -543,6 +544,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '   "prereqs" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '      "build" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '         "requires" : {' >> META_new.json
+	$(NOECHO) $(ECHO) '            "Digest::SHA1" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "IO::String" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "IPC::Cmd" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "Test::Deep" : "0",' >> META_new.json
@@ -563,7 +565,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "1.953"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "1.954"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 
@@ -815,7 +817,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 
 # --- MakeMaker makeaperl section ---
 MAP_TARGET    = perl
-FULLPERL      = /Users/melo/perl5/perlbrew/perls/perl-5.14.2/bin/perl
+FULLPERL      = /Users/melo/perl5/perlbrew/perls/perl-5.14.1/bin/perl
 
 $(MAP_TARGET) :: static $(MAKE_APERL_FILE)
 	$(MAKE) $(USEMAKEFILE) $(MAKE_APERL_FILE) $@
@@ -859,7 +861,7 @@ testdb_static :: testdb_dynamic
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd :
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1.953">' > $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1.954">' > $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT>Perl binding for Redis database</ABSTRACT>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>Pedro Melo &lt;melo@cpan.org&gt;</AUTHOR>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> $(DISTNAME).ppd

@@ -3,6 +3,7 @@ abstract: 'Perl binding for Redis database'
 author:
   - 'Pedro Melo <melo@cpan.org>'
 build_requires:
+  Digest::SHA1: 0
   IO::String: 0
   IPC::Cmd: 0
   Test::Deep: 0
@@ -12,7 +13,7 @@ build_requires:
 configure_requires:
   ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300021, CPAN::Meta::Converter version 2.120921'
+generated_by: 'Dist::Zilla version 4.300024, CPAN::Meta::Converter version 2.120921'
 license: artistic_2
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -34,13 +35,13 @@ no_index:
 provides:
   Redis:
     file: lib/Redis.pm
-    version: 1.953
+    version: 1.954
   Redis::Hash:
     file: lib/Redis/Hash.pm
-    version: 1.953
+    version: 1.954
   Redis::List:
     file: lib/Redis/List.pm
-    version: 1.953
+    version: 1.954
 requires:
   Try::Tiny: 0
   perl: 5.008
@@ -48,33 +49,39 @@ resources:
   bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=Redis
   homepage: https://github.com/melo/perl-redis
   repository: https://github.com/melo/perl-redis.git
-version: 1.953
+version: 1.954
 x_Dist_Zilla:
+  perl:
+    version: 5.014001
   plugins:
     -
       class: Dist::Zilla::Plugin::Git::NextVersion
       name: '@Author::MELO/Git::NextVersion'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::GenerateFile
       name: '@Author::MELO/GenerateManifestSkip'
-      version: 4.300021
+      version: 4.300024
+    -
+      class: Dist::Zilla::Plugin::GenerateFile
+      name: '@Author::MELO/GenerateTravisCfg'
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::GatherDir
       name: '@Author::MELO/GatherDir'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::PruneCruft
       name: '@Author::MELO/PruneCruft'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::ManifestSkip
       name: '@Author::MELO/ManifestSkip'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::PruneFiles
       name: '@Author::MELO/PruneRepoMetaFiles'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Authority
       name: '@Author::MELO/Authority'
@@ -82,7 +89,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::NextRelease
       name: '@Author::MELO/NextRelease'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::OurPkgVersion
       name: '@Author::MELO/OurPkgVersion'
@@ -94,11 +101,11 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::License
       name: '@Author::MELO/License'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Readme
       name: '@Author::MELO/Readme'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Bugtracker
       name: '@Author::MELO/Bugtracker'
@@ -114,11 +121,11 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::AutoPrereqs
       name: '@Author::MELO/AutoPrereqs'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MetaNoIndex
       name: '@Author::MELO/MetaNoIndex'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MetaProvides::Package
       name: '@Author::MELO/MetaProvides::Package'
@@ -130,15 +137,15 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::MetaConfig
       name: '@Author::MELO/MetaConfig'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MetaYAML
       name: '@Author::MELO/MetaYAML'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MetaJSON
       name: '@Author::MELO/MetaJSON'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Prereqs
       config:
@@ -146,19 +153,19 @@ x_Dist_Zilla:
           phase: test
           type: requires
       name: '@Author::MELO/TestMoreWithSubtests'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::ExecDir
       name: '@Author::MELO/ExecDir'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::ShareDir
       name: '@Author::MELO/ShareDir'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MakeMaker
       name: '@Author::MELO/MakeMaker'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Test::UnusedVars
       name: '@Author::MELO/@TestingMania/Test::UnusedVars'
@@ -178,7 +185,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::PodCoverageTests
       name: '@Author::MELO/@TestingMania/PodCoverageTests'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Test::CPAN::Changes
       name: '@Author::MELO/@TestingMania/Test::CPAN::Changes'
@@ -194,7 +201,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::MetaTests
       name: '@Author::MELO/@TestingMania/MetaTests'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Test::Compile
       name: '@Author::MELO/@TestingMania/Test::Compile'
@@ -214,7 +221,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::PodSyntaxTests
       name: '@Author::MELO/@TestingMania/PodSyntaxTests'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::MojibakeTests
       name: '@Author::MELO/@TestingMania/MojibakeTests'
@@ -222,7 +229,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::Manifest
       name: '@Author::MELO/Manifest'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::CheckExtraTests
       name: '@Author::MELO/CheckExtraTests'
@@ -234,35 +241,35 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::TestRelease
       name: '@Author::MELO/TestRelease'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::ConfirmRelease
       name: '@Author::MELO/ConfirmRelease'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::UploadToCPAN
       name: '@Author::MELO/UploadToCPAN'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::Git::CommitBuild
       name: '@Author::MELO/Git::CommitBuild'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::Git::Check
       name: '@Author::MELO/@Git/Check'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::Git::Commit
       name: '@Author::MELO/@Git/Commit'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::Git::Tag
       name: '@Author::MELO/@Git/Tag'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::Git::Push
       name: '@Author::MELO/@Git/Push'
-      version: 1.122460
+      version: 1.122530
     -
       class: Dist::Zilla::Plugin::InstallRelease
       name: '@Author::MELO/InstallRelease'
@@ -278,30 +285,30 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':InstallModules'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':IncModules'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':TestFiles'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':ExecFiles'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':ShareFiles'
-      version: 4.300021
+      version: 4.300024
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':MainModule'
-      version: 4.300021
+      version: 4.300024
   zilla:
     class: Dist::Zilla::Dist::Builder
     config:
       is_trial: 0
-    version: 4.300021
+    version: 4.300024
 x_authority: cpan:MELO
