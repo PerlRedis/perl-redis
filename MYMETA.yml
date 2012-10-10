@@ -35,20 +35,20 @@ no_index:
 provides:
   Redis:
     file: lib/Redis.pm
-    version: 1.954
+    version: 1.955
   Redis::Hash:
     file: lib/Redis/Hash.pm
-    version: 1.954
+    version: 1.955
   Redis::List:
     file: lib/Redis/List.pm
-    version: 1.954
+    version: 1.955
 requires:
   Try::Tiny: 0
 resources:
   bugtracker: http://rt.cpan.org/Public/Dist/Display.html?Name=Redis
   homepage: https://github.com/melo/perl-redis
   repository: https://github.com/melo/perl-redis.git
-version: 1.954
+version: 1.955
 x_Dist_Zilla:
   perl:
     version: 5.014001

@@ -30,7 +30,7 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Try::Tiny" => 0
   },
-  "VERSION" => "1.954",
+  "VERSION" => "1.955",
   "test" => {
     "TESTS" => "t/*.t"
   }

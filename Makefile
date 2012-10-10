@@ -20,7 +20,7 @@
 #     LICENSE => q[artistic_2]
 #     NAME => q[Redis]
 #     PREREQ_PM => { Test::More=>q[0.98], Try::Tiny=>q[0], Test::Exception=>q[0], Digest::SHA1=>q[0], IO::String=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
-#     VERSION => q[1.954]
+#     VERSION => q[1.955]
 #     test => { TESTS=>q[t/*.t] }
 
 # --- MakeMaker post_initialize section:
@@ -60,11 +60,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Redis
 NAME_SYM = Redis
-VERSION = 1.954
+VERSION = 1.955
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_954
+VERSION_SYM = 1_955
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.954
+XS_VERSION = 1.955
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -266,7 +266,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Redis
-DISTVNAME = Redis-1.954
+DISTVNAME = Redis-1.955
 
 
 # --- MakeMaker macro section:
@@ -517,7 +517,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Try::Tiny: 0' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: 1.954' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: 1.955' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -565,7 +565,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "1.954"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "1.955"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 
@@ -861,7 +861,7 @@ testdb_static :: testdb_dynamic
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd :
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1.954">' > $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1.955">' > $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT>Perl binding for Redis database</ABSTRACT>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>Pedro Melo &lt;melo@cpan.org&gt;</AUTHOR>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> $(DISTNAME).ppd
