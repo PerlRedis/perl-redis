@@ -1221,6 +1221,51 @@ during the run.
   $r->lastsave;
 
 
+=head2 Scripting commands
+
+=head3 eval
+
+  $r->eval($lua_script, $num_keys, $key1, ..., $arg1, $arg2);
+
+Executes a Lua script server side.
+
+Note that this commands sends the Lua script every time you call it. See
+L</evalsha> and L</script_load> for an alternative.
+
+=head3 evalsha
+
+  $r->eval($lua_script_sha1, $num_keys, $key1, ..., $arg1, $arg2);
+
+Executes a Lua script cached on the server side by its SHA1 digest.
+
+See L</script_load>.
+
+=head3 script_load
+
+  my ($sha1) = $r->script_load($lua_script);
+
+Cache Lua script, returns SHA1 digest that can be used with L</evalsha>.
+
+=head3 script_exists
+
+  my ($exists1, $exists2, ...) = $r->script_exists($scrip1_sha, $script2_sha, ...);
+
+Given a list of SHA1 digests, returns a list of booleans, one for each
+SHA1, that report the existence of each script in the server cache.
+
+=head3 script_kill
+
+  $r->script_kill;
+
+Kills the currently running script.
+
+=head3 script_flush
+
+  $r->script_flush;
+
+Flush the Lua scripts cache.
+
+
 =head2 Remote server control commands
 
 =head3 info
