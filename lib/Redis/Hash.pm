@@ -1,7 +1,7 @@
 package Redis::Hash;
 
 # ABSTRACT: tie Perl hashes to Redis hashes
-our $VERSION = '1.955'; # VERSION
+our $VERSION = '1.956'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use strict;
@@ -79,7 +79,7 @@ Redis::Hash - tie Perl hashes to Redis hashes
 
 =head1 VERSION
 
-version 1.955
+version 1.956
 
 =head1 DESCRIPTION
 

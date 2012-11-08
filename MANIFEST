@@ -18,6 +18,7 @@ t/02-responses.t
 t/03-pubsub.t
 t/04-pipeline.t
 t/05-nonblock.t
+t/06-on-connect.t
 t/07-reconnect.t
 t/08-unix-socket.t
 t/09-env-redis-server.t
