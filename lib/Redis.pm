@@ -45,6 +45,7 @@ sub new {
   }
 
   $self->{password} = $args{password} if $args{password};
+  $self->{on_connect} = $args{on_connect} if $args{on_connect};
 
   if ($args{sock}) {
     $self->{server} = $args{sock};
@@ -431,6 +432,8 @@ sub __build_sock {
     };
   }
 
+  $self->{on_connect}->($self) if exists $self->{on_connect};
+
   return;
 }
 
@@ -807,6 +810,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
+    my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
 
 The C<< server >> parameter specifies the Redis server we should connect
 to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
@@ -864,6 +868,11 @@ C<< password >> attribute. After each established connection (at the
 start or when reconnecting), the Redis C<< AUTH >> command will be send
 to the server. If the password is wrong, an exception will be thrown and
 reconnect will be disabled.
+
+You can also provide a code reference that will be immediatly after each
+sucessfull connection. The C<< on_connect >> attribute is used to
+provide the code reference, and it will be called with the first
+parameter being the Redis object.
 
 The C<< debug >> parameter enables debug information to STDERR,
 including all interactions with the server. You can also enable debug
