@@ -29,7 +29,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## default to lax utf8
-  $self->{encoding} = exists $args{encoding}? $args{encoding} : 'utf8';
+  $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
 
   ## Deal with REDIS_SERVER ENV
   if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
@@ -44,7 +44,7 @@ sub new {
     }
   }
 
-  $self->{password} = $args{password} if $args{password};
+  $self->{password}   = $args{password}   if $args{password};
   $self->{on_connect} = $args{on_connect} if $args{on_connect};
 
   if ($args{sock}) {
