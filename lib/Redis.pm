@@ -1,7 +1,7 @@
 package Redis;
 
 # ABSTRACT: Perl binding for Redis database
-our $VERSION = '1.957'; # VERSION
+our $VERSION = '1.958'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use warnings;
@@ -85,7 +85,8 @@ sub AUTOLOAD {
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
 
-  my $method = sub { shift->__std_cmd($command, @_) };
+  my ($cmd_first, @rest) = split(/_/, $command);
+  my $method = sub { shift->__std_cmd($cmd_first, @rest, @_) };
 
   # Save this method for future calls
   no strict 'refs';
@@ -668,7 +669,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.957
+version 1.958
 
 =head1 SYNOPSIS
 
