@@ -1,6 +1,6 @@
 Revision history for Redis
 
-1.956     2013-01-15T10:33:34Z
+1.956     2013-01-15T10:35:10Z
     * Add on_connect callback to Redis constructor (issue 28)
     * Make sure quit() doesn't die when the socket is already dead (issue 30);
     * Switch to Digest::SHA, one less non-core dep RT#81841

@@ -158,6 +158,10 @@ x_Dist_Zilla:
       name: '@Author::MELO/MakeMaker'
       version: 4.300028
     -
+      class: Dist::Zilla::Plugin::Test::Pod::No404s
+      name: '@Author::MELO/Test::Pod::No404s'
+      version: 1.001
+    -
       class: Dist::Zilla::Plugin::Test::UnusedVars
       name: '@Author::MELO/@TestingMania/Test::UnusedVars'
       version: 2.000003
@@ -165,10 +169,6 @@ x_Dist_Zilla:
       class: Dist::Zilla::Plugin::Test::Synopsis
       name: '@Author::MELO/@TestingMania/Test::Synopsis'
       version: 2.000002
-    -
-      class: Dist::Zilla::Plugin::Test::Portability
-      name: '@Author::MELO/@TestingMania/Test::Portability'
-      version: 2.000003
     -
       class: Dist::Zilla::Plugin::Test::Version
       name: '@Author::MELO/@TestingMania/Test::Version'
@@ -198,6 +198,10 @@ x_Dist_Zilla:
       name: '@Author::MELO/@TestingMania/Test::Compile'
       version: 1.112820
     -
+      class: Dist::Zilla::Plugin::Test::Kwalitee
+      name: '@Author::MELO/@TestingMania/Test::Kwalitee'
+      version: 2.03
+    -
       class: Dist::Zilla::Plugin::NoTabsTests
       name: '@Author::MELO/@TestingMania/NoTabsTests'
       version: 0.01
@@ -205,6 +209,10 @@ x_Dist_Zilla:
       class: Dist::Zilla::Plugin::Test::MinimumVersion
       name: '@Author::MELO/@TestingMania/Test::MinimumVersion'
       version: 2.000002
+    -
+      class: Dist::Zilla::Plugin::Test::Pod::LinkCheck
+      name: '@Author::MELO/@TestingMania/Test::Pod::LinkCheck'
+      version: 1.001
     -
       class: Dist::Zilla::Plugin::Test::EOL
       name: '@Author::MELO/@TestingMania/Test::EOL'
