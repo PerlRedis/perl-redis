@@ -1,11 +1,11 @@
 Revision history for Redis
 
-1.956     2013-01-15T10:31:21Z
+1.956     2013-01-15T10:33:34Z
     * Add on_connect callback to Redis constructor (issue 28)
     * Make sure quit() doesn't die when the socket is already dead (issue 30);
     * Switch to Digest::SHA, one less non-core dep RT#81841
     * Try and make Travis-CI more useful, ask for a redis-server
-    * Upda
+    * Update SUPPORT section, moving bugtracker to GitHub issues
 
 1.955     2012-10-10T11:43:44Z
     * Skip 30-scripts.t if the redis-server found lacks script support
