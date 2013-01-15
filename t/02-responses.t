@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 use Test::More;
-use Test::Exception;
+use Test::Fatal;
 use Test::Deep;
 use IO::String;
 use Redis;
@@ -80,9 +80,11 @@ is_deeply([$r->__read_response('cmd')], [undef, undef],
 
 ## Multi-bulk responses with nested error
 r('*3', '$5', 'Redis', '-you must die!!', ':42');
-throws_ok sub { $r->__read_response('cmd') },
+like(
+  exception { $r->__read_response('cmd') },
   qr/\[cmd\] you must die!!/,
-  'Nested errors must usually throw exceptions';
+  'Nested errors must usually throw exceptions'
+);
 
 r('*3', '$5', 'Redis', '-you must die!!', ':42');
 is_deeply([$r->__read_response('cmd', 1)], [

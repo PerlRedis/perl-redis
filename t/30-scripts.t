@@ -3,7 +3,6 @@
 use warnings;
 use strict;
 use Test::More;
-use Test::Exception;
 use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;

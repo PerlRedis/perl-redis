@@ -1,5 +1,10 @@
 Revision history for Redis
 
+1.958     2013-01-15T16:54:40Z
+    * Support for name constructor parameter, set connection name
+    * Add documentation for CLIENT * commands
+    * Improve reliability of Test::SpawnRedisServer
+
 1.957     2013-01-15T13:18:07Z
     * Fix minimum Perl version
 

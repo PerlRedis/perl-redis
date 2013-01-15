@@ -37,14 +37,8 @@
             "IO::String" : "0",
             "IPC::Cmd" : "0",
             "Test::Deep" : "0",
-            "Test::Exception" : "0",
             "Test::Fatal" : "0",
             "Test::More" : "0.98"
-         }
-      },
-      "configure" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "6.30"
          }
       },
       "develop" : {
@@ -66,7 +60,6 @@
             "IO::String" : "0",
             "IPC::Cmd" : "0",
             "Test::Deep" : "0",
-            "Test::Exception" : "0",
             "Test::Fatal" : "0",
             "Test::More" : "0.98"
          }
@@ -75,15 +68,15 @@
    "provides" : {
       "Redis" : {
          "file" : "lib/Redis.pm",
-         "version" : "1.957"
+         "version" : "1.958"
       },
       "Redis::Hash" : {
          "file" : "lib/Redis/Hash.pm",
-         "version" : "1.957"
+         "version" : "1.958"
       },
       "Redis::List" : {
          "file" : "lib/Redis/List.pm",
-         "version" : "1.957"
+         "version" : "1.958"
       }
    },
    "release_status" : "stable",
@@ -98,7 +91,7 @@
          "web" : "https://github.com/melo/perl-redis"
       }
    },
-   "version" : "1.957",
+   "version" : "1.958",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.014002"
@@ -193,11 +186,6 @@
             "class" : "Dist::Zilla::Plugin::MetaProvides::Package",
             "name" : "@Author::MELO/MetaProvides::Package",
             "version" : "1.14000001"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::MinimumPerl",
-            "name" : "@Author::MELO/MinimumPerl",
-            "version" : "1.003"
          },
          {
             "class" : "Dist::Zilla::Plugin::MetaConfig",

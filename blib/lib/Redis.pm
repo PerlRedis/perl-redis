@@ -1,7 +1,7 @@
 package Redis;
 
 # ABSTRACT: Perl binding for Redis database
-our $VERSION = '1.957'; # VERSION
+our $VERSION = '1.958'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use warnings;
@@ -46,6 +46,14 @@ sub new {
 
   $self->{password}   = $args{password}   if $args{password};
   $self->{on_connect} = $args{on_connect} if $args{on_connect};
+
+  if (my $name = $args{name}) {
+    my $on_conn = $self->{on_connect};
+    $self->{on_connect} = sub {
+      $_[0]->client_setname($name);
+      $on_conn->(@_) if $on_conn;
+    }
+  }
 
   if ($args{sock}) {
     $self->{server} = $args{sock};
@@ -668,7 +676,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.957
+version 1.958
 
 =head1 SYNOPSIS
 
@@ -676,6 +684,9 @@ version 1.957
     my $redis = Redis->new;
 
     my $redis = Redis->new(server => 'redis.example.com:8080');
+
+    ## Set the connection name (requires Redis 2.6.9)
+    my $redis = Redis->new(server => 'redis.example.com:8080', name => 'my_connection_name');
 
     ## Use UNIX domain socket
     my $redis = Redis->new(sock => '/path/to/socket');
@@ -828,6 +839,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
     my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
+    my $r = Redis->new( name => 'my_connection_name' ); ## Redis 2.6.9 required
 
 The C<< server >> parameter specifies the Redis server we should connect
 to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
@@ -863,7 +875,7 @@ tcp:127.0.0.1:11011
 The C<< encoding >> parameter speficies the encoding we will use to
 decode all the data we receive and encode all the data sent to the redis
 server. Due to backwards-compatibility we default to C<< utf8 >>. To
-disable all this encoding/decoding, you must use C<<encoding => undef>>.
+disable all this encoding/decoding, you must use C<< encoding => undef >>.
 B<< This is the recommended option >>.
 
 B<< Warning >>: this option has several problems and it is
@@ -891,6 +903,14 @@ sucessfull connection. The C<< on_connect >> attribute is used to
 provide the code reference, and it will be called with the first
 parameter being the Redis object.
 
+Starting with Redis 2.6.9, you can set a name for each connection.
+This can be very useful for debugging purposes, using the
+C<< CLIENT LIST >> command. To set a connection name, use the C<< name >>
+parameter. Please note that there are restrictions on the name you can
+set, the most important of which is, no spaces. See the
+L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname>
+for all the juicy details.
+
 The C<< debug >> parameter enables debug information to STDERR,
 including all interactions with the server. You can also enable debug
 with the C<REDIS_DEBUG> environment variable.
@@ -909,6 +929,30 @@ pipelined operation.
   $r->ping || die "no server?";
 
 The C<ping> method does not support pipelined operation.
+
+=head3 client_list
+
+  @clients = $r->client_list;
+
+Returns list of clients connected to the server. See
+L<CLIENT LIST documentation|http://redis.io/commands/client-list>
+for a description of the fields and their meaning.
+
+=head3 client_getname
+
+  my $connection_name = $r->client_getname;
+
+Returns the name associated with this connection. See L</client_setname>
+or the C<< name >> parameter to L</new> for ways to set this name.
+
+=head3 client_setname
+
+  $r->client_setname('my_connection_name');
+
+Sets this connection name. See the
+L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname>
+for restrictions on the connection name string. The most important one:
+no spaces.
 
 =head2 Pipeline management
 
