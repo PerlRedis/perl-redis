@@ -1,6 +1,6 @@
 Revision history for Redis
 
-1.957     2013-01-15T13:08:22Z
+1.957     2013-01-15T13:09:36Z
 
 1.956     2013-01-15T10:35:10Z
     * Add on_connect callback to Redis constructor (issue 28)

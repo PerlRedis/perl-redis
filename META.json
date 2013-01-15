@@ -31,6 +31,11 @@
       ]
    },
    "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.30"
+         }
+      },
       "develop" : {
          "requires" : {
             "Pod::Coverage::TrustPod" : "0",
@@ -42,15 +47,18 @@
       "runtime" : {
          "requires" : {
             "Try::Tiny" : "0",
-            "perl" : "5.014"
+            "perl" : "5.008"
          }
       },
       "test" : {
          "requires" : {
+            "Digest::SHA" : "0",
             "IO::String" : "0",
+            "IPC::Cmd" : "0",
             "Test::Deep" : "0",
             "Test::Exception" : "0",
-            "Test::Fatal" : "0"
+            "Test::Fatal" : "0",
+            "Test::More" : "0.98"
          }
       }
    },
