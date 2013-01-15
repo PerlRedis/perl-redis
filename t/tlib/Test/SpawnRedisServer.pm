@@ -45,6 +45,7 @@ sub redis {
   my ($ver, $c);
   eval { ($ver, $c) = spawn_server($redis_server_path, $fn, $addr) };
   if (my $e = $@) {
+    reap();
     Test::More::plan skip_all => "Could not start redis-server: $@";
     return;
   }
