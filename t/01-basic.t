@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 use Test::More;
-use Test::Exception;
+use Test::Fatal;
 use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
@@ -92,9 +92,11 @@ ok($@, 'rename to existing key');
 
 ok(my $nr_keys = $o->dbsize, 'dbsize');
 
-throws_ok sub { $o->lpush('foo', 'bar') },
+like(
+  exception { $o->lpush('foo', 'bar') },
   qr/\[lpush\] ERR Operation against a key holding the wrong kind of value,/,
-  'Error responses throw exception';
+  'Error responses throw exception'
+);
 
 
 ## Commands operating on lists
@@ -295,8 +297,6 @@ is_deeply({$o->hgetall($hash)}, {foo => 1, bar => 2, baz => 3, qux => 4});
 ok($o->del($hash));                            # remove entire hash
 
 
-## Commands with multiple names, use _
-
 ## Multiple databases handling commands
 
 ok($o->select(1), 'select');
@@ -353,9 +353,11 @@ ok(!$o->shutdown(), '... twice also lives, but returns false');
 ok(!$o->ping(), 'ping() will be false after shutdown()');
 
 sleep(1);
-throws_ok sub { Redis->new(server => $srv) },
+like(
+  exception { Redis->new(server => $srv) },
   qr/Could not connect to Redis server at $srv/,
-  'Failed connection throws exception';
+  'Failed connection throws exception'
+);
 
 
 ## All done

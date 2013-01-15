@@ -16,7 +16,6 @@ my %WriteMakefileArgs = (
     "IO::String" => 0,
     "IPC::Cmd" => 0,
     "Test::Deep" => 0,
-    "Test::Exception" => 0,
     "Test::Fatal" => 0,
     "Test::More" => "0.98"
   },

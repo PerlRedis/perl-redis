@@ -3,6 +3,7 @@ package    # Hide from PAUSE
 
 use strict;
 use warnings;
+use Redis;
 use File::Temp;
 use IPC::Cmd qw(can_run);
 use POSIX ":sys_wait_h";
@@ -32,7 +33,8 @@ sub redis {
   ");
   $fh->flush;
 
-  Test::More::diag("Redis port $port, cfg $fn") if $ENV{REDIS_DEBUG};
+  my $addr = "127.0.0.1:$port";
+  Test::More::diag("Spawn Redis at $addr, cfg $fn") if $ENV{REDIS_DEBUG};
 
   my $redis_server_path = $ENV{REDIS_SERVER_PATH} || 'redis-server';
   if (! can_run($redis_server_path)) {
@@ -40,52 +42,81 @@ sub redis {
     return;
   }
 
-  my $c;
-  eval { $c = spawn_server($redis_server_path, $fn) };
+  my ($ver, $c);
+  eval { ($ver, $c) = spawn_server($redis_server_path, $fn, $addr) };
   if (my $e = $@) {
+    reap();
     Test::More::plan skip_all => "Could not start redis-server: $@";
     return;
   }
 
-  return ($c, "127.0.0.1:$port");
+  if (my $rvs = $params{requires_version}) {
+    if (!defined $ver) {
+      $c->();
+      Test::More::plan skip_all => "This tests require at least redis-server $rvs, could not determine server version";
+      return;
+    }
+
+    my ($v1, $v2, $v3) = split(/[.]/, $ver);
+    my ($r1, $r2, $r3) = split(/[.]/, $rvs);
+    if ($v1 < $r1 or $v1 == $r1 and $v2 < $r2 or $v1 == $r1 and $v2 == $r2 and $v3 < $r3) {
+      $c->();
+      Test::More::plan skip_all => "This tests require at least redis-server $rvs, server found is $ver";
+      return;
+    }
+  }
+
+  return ($c, $addr, $ver, split(/[.]/, $ver));
 }
 
 sub spawn_server {
-  my $pid = fork();
+  my $addr = pop;
+  my $pid  = fork();
   if ($pid) {    ## Parent
     require Test::More;
     Test::More::diag("Starting server with pid $pid") if $ENV{REDIS_DEBUG};
 
-    ## FIXME: we should PING it until he is ready
-    sleep(1);
-    my $alive = 1;
+    my $redis   = Redis->new(server => $addr, reconnect => 5, every => 200);
+    my $version = $redis->info->{redis_version};
+    my $alive   = 1;
 
-    return sub {
+    my $c = sub {
       return unless $alive;
 
       Test::More::diag("Killing server at $pid") if $ENV{REDIS_DEBUG};
       kill(15, $pid);
 
-      my $try = 0;
-      while ($try++ < 10) {
-        my $ok = waitpid($pid, WNOHANG);
-        $try = -1, last if $ok > 0;
-        sleep(1);
-      }
+      my $failed = reap($pid);
       Test::More::diag("Failed to kill server at $pid")
-        if $ENV{REDIS_DEBUG} && $try > 0;
+        if $ENV{REDIS_DEBUG} and $failed;
       unlink('redis-server.log');
       unlink('dump.rdb');
       $alive = 0;
     };
+
+    return $version => $c;
   }
   elsif (defined $pid) {    ## Child
     exec(@_);
-    die "Failed exec of '@_': $!, ";
+    warn "## In child Failed exec of '@_': $!, ";
+    exit(1);
   }
 
   die "Could not fork(): $!";
 }
 
+sub reap {
+  my ($pid) = @_;
+  $pid = -1 unless $pid;
+
+  my $try = 0;
+  while ($try++ < 3) {
+    my $ok = waitpid($pid, WNOHANG);
+    $try = 0, last if $ok > 0;
+    sleep(1);
+  }
+
+  return $try;
+}
 
 1;
