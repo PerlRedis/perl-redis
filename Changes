@@ -1,5 +1,7 @@
 Revision history for Redis
 
+1.957     2013-01-15T12:51:20Z
+
 1.956     2013-01-15T10:35:10Z
     * Add on_connect callback to Redis constructor (issue 28)
     * Make sure quit() doesn't die when the socket is already dead (issue 30);
