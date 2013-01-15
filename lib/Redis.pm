@@ -174,9 +174,15 @@ sub quit {
   confess "[quit] only works in synchronous mode, "
       if @_ && ref $_[-1] eq 'CODE';
 
-  $self->wait_all_responses;
-  $self->__send_command('QUIT');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  try {
+    $self->wait_all_responses;
+    $self->__send_command('QUIT');
+  }
+  catch {
+    ## Ignore, we are quiting anyway...
+  };
+
+  close(delete $self->{sock}) if $self->{sock};
 
   return 1;
 }
