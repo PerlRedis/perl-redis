@@ -50,6 +50,22 @@ sub redis {
     return;
   }
 
+  if (my $rvs = $params{requires_version}) {
+    if (!defined $ver) {
+      $c->();
+      Test::More::plan skip_all => "This tests require at least redis-server $rvs, could not determine server version";
+      return;
+    }
+
+    my ($v1, $v2, $v3) = split(/[.]/, $ver);
+    my ($r1, $r2, $r3) = split(/[.]/, $rvs);
+    if ($v1 < $r1 or $v1 == $r1 and $v2 < $r2 or $v1 == $r1 and $v2 == $r2 and $v3 < $r3) {
+      $c->();
+      Test::More::plan skip_all => "This tests require at least redis-server $rvs, server found is $ver";
+      return;
+    }
+  }
+
   return ($c, $addr, $ver, split(/[.]/, $ver));
 }
 
