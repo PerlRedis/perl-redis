@@ -13,15 +13,15 @@
 
 #     ABSTRACT => q[Perl binding for Redis database]
 #     AUTHOR => [q[Pedro Melo <melo@cpan.org>]]
-#     BUILD_REQUIRES => { Test::Exception=>q[0], IO::String=>q[0], Test::Fatal=>q[0], Test::Deep=>q[0] }
-#     CONFIGURE_REQUIRES => {  }
+#     BUILD_REQUIRES => { Test::More=>q[0.98], Test::Exception=>q[0], IO::String=>q[0], Digest::SHA=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
+#     CONFIGURE_REQUIRES => { ExtUtils::MakeMaker=>q[6.30] }
 #     DISTNAME => q[Redis]
 #     EXE_FILES => []
 #     LICENSE => q[artistic_2]
 #     NAME => q[Redis]
-#     PREREQ_PM => { Try::Tiny=>q[0], Test::Exception=>q[0], IO::String=>q[0], Test::Fatal=>q[0], Test::Deep=>q[0] }
+#     PREREQ_PM => { Test::More=>q[0.98], Try::Tiny=>q[0], Test::Exception=>q[0], IO::String=>q[0], Digest::SHA=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
 #     TEST_REQUIRES => {  }
-#     VERSION => q[1.956]
+#     VERSION => q[1.957]
 #     test => { TESTS=>q[t/*.t] }
 
 # --- MakeMaker post_initialize section:
@@ -61,11 +61,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Redis
 NAME_SYM = Redis
-VERSION = 1.956
+VERSION = 1.957
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_956
+VERSION_SYM = 1_957
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.956
+XS_VERSION = 1.957
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -267,7 +267,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Redis
-DISTVNAME = Redis-1.956
+DISTVNAME = Redis-1.957
 
 
 # --- MakeMaker macro section:
@@ -496,11 +496,15 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) 'author:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  - '\''Pedro Melo <melo@cpan.org>'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'build_requires:' >> META_new.yml
+	$(NOECHO) $(ECHO) '  Digest::SHA: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  IO::String: 0' >> META_new.yml
+	$(NOECHO) $(ECHO) '  IPC::Cmd: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Test::Deep: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Test::Exception: 0' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Test::Fatal: 0' >> META_new.yml
-	$(NOECHO) $(ECHO) 'configure_requires: {}' >> META_new.yml
+	$(NOECHO) $(ECHO) '  Test::More: 0.98' >> META_new.yml
+	$(NOECHO) $(ECHO) 'configure_requires:' >> META_new.yml
+	$(NOECHO) $(ECHO) '  ExtUtils::MakeMaker: 6.30' >> META_new.yml
 	$(NOECHO) $(ECHO) 'dynamic_config: 1' >> META_new.yml
 	$(NOECHO) $(ECHO) 'generated_by: '\''ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.120921'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'license: artistic_2' >> META_new.yml
@@ -514,7 +518,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Try::Tiny: 0' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: 1.956' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: 1.957' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -541,14 +545,19 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '   "prereqs" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '      "build" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '         "requires" : {' >> META_new.json
+	$(NOECHO) $(ECHO) '            "Digest::SHA" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "IO::String" : "0",' >> META_new.json
+	$(NOECHO) $(ECHO) '            "IPC::Cmd" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "Test::Deep" : "0",' >> META_new.json
 	$(NOECHO) $(ECHO) '            "Test::Exception" : "0",' >> META_new.json
-	$(NOECHO) $(ECHO) '            "Test::Fatal" : "0"' >> META_new.json
+	$(NOECHO) $(ECHO) '            "Test::Fatal" : "0",' >> META_new.json
+	$(NOECHO) $(ECHO) '            "Test::More" : "0.98"' >> META_new.json
 	$(NOECHO) $(ECHO) '         }' >> META_new.json
 	$(NOECHO) $(ECHO) '      },' >> META_new.json
 	$(NOECHO) $(ECHO) '      "configure" : {' >> META_new.json
-	$(NOECHO) $(ECHO) '         "requires" : {}' >> META_new.json
+	$(NOECHO) $(ECHO) '         "requires" : {' >> META_new.json
+	$(NOECHO) $(ECHO) '            "ExtUtils::MakeMaker" : "6.30"' >> META_new.json
+	$(NOECHO) $(ECHO) '         }' >> META_new.json
 	$(NOECHO) $(ECHO) '      },' >> META_new.json
 	$(NOECHO) $(ECHO) '      "runtime" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '         "requires" : {' >> META_new.json
@@ -557,7 +566,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "1.956"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "1.957"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 

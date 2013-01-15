@@ -3,10 +3,15 @@ abstract: 'Perl binding for Redis database'
 author:
   - 'Pedro Melo <melo@cpan.org>'
 build_requires:
+  Digest::SHA: 0
   IO::String: 0
+  IPC::Cmd: 0
   Test::Deep: 0
   Test::Exception: 0
   Test::Fatal: 0
+  Test::More: 0.98
+configure_requires:
+  ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
 generated_by: 'Dist::Zilla version 4.300028, CPAN::Meta::Converter version 2.120921'
 license: artistic_2
@@ -30,21 +35,21 @@ no_index:
 provides:
   Redis:
     file: lib/Redis.pm
-    version: 1.956
+    version: 1.957
   Redis::Hash:
     file: lib/Redis/Hash.pm
-    version: 1.956
+    version: 1.957
   Redis::List:
     file: lib/Redis/List.pm
-    version: 1.956
+    version: 1.957
 requires:
   Try::Tiny: 0
-  perl: 5.014
+  perl: 5.008
 resources:
   bugtracker: https://github.com/melo/perl-redis/issues
-  homepage: http://search.cpan.org/dist/Redis
+  homepage: http://metacpan.org/release/Redis/
   repository: git://github.com/melo/perl-redis.git
-version: 1.956
+version: 1.957
 x_Dist_Zilla:
   perl:
     version: 5.014002
