@@ -25,4 +25,10 @@ subtest 'client_{set|get}name commands' => sub {
 };
 
 
+subtest 'client name via constructor' => sub {
+  ok(my $r = Redis->new(server => $srv, name => 'buuu'), 'connected to our test redis-server, with a name');
+  is($r->client_getname, 'buuu', '... name was properly set');
+};
+
+
 done_testing();

@@ -47,6 +47,14 @@ sub new {
   $self->{password}   = $args{password}   if $args{password};
   $self->{on_connect} = $args{on_connect} if $args{on_connect};
 
+  if (my $name = $args{name}) {
+    my $on_conn = $self->{on_connect};
+    $self->{on_connect} = sub {
+      $_[0]->client_setname($name);
+      $on_conn->(@_) if $on_conn;
+    }
+  }
+
   if ($args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
