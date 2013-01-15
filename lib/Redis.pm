@@ -244,7 +244,7 @@ sub info {
   });
 }
 
-sub keyss {
+sub keys {
   my $self = shift;
   $self->__is_valid_command('KEYS');
 
