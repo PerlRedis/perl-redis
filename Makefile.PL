@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use 5.008;
+use 5.008008;
 
 use ExtUtils::MakeMaker 6.30;
 
@@ -20,9 +20,7 @@ my %WriteMakefileArgs = (
     "Test::Fatal" => 0,
     "Test::More" => "0.98"
   },
-  "CONFIGURE_REQUIRES" => {
-    "ExtUtils::MakeMaker" => "6.30"
-  },
+  "CONFIGURE_REQUIRES" => {},
   "DISTNAME" => "Redis",
   "EXE_FILES" => [],
   "LICENSE" => "artistic_2",

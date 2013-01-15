@@ -295,6 +295,8 @@ is_deeply({$o->hgetall($hash)}, {foo => 1, bar => 2, baz => 3, qux => 4});
 ok($o->del($hash));                            # remove entire hash
 
 
+## Commands with multiple names, use _
+
 ## Multiple databases handling commands
 
 ok($o->select(1), 'select');

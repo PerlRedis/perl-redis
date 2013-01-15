@@ -31,11 +31,6 @@
       ]
    },
    "prereqs" : {
-      "configure" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "6.30"
-         }
-      },
       "develop" : {
          "requires" : {
             "Pod::Coverage::TrustPod" : "0",
@@ -47,7 +42,7 @@
       "runtime" : {
          "requires" : {
             "Try::Tiny" : "0",
-            "perl" : "5.008"
+            "perl" : "v5.8.8"
          }
       },
       "test" : {
@@ -185,11 +180,6 @@
             "version" : "1.14000001"
          },
          {
-            "class" : "Dist::Zilla::Plugin::MinimumPerl",
-            "name" : "@Author::MELO/MinimumPerl",
-            "version" : "1.003"
-         },
-         {
             "class" : "Dist::Zilla::Plugin::MetaConfig",
             "name" : "@Author::MELO/MetaConfig",
             "version" : "4.300028"
@@ -244,11 +234,6 @@
             "class" : "Dist::Zilla::Plugin::Test::Synopsis",
             "name" : "@Author::MELO/@TestingMania/Test::Synopsis",
             "version" : "2.000002"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::Test::Portability",
-            "name" : "@Author::MELO/@TestingMania/Test::Portability",
-            "version" : "2.000003"
          },
          {
             "class" : "Dist::Zilla::Plugin::Test::Version",
