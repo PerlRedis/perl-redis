@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Fix minimum Perl version
 
 1.956     2013-01-15T10:35:10Z
     * Add on_connect callback to Redis constructor (issue 28)
