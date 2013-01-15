@@ -467,7 +467,7 @@ sub __send_command {
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
     $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless $len;
+      unless defined $len;
     substr $buf, 0, $len, "";
   }
 
