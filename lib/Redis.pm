@@ -852,7 +852,7 @@ tcp:127.0.0.1:11011
 The C<< encoding >> parameter speficies the encoding we will use to
 decode all the data we receive and encode all the data sent to the redis
 server. Due to backwards-compatibility we default to C<< utf8 >>. To
-disable all this encoding/decoding, you must use C<<encoding => undef>>.
+disable all this encoding/decoding, you must use C<< encoding => undef >>.
 B<< This is the recommended option >>.
 
 B<< Warning >>: this option has several problems and it is
