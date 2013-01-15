@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.958     2013-01-15T16:54:40Z
     * Support for name constructor parameter, set connection name
     * Add documentation for CLIENT * commands
     * Improve reliability of Test::SpawnRedisServer
