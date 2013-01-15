@@ -1,3 +1,4 @@
+.travis.yml
 Changes
 LICENSE
 MANIFEST
@@ -18,6 +19,7 @@ t/02-responses.t
 t/03-pubsub.t
 t/04-pipeline.t
 t/05-nonblock.t
+t/06-on-connect.t
 t/07-reconnect.t
 t/08-unix-socket.t
 t/09-env-redis-server.t
@@ -29,13 +31,15 @@ xt/author/test-eol.t
 xt/release/cpan-changes.t
 xt/release/dist-manifest.t
 xt/release/distmeta.t
+xt/release/kwalitee.t
 xt/release/meta-json.t
 xt/release/minimum-version.t
 xt/release/mojibake.t
 xt/release/no-tabs.t
 xt/release/pod-coverage.t
+xt/release/pod-linkcheck.t
+xt/release/pod-no404s.t
 xt/release/pod-syntax.t
-xt/release/portability.t
 xt/release/synopsis.t
 xt/release/test-version.t
 xt/release/unused-vars.t

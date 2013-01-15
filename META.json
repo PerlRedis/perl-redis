@@ -4,7 +4,7 @@
       "Pedro Melo <melo@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300024, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Dist::Zilla version 4.300028, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "artistic_2"
    ],
@@ -31,96 +31,105 @@
       ]
    },
    "prereqs" : {
-      "configure" : {
+      "develop" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.30"
+            "Pod::Coverage::TrustPod" : "0",
+            "Test::CPAN::Meta" : "0",
+            "Test::Pod" : "1.41",
+            "Test::Pod::Coverage" : "1.08"
          }
       },
       "runtime" : {
          "requires" : {
             "Try::Tiny" : "0",
-            "perl" : "5.008"
+            "perl" : "5.014"
          }
       },
       "test" : {
          "requires" : {
-            "Digest::SHA1" : "0",
             "IO::String" : "0",
-            "IPC::Cmd" : "0",
             "Test::Deep" : "0",
             "Test::Exception" : "0",
-            "Test::Fatal" : "0",
-            "Test::More" : "0.98"
+            "Test::Fatal" : "0"
          }
       }
    },
    "provides" : {
       "Redis" : {
          "file" : "lib/Redis.pm",
-         "version" : "1.955"
+         "version" : "1.956"
       },
       "Redis::Hash" : {
          "file" : "lib/Redis/Hash.pm",
-         "version" : "1.955"
+         "version" : "1.956"
       },
       "Redis::List" : {
          "file" : "lib/Redis/List.pm",
-         "version" : "1.955"
+         "version" : "1.956"
       }
    },
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "mailto" : "bug-redis at rt.cpan.org",
-         "web" : "http://rt.cpan.org/Public/Dist/Display.html?Name=Redis"
+         "web" : "https://github.com/melo/perl-redis/issues"
       },
-      "homepage" : "https://github.com/melo/perl-redis",
+      "homepage" : "http://search.cpan.org/dist/Redis",
       "repository" : {
          "type" : "git",
-         "url" : "https://github.com/melo/perl-redis.git",
+         "url" : "git://github.com/melo/perl-redis.git",
          "web" : "https://github.com/melo/perl-redis"
       }
    },
-   "version" : "1.955",
+   "version" : "1.956",
    "x_Dist_Zilla" : {
       "perl" : {
-         "version" : "5.014001"
+         "version" : "5.014002"
       },
       "plugins" : [
          {
+            "class" : "Dist::Zilla::Plugin::GitHub::Meta",
+            "name" : "@Author::MELO/@GitHub/GitHub::Meta",
+            "version" : "0.30"
+         },
+         {
+            "class" : "Dist::Zilla::Plugin::GitHub::Update",
+            "name" : "@Author::MELO/@GitHub/GitHub::Update",
+            "version" : "0.30"
+         },
+         {
             "class" : "Dist::Zilla::Plugin::Git::NextVersion",
             "name" : "@Author::MELO/Git::NextVersion",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::GenerateFile",
             "name" : "@Author::MELO/GenerateManifestSkip",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::GenerateFile",
             "name" : "@Author::MELO/GenerateTravisCfg",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::GatherDir",
             "name" : "@Author::MELO/GatherDir",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::PruneCruft",
             "name" : "@Author::MELO/PruneCruft",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::ManifestSkip",
             "name" : "@Author::MELO/ManifestSkip",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::PruneFiles",
             "name" : "@Author::MELO/PruneRepoMetaFiles",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Authority",
@@ -130,7 +139,7 @@
          {
             "class" : "Dist::Zilla::Plugin::NextRelease",
             "name" : "@Author::MELO/NextRelease",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::OurPkgVersion",
@@ -145,37 +154,22 @@
          {
             "class" : "Dist::Zilla::Plugin::License",
             "name" : "@Author::MELO/License",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Readme",
             "name" : "@Author::MELO/Readme",
-            "version" : "4.300024"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::Bugtracker",
-            "name" : "@Author::MELO/Bugtracker",
-            "version" : "1.111080"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::Repository",
-            "name" : "@Author::MELO/Repository",
-            "version" : "0.18"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::GithubMeta",
-            "name" : "@Author::MELO/GithubMeta",
-            "version" : "0.28"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::AutoPrereqs",
             "name" : "@Author::MELO/AutoPrereqs",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MetaNoIndex",
             "name" : "@Author::MELO/MetaNoIndex",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MetaProvides::Package",
@@ -190,17 +184,17 @@
          {
             "class" : "Dist::Zilla::Plugin::MetaConfig",
             "name" : "@Author::MELO/MetaConfig",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MetaYAML",
             "name" : "@Author::MELO/MetaYAML",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MetaJSON",
             "name" : "@Author::MELO/MetaJSON",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Prereqs",
@@ -211,22 +205,27 @@
                }
             },
             "name" : "@Author::MELO/TestMoreWithSubtests",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::ExecDir",
             "name" : "@Author::MELO/ExecDir",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::ShareDir",
             "name" : "@Author::MELO/ShareDir",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MakeMaker",
             "name" : "@Author::MELO/MakeMaker",
-            "version" : "4.300024"
+            "version" : "4.300028"
+         },
+         {
+            "class" : "Dist::Zilla::Plugin::Test::Pod::No404s",
+            "name" : "@Author::MELO/Test::Pod::No404s",
+            "version" : "1.001"
          },
          {
             "class" : "Dist::Zilla::Plugin::Test::UnusedVars",
@@ -239,11 +238,6 @@
             "version" : "2.000002"
          },
          {
-            "class" : "Dist::Zilla::Plugin::Test::Portability",
-            "name" : "@Author::MELO/@TestingMania/Test::Portability",
-            "version" : "2.000003"
-         },
-         {
             "class" : "Dist::Zilla::Plugin::Test::Version",
             "name" : "@Author::MELO/@TestingMania/Test::Version",
             "version" : "0.002004"
@@ -251,7 +245,7 @@
          {
             "class" : "Dist::Zilla::Plugin::PodCoverageTests",
             "name" : "@Author::MELO/@TestingMania/PodCoverageTests",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Test::CPAN::Changes",
@@ -271,12 +265,17 @@
          {
             "class" : "Dist::Zilla::Plugin::MetaTests",
             "name" : "@Author::MELO/@TestingMania/MetaTests",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Test::Compile",
             "name" : "@Author::MELO/@TestingMania/Test::Compile",
             "version" : "1.112820"
+         },
+         {
+            "class" : "Dist::Zilla::Plugin::Test::Kwalitee",
+            "name" : "@Author::MELO/@TestingMania/Test::Kwalitee",
+            "version" : "2.03"
          },
          {
             "class" : "Dist::Zilla::Plugin::NoTabsTests",
@@ -289,6 +288,11 @@
             "version" : "2.000002"
          },
          {
+            "class" : "Dist::Zilla::Plugin::Test::Pod::LinkCheck",
+            "name" : "@Author::MELO/@TestingMania/Test::Pod::LinkCheck",
+            "version" : "1.001"
+         },
+         {
             "class" : "Dist::Zilla::Plugin::Test::EOL",
             "name" : "@Author::MELO/@TestingMania/Test::EOL",
             "version" : "0.07"
@@ -296,7 +300,7 @@
          {
             "class" : "Dist::Zilla::Plugin::PodSyntaxTests",
             "name" : "@Author::MELO/@TestingMania/PodSyntaxTests",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::MojibakeTests",
@@ -306,7 +310,7 @@
          {
             "class" : "Dist::Zilla::Plugin::Manifest",
             "name" : "@Author::MELO/Manifest",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::CheckExtraTests",
@@ -321,42 +325,42 @@
          {
             "class" : "Dist::Zilla::Plugin::TestRelease",
             "name" : "@Author::MELO/TestRelease",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::ConfirmRelease",
             "name" : "@Author::MELO/ConfirmRelease",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::UploadToCPAN",
             "name" : "@Author::MELO/UploadToCPAN",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::CommitBuild",
             "name" : "@Author::MELO/Git::CommitBuild",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Check",
             "name" : "@Author::MELO/@Git/Check",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Commit",
             "name" : "@Author::MELO/@Git/Commit",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Tag",
             "name" : "@Author::MELO/@Git/Tag",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Push",
             "name" : "@Author::MELO/@Git/Push",
-            "version" : "1.122530"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::InstallRelease",
@@ -366,7 +370,7 @@
          {
             "class" : "Dist::Zilla::Plugin::PrereqsClean",
             "name" : "@Author::MELO/PrereqsClean",
-            "version" : "0.91"
+            "version" : "0.92"
          },
          {
             "class" : "Dist::Zilla::Plugin::Clean",
@@ -376,32 +380,32 @@
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":InstallModules",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":IncModules",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":TestFiles",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":ExecFiles",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":ShareFiles",
-            "version" : "4.300024"
+            "version" : "4.300028"
          },
          {
             "class" : "Dist::Zilla::Plugin::FinderCode",
             "name" : ":MainModule",
-            "version" : "4.300024"
+            "version" : "4.300028"
          }
       ],
       "zilla" : {
@@ -409,7 +413,7 @@
          "config" : {
             "is_trial" : "0"
          },
-         "version" : "4.300024"
+         "version" : "4.300028"
       }
    },
    "x_authority" : "cpan:MELO"

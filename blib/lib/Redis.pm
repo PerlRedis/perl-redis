@@ -1,7 +1,7 @@
 package Redis;
 
 # ABSTRACT: Perl binding for Redis database
-our $VERSION = '1.955'; # VERSION
+our $VERSION = '1.956'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use warnings;
@@ -29,7 +29,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## default to lax utf8
-  $self->{encoding} = exists $args{encoding}? $args{encoding} : 'utf8';
+  $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
 
   ## Deal with REDIS_SERVER ENV
   if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
@@ -44,7 +44,8 @@ sub new {
     }
   }
 
-  $self->{password} = $args{password} if $args{password};
+  $self->{password}   = $args{password}   if $args{password};
+  $self->{on_connect} = $args{on_connect} if $args{on_connect};
 
   if ($args{sock}) {
     $self->{server} = $args{sock};
@@ -173,9 +174,15 @@ sub quit {
   confess "[quit] only works in synchronous mode, "
       if @_ && ref $_[-1] eq 'CODE';
 
-  $self->wait_all_responses;
-  $self->__send_command('QUIT');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  try {
+    $self->wait_all_responses;
+    $self->__send_command('QUIT');
+  }
+  catch {
+    ## Ignore, we are quiting anyway...
+  };
+
+  close(delete $self->{sock}) if $self->{sock};
 
   return 1;
 }
@@ -431,6 +438,8 @@ sub __build_sock {
     };
   }
 
+  $self->{on_connect}->($self) if exists $self->{on_connect};
+
   return;
 }
 
@@ -464,7 +473,7 @@ sub __send_command {
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
     $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless $len;
+      unless defined $len;
     substr $buf, 0, $len, "";
   }
 
@@ -659,7 +668,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.955
+version 1.956
 
 =head1 SYNOPSIS
 
@@ -818,6 +827,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
+    my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
 
 The C<< server >> parameter specifies the Redis server we should connect
 to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
@@ -875,6 +885,11 @@ C<< password >> attribute. After each established connection (at the
 start or when reconnecting), the Redis C<< AUTH >> command will be send
 to the server. If the password is wrong, an exception will be thrown and
 reconnect will be disabled.
+
+You can also provide a code reference that will be immediatly after each
+sucessfull connection. The C<< on_connect >> attribute is used to
+provide the code reference, and it will be called with the first
+parameter being the Redis object.
 
 The C<< debug >> parameter enables debug information to STDERR,
 including all interactions with the server. You can also enable debug
@@ -1316,6 +1331,14 @@ in addition to those websites please use your favorite search engine to discover
 
 =item *
 
+MetaCPAN
+
+A modern, open-source CPAN search engine, useful to view POD in HTML format.
+
+L<http://metacpan.org/release/Redis>
+
+=item *
+
 CPAN Testers
 
 The CPAN Testers is a network of smokers who run automated tests on uploaded CPAN distributions.
@@ -1354,16 +1377,17 @@ You can email the author of this module at C<MELO at cpan.org> asking for help w
 
 =head2 Bugs / Feature Requests
 
-Please report any bugs or feature requests by email to C<bug-redis at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/Public/Dist/Display.html?Name=Redis>. You will be automatically notified of any
-progress on the request by the system.
+Please report any bugs or feature requests through the web interface at L<https://github.com/melo/perl-redis/issues>. You will be automatically notified of any progress on the request by the system.
 
 =head2 Source Code
 
+The code is open to the world, and available for you to hack on. Please feel free to browse it and play
+with it, or whatever. If you want to contribute patches, please send me a diff or prod me to pull
+from your repository :)
 
 L<https://github.com/melo/perl-redis>
 
-  git clone https://github.com/melo/perl-redis.git
+  git clone git://github.com/melo/perl-redis.git
 
 =head1 ACKNOWLEDGEMENTS
 

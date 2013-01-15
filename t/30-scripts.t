@@ -7,7 +7,7 @@ use Test::Exception;
 use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
-use Digest::SHA1 qw(sha1_hex);
+use Digest::SHA qw(sha1_hex);
 
 my ($c, $srv) = redis();
 END { $c->() if $c }
