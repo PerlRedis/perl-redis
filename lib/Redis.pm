@@ -174,9 +174,15 @@ sub quit {
   confess "[quit] only works in synchronous mode, "
       if @_ && ref $_[-1] eq 'CODE';
 
-  $self->wait_all_responses;
-  $self->__send_command('QUIT');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  try {
+    $self->wait_all_responses;
+    $self->__send_command('QUIT');
+  }
+  catch {
+    ## Ignore, we are quiting anyway...
+  };
+
+  close(delete $self->{sock}) if $self->{sock};
 
   return 1;
 }
@@ -467,7 +473,7 @@ sub __send_command {
   while ($buf) {
     my $len = syswrite $sock, $buf, length $buf;
     $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless $len;
+      unless defined $len;
     substr $buf, 0, $len, "";
   }
 
@@ -1325,6 +1331,14 @@ in addition to those websites please use your favorite search engine to discover
 
 =item *
 
+MetaCPAN
+
+A modern, open-source CPAN search engine, useful to view POD in HTML format.
+
+L<http://metacpan.org/release/Redis>
+
+=item *
+
 CPAN Testers
 
 The CPAN Testers is a network of smokers who run automated tests on uploaded CPAN distributions.
@@ -1363,16 +1377,17 @@ You can email the author of this module at C<MELO at cpan.org> asking for help w
 
 =head2 Bugs / Feature Requests
 
-Please report any bugs or feature requests by email to C<bug-redis at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/Public/Dist/Display.html?Name=Redis>. You will be automatically notified of any
-progress on the request by the system.
+Please report any bugs or feature requests through the web interface at L<https://github.com/melo/perl-redis/issues>. You will be automatically notified of any progress on the request by the system.
 
 =head2 Source Code
 
+The code is open to the world, and available for you to hack on. Please feel free to browse it and play
+with it, or whatever. If you want to contribute patches, please send me a diff or prod me to pull
+from your repository :)
 
 L<https://github.com/melo/perl-redis>
 
-  git clone https://github.com/melo/perl-redis.git
+  git clone git://github.com/melo/perl-redis.git
 
 =head1 ACKNOWLEDGEMENTS
 

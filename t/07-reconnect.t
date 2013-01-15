@@ -32,12 +32,7 @@ subtest 'Command without connection or timeout, with reconnect' => sub {
 
   ok($r->quit, 'close connection to the server');
   ok($r->set(reconnect => $$), 'send command with reconnect');
-
-  ## Redis will timeout clients after 100 internal server loops, at
-  ## least 10 seconds (even with a timeout 1 on the config) so we sleep
-  ## a bit more hoping the timeout did happen. Not perfect, patches
-  ## welcome
-  sleep(11);
+  _wait_for_redis_timeout();
   is($r->get('reconnect'), $$, 'reconnect with read errors before write');
 };
 
@@ -95,6 +90,13 @@ subtest "Bad commnands don't trigger reconnect" => sub {
 };
 
 
+subtest 'Reconnect code clears sockect ASAP' => sub {
+  ok(my $r = Redis->new(reconnect => 3, server => $srv), 'connected to our test redis-server');
+  _wait_for_redis_timeout();
+  is(exception { $r->quit }, undef, "Quit doesn't die if we are already disconnected");
+};
+
+
 subtest "Reconnect gives up after timeout" => sub {
   ok(my $r = Redis->new(reconnect => 3, server => $srv),
     'connected to our test redis-server');
@@ -111,3 +113,13 @@ subtest "Reconnect gives up after timeout" => sub {
 
 
 done_testing();
+
+
+sub _wait_for_redis_timeout {
+  ## Redis will timeout clients after 100 internal server loops, at
+  ## least 10 seconds (even with a timeout 1 on the config) so we sleep
+  ## a bit more hoping the timeout did happen. Not perfect, patches
+  ## welcome
+  diag('Sleeping 11 seconds, waiting for Redis to timeout...');
+  sleep(11);
+}

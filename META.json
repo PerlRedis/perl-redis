@@ -31,11 +31,6 @@
       ]
    },
    "prereqs" : {
-      "configure" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "6.30"
-         }
-      },
       "develop" : {
          "requires" : {
             "Pod::Coverage::TrustPod" : "0",
@@ -47,18 +42,15 @@
       "runtime" : {
          "requires" : {
             "Try::Tiny" : "0",
-            "perl" : "5.008"
+            "perl" : "5.014"
          }
       },
       "test" : {
          "requires" : {
-            "Digest::SHA1" : "0",
             "IO::String" : "0",
-            "IPC::Cmd" : "0",
             "Test::Deep" : "0",
             "Test::Exception" : "0",
-            "Test::Fatal" : "0",
-            "Test::More" : "0.98"
+            "Test::Fatal" : "0"
          }
       }
    },
@@ -79,26 +71,35 @@
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "mailto" : "bug-redis at rt.cpan.org",
-         "web" : "http://rt.cpan.org/Public/Dist/Display.html?Name=Redis"
+         "web" : "https://github.com/melo/perl-redis/issues"
       },
-      "homepage" : "https://github.com/melo/perl-redis",
+      "homepage" : "http://search.cpan.org/dist/Redis",
       "repository" : {
          "type" : "git",
-         "url" : "https://github.com/melo/perl-redis.git",
+         "url" : "git://github.com/melo/perl-redis.git",
          "web" : "https://github.com/melo/perl-redis"
       }
    },
    "version" : "1.956",
    "x_Dist_Zilla" : {
       "perl" : {
-         "version" : "5.014001"
+         "version" : "5.014002"
       },
       "plugins" : [
          {
+            "class" : "Dist::Zilla::Plugin::GitHub::Meta",
+            "name" : "@Author::MELO/@GitHub/GitHub::Meta",
+            "version" : "0.30"
+         },
+         {
+            "class" : "Dist::Zilla::Plugin::GitHub::Update",
+            "name" : "@Author::MELO/@GitHub/GitHub::Update",
+            "version" : "0.30"
+         },
+         {
             "class" : "Dist::Zilla::Plugin::Git::NextVersion",
             "name" : "@Author::MELO/Git::NextVersion",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::GenerateFile",
@@ -159,21 +160,6 @@
             "class" : "Dist::Zilla::Plugin::Readme",
             "name" : "@Author::MELO/Readme",
             "version" : "4.300028"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::Bugtracker",
-            "name" : "@Author::MELO/Bugtracker",
-            "version" : "1.111080"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::Repository",
-            "name" : "@Author::MELO/Repository",
-            "version" : "0.19"
-         },
-         {
-            "class" : "Dist::Zilla::Plugin::GithubMeta",
-            "name" : "@Author::MELO/GithubMeta",
-            "version" : "0.28"
          },
          {
             "class" : "Dist::Zilla::Plugin::AutoPrereqs",
@@ -344,27 +330,27 @@
          {
             "class" : "Dist::Zilla::Plugin::Git::CommitBuild",
             "name" : "@Author::MELO/Git::CommitBuild",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Check",
             "name" : "@Author::MELO/@Git/Check",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Commit",
             "name" : "@Author::MELO/@Git/Commit",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Tag",
             "name" : "@Author::MELO/@Git/Tag",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::Git::Push",
             "name" : "@Author::MELO/@Git/Push",
-            "version" : "2.001"
+            "version" : "2.006"
          },
          {
             "class" : "Dist::Zilla::Plugin::InstallRelease",
