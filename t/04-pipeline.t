@@ -3,10 +3,10 @@
 use warnings;
 use strict;
 use Test::More;
+use Test::Fatal;
 use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
-use Test::Exception;
 use Test::Deep;
 
 my ($c, $srv) = redis();
@@ -84,9 +84,11 @@ subtest 'transaction with error and no pipeline' => sub {
   is($r->set('clunk', 'eth'), 'QUEUED',  'transactional SET');
   is($r->rpush('clunk', 'oops'), 'QUEUED', 'transactional bad RPUSH');
   is($r->get('clunk'), 'QUEUED', 'transactional GET');
-  throws_ok sub { $r->exec },
+  like(
+    exception { $r->exec },
     qr/\[exec\] ERR Operation against a key holding the wrong kind of value,/,
-    'synchronous EXEC dies for intervening error';
+    'synchronous EXEC dies for intervening error'
+  );
 };
 
 done_testing();
