@@ -17,6 +17,7 @@ use Carp qw/confess/;
 use Encode;
 use Try::Tiny;
 use Scalar::Util ();
+use POSIX 'strftime';
 
 use constant WIN32 => $^O =~ /mswin32/i;
 
@@ -131,12 +132,24 @@ sub __with_reconnect {
   ## Fast path, no reconnect
   return $cb->() unless $self->{reconnect};
 
-  return &try($cb, catch {
-    die $_ unless ref($_) eq 'Redis::X::Reconnect';
+  return &try(
+    $cb,
+    catch {
+      my $mark = $self->{mark} || '<no mark>';
+      unless (ref($_) eq 'Redis::X::Reconnect') {
+        my $e = $_;
+        print STDERR Carp::longmess(
+          strftime("[%F %T] ", localtime) . "[$0][__with_reconnect]: got unblessed exception [mark $mark]: '$e'");
 
-    $self->__connect;
-    $cb->();
-  });
+        die $e;
+      }
+
+      print STDERR Carp::longmess(strftime("[%F %T] ", localtime)
+          . "[$0][__with_reconnect]: got blessed exception, will reconnect [mark $mark]: '$$_'");
+      $self->__connect;
+      $cb->();
+    }
+  );
 }
 
 sub __run_cmd {
@@ -654,7 +667,14 @@ BEGIN {
 
 sub __throw_reconnect {
   my ($self, $m) = @_;
-  die bless(\$m, 'Redis::X::Reconnect') if $self->{reconnect};
+
+  if ($self->{reconnect}) {
+    $self->{mark}++;
+    print STDERR Carp::longmess(
+      strftime("[%F %T] ", localtime) . "[$0][__throw_reconnect] called with reconnect on [mark $self->{mark}]: '$m'");
+    die bless(\$m, 'Redis::X::Reconnect');
+  }
+
   die $m;
 }
 
