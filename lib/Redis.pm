@@ -25,29 +25,22 @@ sub new {
   my $class = shift;
   my %args  = @_;
   my $self  = bless {}, $class;
+  return $self->_inititialize(\%args);
+}
 
-  $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
+sub _inititialize {
+  my ( $self, $args ) = @_;
+  $self->{debug} = $args->{debug} || $ENV{REDIS_DEBUG};
 
   ## default to lax utf8
-  $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
+  $self->{encoding} = exists $args->{encoding} ? $args->{encoding} : 'utf8';
 
-  ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
-    if ($ENV{REDIS_SERVER} =~ m!^/!) {
-      $args{sock} = $ENV{REDIS_SERVER};
-    }
-    elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
-      $args{sock} = $1;
-    }
-    elsif ($ENV{REDIS_SERVER} =~ m!^(tcp:)?(.+)!) {
-      $args{server} = $2;
-    }
-  }
+  $self->_set_server($args);
 
-  $self->{password}   = $args{password}   if $args{password};
-  $self->{on_connect} = $args{on_connect} if $args{on_connect};
+  $self->{password}   = $args->{password}   if $args->{password};
+  $self->{on_connect} = $args->{on_connect} if $args->{on_connect};
 
-  if (my $name = $args{name}) {
+  if (my $name = $args->{name}) {
     my $on_conn = $self->{on_connect};
     $self->{on_connect} = sub {
       $_[0]->client_setname($name);
@@ -55,12 +48,38 @@ sub new {
     }
   }
 
-  if ($args{sock}) {
-    $self->{server} = $args{sock};
+  $self->{is_subscriber} = 0;
+  $self->{subscribers}   = {};
+  $self->{reconnect}     = $args->{reconnect} || 0;
+  $self->{every}         = $args->{every} || 1000;
+
+  $self->__connect;
+
+  return $self;
+}
+
+sub _set_server {
+  my ( $self, $args ) = @_;
+
+  ## Deal with REDIS_SERVER ENV
+  if ($ENV{REDIS_SERVER} && !$args->{sock} && !$args->{server}) {
+    if ($ENV{REDIS_SERVER} =~ m!^/!) {
+      $args->{sock} = $ENV{REDIS_SERVER};
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
+      $args->{sock} = $1;
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^(?:tcp:)?(.+)!) {
+      $args->{server} = $1;
+    }
+  }
+
+  if ($args->{sock}) {
+    $self->{server} = $args->{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
   }
   else {
-    $self->{server} = $args{server} || '127.0.0.1:6379';
+    $self->{server} = $args->{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
       IO::Socket::INET->new(
         PeerAddr => $_[0]->{server},
@@ -68,17 +87,7 @@ sub new {
       );
     };
   }
-
-  $self->{is_subscriber} = 0;
-  $self->{subscribers}   = {};
-  $self->{reconnect}     = $args{reconnect} || 0;
-  $self->{every}         = $args{every} || 1000;
-
-  $self->__connect;
-
-  return $self;
 }
-
 sub is_subscriber { $_[0]{is_subscriber} }
 
 
