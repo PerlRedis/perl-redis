@@ -108,11 +108,12 @@ sub spawn_server {
 }
 
 sub reap {
-  my ($pid) = @_;
-  $pid = -1 unless $pid;
+  my ($pid, $limit) = @_;
+  $pid   = -1 unless $pid;
+  $limit = 3  unless $limit;
 
   my $try = 0;
-  while ($try++ < 3) {
+  while ($try++ < $limit) {
     my $ok = waitpid($pid, WNOHANG);
     $try = 0, last if $ok > 0;
     sleep(1);
