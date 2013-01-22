@@ -727,6 +727,9 @@ __END__
     ## Try each 100ms upto 2 seconds (every is in milisecs)
     my $redis = Redis->new(reconnect => 2, every => 100);
 
+    ## Throw an exception if Redis read/write takes longer than three seconds
+    my $redis = Redis->new(timeout => 3);
+
     ## Disable the automatic utf8 encoding => much more performance
     ## !!!! This will be the default after 2.000, see ENCODING below
     my $redis = Redis->new(encoding => undef);
@@ -869,6 +872,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
+    my $r = Redis->new( timeout => 3 );
     my $r = Redis->new( password => 'boo' );
     my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
     my $r = Redis->new( name => 'my_connection_name' ); ## Redis 2.6.9 required
@@ -923,6 +927,11 @@ trigger a retry until the new command is sent.
 
 If we cannot re-establish a connection after C<< reconnect >> seconds,
 an exception will be thrown.
+
+The C<< timeout >> option sets a timeout for Redis read/write operations. It's
+implemented via L<IO::Select>, so fractional seconds should be acceptable. If
+we cannot read or write after C<$timeout> seconds, an exception will be
+thrown.
 
 If your Redis server requires authentication, you can use the
 C<< password >> attribute. After each established connection (at the
