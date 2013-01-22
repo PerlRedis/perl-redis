@@ -25,29 +25,22 @@ sub new {
   my $class = shift;
   my %args  = @_;
   my $self  = bless {}, $class;
+  return $self->_inititialize(\%args);
+}
 
-  $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
+sub _inititialize {
+  my ( $self, $args ) = @_;
+  $self->{debug} = $args->{debug} || $ENV{REDIS_DEBUG};
 
   ## default to lax utf8
-  $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
+  $self->{encoding} = exists $args->{encoding} ? $args->{encoding} : 'utf8';
 
-  ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
-    if ($ENV{REDIS_SERVER} =~ m!^/!) {
-      $args{sock} = $ENV{REDIS_SERVER};
-    }
-    elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
-      $args{sock} = $1;
-    }
-    elsif ($ENV{REDIS_SERVER} =~ m!^(tcp:)?(.+)!) {
-      $args{server} = $2;
-    }
-  }
+  $self->_set_server($args);
 
-  $self->{password}   = $args{password}   if $args{password};
-  $self->{on_connect} = $args{on_connect} if $args{on_connect};
+  $self->{password}   = $args->{password}   if $args->{password};
+  $self->{on_connect} = $args->{on_connect} if $args->{on_connect};
 
-  if (my $name = $args{name}) {
+  if (my $name = $args->{name}) {
     my $on_conn = $self->{on_connect};
     $self->{on_connect} = sub {
       $_[0]->client_setname($name);
@@ -55,12 +48,39 @@ sub new {
     }
   }
 
-  if ($args{sock}) {
-    $self->{server} = $args{sock};
+  $self->{is_subscriber} = 0;
+  $self->{subscribers}   = {};
+  $self->{reconnect}     = $args->{reconnect} || 0;
+  $self->{every}         = $args->{every} || 1000;
+  $self->{timeout}       = $args->{timeout};
+
+  $self->__connect;
+
+  return $self;
+}
+
+sub _set_server {
+  my ( $self, $args ) = @_;
+
+  ## Deal with REDIS_SERVER ENV
+  if ($ENV{REDIS_SERVER} && !$args->{sock} && !$args->{server}) {
+    if ($ENV{REDIS_SERVER} =~ m!^/!) {
+      $args->{sock} = $ENV{REDIS_SERVER};
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
+      $args->{sock} = $1;
+    }
+    elsif ($ENV{REDIS_SERVER} =~ m!^(?:tcp:)?(.+)!) {
+      $args->{server} = $1;
+    }
+  }
+
+  if ($args->{sock}) {
+    $self->{server} = $args->{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
   }
   else {
-    $self->{server} = $args{server} || '127.0.0.1:6379';
+    $self->{server} = $args->{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
       IO::Socket::INET->new(
         PeerAddr => $_[0]->{server},
@@ -68,15 +88,6 @@ sub new {
       );
     };
   }
-
-  $self->{is_subscriber} = 0;
-  $self->{subscribers}   = {};
-  $self->{reconnect}     = $args{reconnect} || 0;
-  $self->{every}         = $args{every} || 1000;
-
-  $self->__connect;
-
-  return $self;
 }
 
 sub is_subscriber { $_[0]{is_subscriber} }
@@ -438,6 +449,10 @@ sub __build_sock {
   $self->{sock} = $self->{builder}->($self)
     || confess("Could not connect to Redis server at $self->{server}: $!");
 
+  if ( $self->{timeout} ) {
+    $self->{select} = IO::Select->new($self->{sock});
+  }
+
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
@@ -465,6 +480,7 @@ sub __send_command {
   ## Encode command using multi-bulk format
   my @cmd = split /_/, $cmd;
   my $n_elems = scalar(@_) + scalar(@cmd);
+
   my $buf     = "\*$n_elems\r\n";
   for my $elem (@cmd, @_) {
     my $bin = $enc ? encode($enc, $elem) : $elem;
@@ -478,11 +494,29 @@ sub __send_command {
 
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
-  while ($buf) {
-    my $len = syswrite $sock, $buf, length $buf;
-    $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless defined $len;
-    substr $buf, 0, $len, "";
+  if ( my $timeout = $self->{timeout} ) {
+    __fh_nonblocking($sock, 1);
+    if ( $self->{select}->can_write($timeout) ) {
+      while ($buf) {
+        my $len = syswrite $sock, $buf, length $buf;
+        if ( ! defined $len ) {
+            $self->__throw_reconnect("Failed writing '$cmd' to Redis: $!");
+        }
+        substr $buf, 0, $len, "";
+      }
+    }
+    else {
+      $self->__throw_reconnect("Write timeout sending '$cmd': $!")
+    }
+    __fh_nonblocking($sock, 0);
+  }
+  else {
+    while ($buf) {
+      my $len = syswrite $sock, $buf, length $buf;
+      $self->__throw_reconnect("Could not write to Redis server: $!")
+        unless defined $len;
+      substr $buf, 0, $len, "";
+    }
   }
 
   return;
@@ -496,8 +530,17 @@ sub __read_response {
   local $/ = "\r\n";
 
   ## no debug => fast path
-  return $self->__read_response_r($cmd, $collect_errors) unless $self->{debug};
-
+  if ( my $timeout = $self->{timeout} ) {
+    my $sock = $self->{sock};
+    if ( $self->{select}->can_read($timeout) ) {
+      my ($result, $error) = $self->__read_response_r($cmd, $collect_errors);
+      warn "[RECV] $cmd ", Dumper($result, $error) if $self->{debug};
+      return $result, $error;
+    }
+    else {
+      confess("Read timeout executing '$cmd'");
+    }
+  }
   my ($result, $error) = $self->__read_response_r($cmd, $collect_errors);
   warn "[RECV] $cmd ", Dumper($result, $error) if $self->{debug};
   return $result, $error;
@@ -684,6 +727,9 @@ __END__
     ## Try each 100ms upto 2 seconds (every is in milisecs)
     my $redis = Redis->new(reconnect => 2, every => 100);
 
+    ## Throw an exception if Redis read/write takes longer than three seconds
+    my $redis = Redis->new(timeout => 3);
+
     ## Disable the automatic utf8 encoding => much more performance
     ## !!!! This will be the default after 2.000, see ENCODING below
     my $redis = Redis->new(encoding => undef);
@@ -826,6 +872,7 @@ back without utf-8 flag turned on.
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
+    my $r = Redis->new( timeout => 3 );
     my $r = Redis->new( password => 'boo' );
     my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
     my $r = Redis->new( name => 'my_connection_name' ); ## Redis 2.6.9 required
@@ -880,6 +927,11 @@ trigger a retry until the new command is sent.
 
 If we cannot re-establish a connection after C<< reconnect >> seconds,
 an exception will be thrown.
+
+The C<< timeout >> option sets a timeout for Redis read/write operations. It's
+implemented via L<IO::Select>, so fractional seconds should be acceptable. If
+we cannot read or write after C<$timeout> seconds, an exception will be
+thrown.
 
 If your Redis server requires authentication, you can use the
 C<< password >> attribute. After each established connection (at the
