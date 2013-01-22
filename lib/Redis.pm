@@ -56,7 +56,7 @@ sub new {
     $self->{on_connect} = sub {
       $_[0]->client_setname($name);
       $on_conn->(@_) if $on_conn;
-    }
+      }
   }
 
   if ($args{sock}) {
@@ -124,9 +124,11 @@ sub __std_cmd {
     unless $self->{reconnect};
 
   my @cmd_args = @_;
-  $self->__with_reconnect(sub {
-    $self->__run_cmd($command, $collect_errors, undef, $cb, @cmd_args);
-  });
+  $self->__with_reconnect(
+    sub {
+      $self->__run_cmd($command, $collect_errors, undef, $cb, @cmd_args);
+    }
+  );
 }
 
 sub __with_reconnect {
@@ -135,26 +137,31 @@ sub __with_reconnect {
   ## Fast path, no reconnect
   return $cb->() unless $self->{reconnect};
 
-  return &try($cb, catch {
-    die $_ unless ref($_) eq 'Redis::X::Reconnect';
+  return &try(
+    $cb,
+    catch {
+      die $_ unless ref($_) eq 'Redis::X::Reconnect';
 
-    $self->__connect;
-    $cb->();
-  });
+      $self->__connect;
+      $cb->();
+    }
+  );
 }
 
 sub __run_cmd {
   my ($self, $command, $collect_errors, $custom_decode, $cb, @args) = @_;
 
   my $ret;
-  my $wrapper = $cb && $custom_decode ? sub {
+  my $wrapper = $cb && $custom_decode
+    ? sub {
     my ($reply, $error) = @_;
     $cb->(scalar $custom_decode->($reply), $error);
-  } : $cb || sub {
+    }
+    : $cb || sub {
     my ($reply, $error) = @_;
     confess "[$command] $error, " if defined $error;
     $ret = $reply;
-  };
+    };
 
   $self->__send_command($command, @args);
   push @{ $self->{queue} }, [$command, $wrapper, $collect_errors];
@@ -162,8 +169,10 @@ sub __run_cmd {
   return 1 if $cb;
 
   $self->wait_all_responses;
-  return $custom_decode ? $custom_decode->($ret, !wantarray)
-       : wantarray && ref $ret eq 'ARRAY' ? @$ret : $ret;
+  return
+      $custom_decode ? $custom_decode->($ret, !wantarray)
+    : wantarray && ref $ret eq 'ARRAY' ? @$ret
+    :                                    $ret;
 }
 
 sub wait_all_responses {
@@ -184,7 +193,7 @@ sub quit {
   return unless $self->{sock};
 
   confess "[quit] only works in synchronous mode, "
-      if @_ && ref $_[-1] eq 'CODE';
+    if @_ && ref $_[-1] eq 'CODE';
 
   try {
     $self->wait_all_responses;
@@ -204,7 +213,7 @@ sub shutdown {
   $self->__is_valid_command('SHUTDOWN');
 
   confess "[shutdown] only works in synchronous mode, "
-      if @_ && ref $_[-1] eq 'CODE';
+    if @_ && ref $_[-1] eq 'CODE';
 
   return unless $self->{sock};
 
@@ -220,7 +229,7 @@ sub ping {
   $self->__is_valid_command('PING');
 
   confess "[ping] only works in synchronous mode, "
-      if @_ && ref $_[-1] eq 'CODE';
+    if @_ && ref $_[-1] eq 'CODE';
 
   return unless exists $self->{sock};
 
@@ -241,7 +250,7 @@ sub info {
   my $custom_decode = sub {
     my ($reply) = @_;
     return $reply if !defined $reply || ref $reply;
-    return { map { split(/:/, $_, 2) } grep { /^[^#]/ } split(/\r\n/, $reply) };
+    return { map { split(/:/, $_, 2) } grep {/^[^#]/} split(/\r\n/, $reply) };
   };
 
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
@@ -251,9 +260,11 @@ sub info {
     unless $self->{reconnect};
 
   my @cmd_args = @_;
-  $self->__with_reconnect(sub {
-    $self->__run_cmd('INFO', 0, $custom_decode, $cb, @cmd_args);
-  });
+  $self->__with_reconnect(
+    sub {
+      $self->__run_cmd('INFO', 0, $custom_decode, $cb, @cmd_args);
+    }
+  );
 }
 
 sub keys {
@@ -276,9 +287,11 @@ sub keys {
     unless $self->{reconnect};
 
   my @cmd_args = @_;
-  $self->__with_reconnect(sub {
-    $self->__run_cmd('KEYS', 0, $custom_decode, $cb, @cmd_args);
-  });
+  $self->__with_reconnect(
+    sub {
+      $self->__run_cmd('KEYS', 0, $custom_decode, $cb, @cmd_args);
+    }
+  );
 }
 
 
@@ -321,24 +334,26 @@ sub __subscription_cmd {
   $self->wait_all_responses;
 
   my @subs = @_;
-  $self->__with_reconnect(sub {
-    $self->__throw_reconnect('Not connected to any server')
-      unless $self->{sock};
+  $self->__with_reconnect(
+    sub {
+      $self->__throw_reconnect('Not connected to any server')
+        unless $self->{sock};
 
-    @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
-      if $unsub;
-    return unless @subs;
+      @subs = $self->__process_unsubscribe_requests($cb, $pr, @subs)
+        if $unsub;
+      return unless @subs;
 
-    $self->__send_command($command, @subs);
+      $self->__send_command($command, @subs);
 
-    my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
-    return $self->__process_subscription_changes($command, \%cbs);
-  });
+      my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
+      return $self->__process_subscription_changes($command, \%cbs);
+    }
+  );
 }
 
-sub    subscribe { shift->__subscription_cmd('',  0,    subscribe => @_) }
-sub   psubscribe { shift->__subscription_cmd('p', 0,   psubscribe => @_) }
-sub  unsubscribe { shift->__subscription_cmd('',  1,  unsubscribe => @_) }
+sub subscribe    { shift->__subscription_cmd('',  0, subscribe    => @_) }
+sub psubscribe   { shift->__subscription_cmd('p', 0, psubscribe   => @_) }
+sub unsubscribe  { shift->__subscription_cmd('',  1, unsubscribe  => @_) }
 sub punsubscribe { shift->__subscription_cmd('p', 1, punsubscribe => @_) }
 
 sub __process_unsubscribe_requests {
@@ -348,7 +363,7 @@ sub __process_unsubscribe_requests {
   my @subs_to_unsubscribe;
   for my $sub (@unsubs) {
     my $key = "${pr}message:$sub";
-    my $cbs = $subs->{$key} = [grep { $_ ne $cb } @{$subs->{$key}}];
+    my $cbs = $subs->{$key} = [grep { $_ ne $cb } @{ $subs->{$key} }];
     next if @$cbs;
 
     delete $subs->{$key};
@@ -376,7 +391,7 @@ sub __process_subscription_changes {
     $key .= "message:$m->[1]";
     my $cb = delete $expected->{$key};
 
-    push @{$subs->{$key}}, $cb unless $unsub;
+    push @{ $subs->{$key} }, $cb unless $unsub;
 
     $self->{is_subscriber} = $m->[2];
   }
@@ -396,7 +411,7 @@ sub __process_pubsub_msg {
     return;
   }
 
-  $_->($data, $topic, $sub) for @{$subs->{$cbid}};
+  $_->($data, $topic, $sub) for @{ $subs->{$cbid} };
 
   return 1;
 
@@ -472,7 +487,7 @@ sub __send_command {
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
   ## Encode command using multi-bulk format
-  my @cmd = split /_/, $cmd;
+  my @cmd     = split /_/, $cmd;
   my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
   for my $elem (@cmd, @_) {
@@ -567,7 +582,7 @@ sub __read_line {
 sub __read_len {
   my ($self, $len) = @_;
 
-  my $data = '';
+  my $data   = '';
   my $offset = 0;
   while ($len) {
     my $bytes = read $self->{sock}, $data, $len, $offset;
@@ -686,7 +701,7 @@ sub __throw_reconnect {
 }
 
 
-1; # End of Redis.pm
+1;    # End of Redis.pm
 
 __END__
 
@@ -766,21 +781,21 @@ __END__
 
 Pure perl bindings for L<http://redis.io/>
 
-This version supports protocol 2.x (multi-bulk) or later of Redis
-available at L<https://github.com/antirez/redis/>.
+This version supports protocol 2.x (multi-bulk) or later of Redis available at
+L<https://github.com/antirez/redis/>.
 
 This documentation lists commands which are exercised in test suite, but
 additional commands will work correctly since protocol specifies enough
-information to support almost all commands with same piece of code with
-a little help of C<AUTOLOAD>.
+information to support almost all commands with same piece of code with a
+little help of C<AUTOLOAD>.
 
 
 =head1 PIPELINING
 
-Usually, running a command will wait for a response.  However, if you're
-doing large numbers of requests, it can be more efficient to use what Redis
-calls I<pipelining>: send multiple commands to Redis without waiting for a
-response, then wait for the responses that come in.
+Usually, running a command will wait for a response.  However, if you're doing
+large numbers of requests, it can be more efficient to use what Redis calls
+I<pipelining>: send multiple commands to Redis without waiting for a response,
+then wait for the responses that come in.
 
 To use pipelining, add a coderef argument as the last argument to a command
 method call:
@@ -799,8 +814,7 @@ A non-pipelined (synchronous) command has been sent on the same connection
 =item *
 
 A pub/sub subscription command (one of C<subscribe>, C<unsubscribe>,
-C<psubscribe>, or C<punsubscribe>) is about to be sent on the same
-connection.
+C<psubscribe>, or C<punsubscribe>) is about to be sent on the same connection.
 
 =item *
 
@@ -810,35 +824,34 @@ The L</wait_all_responses> method is called explicitly.
 
 The coderef you supply to a pipelined command method is invoked once the
 response is available.  It takes two arguments, C<$reply> and C<$error>.  If
-C<$error> is defined, it contains the text of an error reply sent by the
-Redis server.  Otherwise, C<$reply> is the non-error reply.  For almost all
-commands, that means it's C<undef>, or a defined but non-reference scalar,
-or an array ref of any of those; but see L</keys>, L</info>, and L</exec>.
+C<$error> is defined, it contains the text of an error reply sent by the Redis
+server.  Otherwise, C<$reply> is the non-error reply.  For almost all commands,
+that means it's C<undef>, or a defined but non-reference scalar, or an array
+ref of any of those; but see L</keys>, L</info>, and L</exec>.
 
 Note the contrast with synchronous commands, which throw an exception on
 receipt of an error reply, or return a non-error reply directly.
 
-The fact that pipelined commands never throw an exception can be
-particularly useful for Redis transactions; see L</exec>.
+The fact that pipelined commands never throw an exception can be particularly
+useful for Redis transactions; see L</exec>.
 
 
 =head1 ENCODING
 
-B<This feature is deprecated and will be removed before 2.000>. You
-should start testing your code with C<< encoding => undef >> because
-that will be the new default with 2.000.
+B<This feature is deprecated and will be removed before 2.000>. You should
+start testing your code with C<< encoding => undef >> because that will be the
+new default with 2.000.
 
-Since Redis knows nothing about encoding, we are forcing utf-8 flag on
-all data received from Redis. This change was introduced in 1.2001
-version. B<Please note> that this encoding option severely degrades
-performance.
+Since Redis knows nothing about encoding, we are forcing utf-8 flag on all data
+received from Redis. This change was introduced in 1.2001 version. B<Please
+note> that this encoding option severely degrades performance.
 
-You can disable this automatic encoding by passing an option to
-L</new>: C<< encoding => undef >>.
+You can disable this automatic encoding by passing an option to L</new>: C<<
+encoding => undef >>.
 
-This allows us to round-trip utf-8 encoded characters correctly, but
-might be problem if you push binary junk into Redis and expect to get it
-back without utf-8 flag turned on.
+This allows us to round-trip utf-8 encoded characters correctly, but might be
+problem if you push binary junk into Redis and expect to get it back without
+utf-8 flag turned on.
 
 
 =head1 METHODS
@@ -857,16 +870,16 @@ back without utf-8 flag turned on.
     my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
     my $r = Redis->new( name => 'my_connection_name' ); ## Redis 2.6.9 required
 
-The C<< server >> parameter specifies the Redis server we should connect
-to, via TCP. Use the 'IP:PORT' format. If no C<< server >> option is
-present, we will attempt to use the C<< REDIS_SERVER >> environment
-variable. If neither of those options are present, it defaults to
-'127.0.0.1:6379'.
+The C<< server >> parameter specifies the Redis server we should connect to,
+via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
+will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
+those options are present, it defaults to '127.0.0.1:6379'.
 
-Alternatively you can use the C<< sock >> parameter to specify the path
-of the UNIX domain socket where the Redis server is listening.
+Alternatively you can use the C<< sock >> parameter to specify the path of the
+UNIX domain socket where the Redis server is listening.
 
-The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following formats are supported:
+The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
+formats are supported:
 
 =over 4
 
@@ -888,48 +901,47 @@ tcp:127.0.0.1:11011
 
 =back
 
-The C<< encoding >> parameter speficies the encoding we will use to
-decode all the data we receive and encode all the data sent to the redis
-server. Due to backwards-compatibility we default to C<< utf8 >>. To
-disable all this encoding/decoding, you must use C<< encoding => undef >>.
-B<< This is the recommended option >>.
+The C<< encoding >> parameter speficies the encoding we will use to decode all
+the data we receive and encode all the data sent to the redis server. Due to
+backwards-compatibility we default to C<< utf8 >>. To disable all this
+encoding/decoding, you must use C<< encoding => undef >>. B<< This is the
+recommended option >>.
 
-B<< Warning >>: this option has several problems and it is
-B<deprecated>. A future version might add other filtering options though.
+B<< Warning >>: this option has several problems and it is B<deprecated>. A
+future version might add other filtering options though.
 
 The C<< reconnect >> option enables auto-reconnection mode. If we cannot
-connect to the Redis server, or if a network write fails, we enter retry
-mode. We will try a new connection every C<< every >> miliseconds
-(1000ms by default), up-to C<< reconnect >> seconds.
+connect to the Redis server, or if a network write fails, we enter retry mode.
+We will try a new connection every C<< every >> miliseconds (1000ms by
+default), up-to C<< reconnect >> seconds.
 
-Be aware that read errors will always thrown an exception, and will not
-trigger a retry until the new command is sent.
+Be aware that read errors will always thrown an exception, and will not trigger
+a retry until the new command is sent.
 
-If we cannot re-establish a connection after C<< reconnect >> seconds,
-an exception will be thrown.
+If we cannot re-establish a connection after C<< reconnect >> seconds, an
+exception will be thrown.
 
-If your Redis server requires authentication, you can use the
-C<< password >> attribute. After each established connection (at the
-start or when reconnecting), the Redis C<< AUTH >> command will be send
-to the server. If the password is wrong, an exception will be thrown and
-reconnect will be disabled.
+If your Redis server requires authentication, you can use the C<< password >>
+attribute. After each established connection (at the start or when
+reconnecting), the Redis C<< AUTH >> command will be send to the server. If the
+password is wrong, an exception will be thrown and reconnect will be disabled.
 
 You can also provide a code reference that will be immediatly after each
-sucessfull connection. The C<< on_connect >> attribute is used to
-provide the code reference, and it will be called with the first
-parameter being the Redis object.
+sucessfull connection. The C<< on_connect >> attribute is used to provide the
+code reference, and it will be called with the first parameter being the Redis
+object.
 
-Starting with Redis 2.6.9, you can set a name for each connection.
-This can be very useful for debugging purposes, using the
-C<< CLIENT LIST >> command. To set a connection name, use the C<< name >>
-parameter. Please note that there are restrictions on the name you can
-set, the most important of which is, no spaces. See the
-L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname>
-for all the juicy details.
+Starting with Redis 2.6.9, you can set a name for each connection. This can be
+very useful for debugging purposes, using the C<< CLIENT LIST >> command. To
+set a connection name, use the C<< name >> parameter. Please note that there
+are restrictions on the name you can set, the most important of which is, no
+spaces. See the L<CLIENT SETNAME
+documentation|http://redis.io/commands/client-setname> for all the juicy
+details.
 
-The C<< debug >> parameter enables debug information to STDERR,
-including all interactions with the server. You can also enable debug
-with the C<REDIS_DEBUG> environment variable.
+The C<< debug >> parameter enables debug information to STDERR, including all
+interactions with the server. You can also enable debug with the C<REDIS_DEBUG>
+environment variable.
 
 
 =head2 Connection Handling
@@ -951,41 +963,41 @@ The C<ping> method does not support pipelined operation.
 
   @clients = $r->client_list;
 
-Returns list of clients connected to the server. See
-L<CLIENT LIST documentation|http://redis.io/commands/client-list>
-for a description of the fields and their meaning.
+Returns list of clients connected to the server. See L<< CLIENT LIST
+documentation|http://redis.io/commands/client-list >> for a description of the
+fields and their meaning.
 
 =head3 client_getname
 
   my $connection_name = $r->client_getname;
 
-Returns the name associated with this connection. See L</client_setname>
-or the C<< name >> parameter to L</new> for ways to set this name.
+Returns the name associated with this connection. See L</client_setname> or the
+C<< name >> parameter to L</new> for ways to set this name.
 
 =head3 client_setname
 
   $r->client_setname('my_connection_name');
 
-Sets this connection name. See the
-L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname>
-for restrictions on the connection name string. The most important one:
-no spaces.
+Sets this connection name. See the L<CLIENT SETNAME
+documentation|http://redis.io/commands/client-setname> for restrictions on the
+connection name string. The most important one: no spaces.
 
 =head2 Pipeline management
 
 =head3 wait_all_responses
 
-Waits until all pending pipelined responses have been received, and invokes
-the pipeline callback for each one.  See L</PIPELINING>.
+Waits until all pending pipelined responses have been received, and invokes the
+pipeline callback for each one.  See L</PIPELINING>.
 
 
 =head2 Transaction-handling commands
 
-B<Warning:> the behaviour of these commands when combined with
-pipelining is still under discussion, and you should B<NOT> use them at
-the same time just now.
+B<Warning:> the behaviour of these commands when combined with pipelining is
+still under discussion, and you should B<NOT> use them at the same time just
+now.
 
-You can L<follow the discussion to see the open issues with this|https://github.com/melo/perl-redis/issues/17>.
+You can L<follow the discussion to see the open issues with
+this|https://github.com/melo/perl-redis/issues/17>.
 
 =head3 multi
 
@@ -999,11 +1011,10 @@ You can L<follow the discussion to see the open issues with this|https://github.
 
   my @individual_replies = $r->exec;
 
-C<exec> has special behaviour when run in a pipeline: the C<$reply> argument
-to the pipeline callback is an array ref whose elements are themselves
-C<[$reply, $error]> pairs.  This means that you can accurately detect errors
-yielded by any command in the transaction, and without any exceptions being
-thrown.
+C<exec> has special behaviour when run in a pipeline: the C<$reply> argument to
+the pipeline callback is an array ref whose elements are themselves C<[$reply,
+$error]> pairs.  This means that you can accurately detect errors yielded by
+any command in the transaction, and without any exceptions being thrown.
 
 
 =head2 Commands operating on string values
@@ -1056,9 +1067,8 @@ thrown.
 
 Note that synchronous C<keys> calls in a scalar context return the number of
 matching keys (not an array ref of matching keys as you might expect).  This
-does not apply in pipelined mode: assuming the server returns a list of
-keys, as expected, it is always passed to the pipeline callback as an array
-ref.
+does not apply in pipelined mode: assuming the server returns a list of keys,
+as expected, it is always passed to the pipeline callback as an array ref.
 
 =head3 randomkey
 
@@ -1190,15 +1200,15 @@ See also L<Redis::List> for tie interface.
 
 =head2 Publish/Subscribe commands
 
-When one of L</subscribe> or L</psubscribe> is used, the Redis object
-will enter I<PubSub> mode. When in I<PubSub> mode only commands in this
-section, plus L</quit>, will be accepted.
+When one of L</subscribe> or L</psubscribe> is used, the Redis object will
+enter I<PubSub> mode. When in I<PubSub> mode only commands in this section,
+plus L</quit>, will be accepted.
 
-If you plan on using PubSub and other Redis functions, you should
-use two Redis objects, one dedicated to PubSub and the other for
-regular commands.
+If you plan on using PubSub and other Redis functions, you should use two Redis
+objects, one dedicated to PubSub and the other for regular commands.
 
-All Pub/Sub commands receive a callback as the last parameter. This callback receives three arguments:
+All Pub/Sub commands receive a callback as the last parameter. This callback
+receives three arguments:
 
 =over 4
 
@@ -1212,16 +1222,15 @@ The topic over which the message was sent.
 
 =item *
 
-The subscribed topic that matched the topic for the message. With
-L</subscribe> these last two are the same, always. But with
-L</psubscribe>, this parameter tells you the pattern that matched.
+The subscribed topic that matched the topic for the message. With L</subscribe>
+these last two are the same, always. But with L</psubscribe>, this parameter
+tells you the pattern that matched.
 
 =back
 
-See the L<Pub/Sub notes|http://redis.io/topics/pubsub> for more
-information about the messages you will receive on your callbacks after
-each L</subscribe>, L</unsubscribe>, L</psubscribe> and
-L</punsubscribe>.
+See the L<Pub/Sub notes|http://redis.io/topics/pubsub> for more information
+about the messages you will receive on your callbacks after each L</subscribe>,
+L</unsubscribe>, L</psubscribe> and L</punsubscribe>.
 
 =head3 publish
 
@@ -1239,8 +1248,8 @@ Publishes the C<< $message >> to the C<< $topic >>.
       },
   );
 
-Subscribe one or more topics. Messages published into one of them will
-be received by Redis, and the specificed callback will be executed.
+Subscribe one or more topics. Messages published into one of them will be
+received by Redis, and the specificed callback will be executed.
 
 =head3 unsubscribe
 
@@ -1253,8 +1262,8 @@ Stops receiving messages for all the topics in C<@topic_list>.
   my @topic_matches = ('prefix1.*', 'prefix2.*');
   $r->psubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
 
-Subscribes a pattern of topics. All messages to topics that match the
-pattern will be delivered to the callback.
+Subscribes a pattern of topics. All messages to topics that match the pattern
+will be delivered to the callback.
 
 =head3 punsubscribe
 
@@ -1275,20 +1284,20 @@ Returns true if we are in I<Pub/Sub> mode.
   my $timeout = 5;
   $r->wait_for_messages($timeout) while $keep_going;
 
-Blocks, waits for incoming messages and delivers them to the appropriate callbacks.
+Blocks, waits for incoming messages and delivers them to the appropriate
+callbacks.
 
-Requires a single parameter, the number of seconds to wait for messages.
-Use 0 to wait for ever. If a positive non-zero value is used, it will
-return after that ammount of seconds without a single notification.
+Requires a single parameter, the number of seconds to wait for messages. Use 0
+to wait for ever. If a positive non-zero value is used, it will return after
+that ammount of seconds without a single notification.
 
-Please note that the timeout is not a commitement to return control to
-the caller at most each C<timeout> seconds, but more a idle timeout,
-were control will return to the caller if Redis is idle (as in no
-messages were received during the timeout period) for more than
-C<timeout> seconds.
+Please note that the timeout is not a commitement to return control to the
+caller at most each C<timeout> seconds, but more a idle timeout, were control
+will return to the caller if Redis is idle (as in no messages were received
+during the timeout period) for more than C<timeout> seconds.
 
-The L</wait_for_messages> call returns the number of messages processed
-during the run.
+The L</wait_for_messages> call returns the number of messages processed during
+the run.
 
 
 =head2 Persistence control commands
@@ -1335,8 +1344,8 @@ Cache Lua script, returns SHA1 digest that can be used with L</evalsha>.
 
   my ($exists1, $exists2, ...) = $r->script_exists($scrip1_sha, $script2_sha, ...);
 
-Given a list of SHA1 digests, returns a list of booleans, one for each
-SHA1, that report the existence of each script in the server cache.
+Given a list of SHA1 digests, returns a list of booleans, one for each SHA1,
+that report the existence of each script in the server cache.
 
 =head3 script_kill
 
@@ -1358,8 +1367,8 @@ Flush the Lua scripts cache.
   my $info_hash = $r->info;
 
 The C<info> method is unique in that it decodes the server's response into a
-hashref, if possible.  This decoding happens in both synchronous and
-pipelined modes.
+hashref, if possible. This decoding happens in both synchronous and pipelined
+modes.
 
 =head3 shutdown
 

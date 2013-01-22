@@ -83,7 +83,7 @@ sub EXTEND {
 
 sub DESTROY { $_[0]->quit }
 
-1; ## End of Redis::List
+1;    ## End of Redis::List
 
 =head1 SYNOPSYS
 

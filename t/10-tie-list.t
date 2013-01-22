@@ -13,8 +13,7 @@ END { $c->() if $c }
 
 ## Setup
 my @my_list;
-ok(my $redis = tie(@my_list, 'Redis::List', 'my_list', server => $srv),
-  'tied to our test redis-server');
+ok(my $redis = tie(@my_list, 'Redis::List', 'my_list', server => $srv), 'tied to our test redis-server');
 ok($redis->ping, 'pinged fine');
 isa_ok($redis, 'Redis::List');
 
@@ -44,29 +43,18 @@ subtest 'list functions' => sub {
   is_deeply(\@my_list, ['BAR', 'bbb'], '... resulting list as expected');
 
   ok(push(@my_list, $v), 'push ok');
-  is_deeply(
-    \@my_list,
-    ['BAR', 'bbb', 'foo'],
-    '... resulting list as expected'
-  );
+  is_deeply(\@my_list, ['BAR', 'bbb', 'foo'], '... resulting list as expected');
 
   ok($v = pop(@my_list), 'pop ok');
   is($v, 'foo', '... expected value');
   is_deeply(\@my_list, ['BAR', 'bbb'], '... resulting list as expected');
 
   ok(unshift(@my_list, $v), 'unshift ok');
-  is_deeply(
-    \@my_list,
-    ['foo', 'BAR', 'bbb'],
-    '... resulting list as expected'
-  );
+  is_deeply(\@my_list, ['foo', 'BAR', 'bbb'], '... resulting list as expected');
 
   ok(my @s = splice(@my_list, 1, 2), 'splice ok');
   is_deeply([@s], ['BAR', 'bbb'], '... resulting list as expected');
-  is_deeply(
-    \@my_list,
-    ['foo', 'BAR', 'bbb'],'... original list as expected'
-  );
+  is_deeply(\@my_list, ['foo', 'BAR', 'bbb'], '... original list as expected');
 };
 
 
