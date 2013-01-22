@@ -7,7 +7,7 @@ use Test::Fatal;
 use Test::Deep;
 use Redis;
 use lib 't/tlib';
-use Test::SpawnRedisServer;
+use Test::SpawnRedisServer qw( redis reap );
 
 my ($c, $srv) = redis();
 END { $c->() if $c }
@@ -119,6 +119,49 @@ subtest 'basics' => sub {
   is($sub->is_subscriber, 0, '... but none anymore');
 
   is(exception { $sub->info }, undef, 'Other commands ok after we leave subscriber_mode');
+};
+
+
+subtest 'server is killed while waiting for subscribe' => sub {
+  my ($another_kill_switch, $another_server) = redis();
+
+  my $pid = fork();
+  BAIL_OUT("Fork failed, aborting") unless defined $pid;
+
+  if ($pid) {    ## parent, we'll wait for the child to die quickly
+    ok(my $sync = Redis->new(server => $srv), 'connected to our test redis-server (sync parent)');
+    BAIL_OUT('Missed sync while waiting for child') unless defined $sync->blpop('wake_up_parent', 4);
+
+    ok($another_kill_switch->(), "pub/sub redis server killed");
+    diag("parent killed pub/sub redis server, signal child to proceed");
+    $sync->lpush('wake_up_child', 'the redis-server is dead, do your thing');
+
+    diag("parent waiting for child $pid...");
+    my $failed = reap($pid, 5);
+    if ($failed) {
+      fail("wait_for_messages() hangs when the server goes away...");
+      kill(9, $pid);
+      reap($pid) and fail('... failed to reap the dead child');
+    }
+    else {
+      pass("wait_for_messages() properly detects a server that dies");
+    }
+  }
+  else {    ## child
+    my $sync = Redis->new(server => $srv);
+    my $sub  = Redis->new(server => $another_server);
+    $sub->subscribe('chan', sub { });
+
+    diag("child is ready to test, signal parent to kill our server");
+    $sync->lpush('wake_up_parent', 'we are ready on this side, kill the server...');
+    die '## Missed sync while waiting for parent' unless defined $sync->blpop('wake_up_child', 4);
+
+    ## This is the test, next wait_for_messages() should not block
+    diag("now, check wait_for_messages(), should not block...");
+    $sub->wait_for_messages(0);
+    diag("wait_for_messages(0) did not block");
+    exit(0);
+  }
 };
 
 
