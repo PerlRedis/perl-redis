@@ -84,10 +84,11 @@ sub spawn_server {
 
     my $redis   = Redis->new(server => $addr, reconnect => 5, every => 200);
     my $version = $redis->info->{redis_version};
-    my $alive   = 1;
+    my $alive   = $$;
 
     my $c = sub {
       return unless $alive;
+      return unless $$ == $alive;    ## only our creator can kill us
 
       Test::More::diag("Killing server at $pid") if $ENV{REDIS_DEBUG};
       kill(15, $pid);
