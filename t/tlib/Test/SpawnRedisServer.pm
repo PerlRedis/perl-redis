@@ -99,6 +99,8 @@ sub spawn_server {
       unlink("redis-server-$addr.log");
       unlink('dump.rdb');
       $alive = 0;
+
+      return !$failed;
     };
 
     return $version => $c;
