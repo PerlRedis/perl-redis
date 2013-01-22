@@ -52,6 +52,7 @@ sub _inititialize {
   $self->{subscribers}   = {};
   $self->{reconnect}     = $args->{reconnect} || 0;
   $self->{every}         = $args->{every} || 1000;
+  $self->{timeout}       = $args->{timeout};
 
   $self->__connect;
 
@@ -88,6 +89,7 @@ sub _set_server {
     };
   }
 }
+
 sub is_subscriber { $_[0]{is_subscriber} }
 
 
@@ -447,6 +449,10 @@ sub __build_sock {
   $self->{sock} = $self->{builder}->($self)
     || confess("Could not connect to Redis server at $self->{server}: $!");
 
+  if ( $self->{timeout} ) {
+    $self->{select} = IO::Select->new($self->{sock});
+  }
+
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
@@ -474,6 +480,7 @@ sub __send_command {
   ## Encode command using multi-bulk format
   my @cmd = split /_/, $cmd;
   my $n_elems = scalar(@_) + scalar(@cmd);
+
   my $buf     = "\*$n_elems\r\n";
   for my $elem (@cmd, @_) {
     my $bin = $enc ? encode($enc, $elem) : $elem;
@@ -487,11 +494,29 @@ sub __send_command {
 
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
-  while ($buf) {
-    my $len = syswrite $sock, $buf, length $buf;
-    $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless defined $len;
-    substr $buf, 0, $len, "";
+  if ( my $timeout = $self->{timeout} ) {
+    __fh_nonblocking($sock, 1);
+    if ( $self->{select}->can_write($timeout) ) {
+      while ($buf) {
+        my $len = syswrite $sock, $buf, length $buf;
+        if ( ! defined $len ) {
+            $self->__throw_reconnect("Failed writing '$cmd' to Redis: $!");
+        }
+        substr $buf, 0, $len, "";
+      }
+    }
+    else {
+      $self->__throw_reconnect("Write timeout sending '$cmd': $!")
+    }
+    __fh_nonblocking($sock, 0);
+  }
+  else {
+    while ($buf) {
+      my $len = syswrite $sock, $buf, length $buf;
+      $self->__throw_reconnect("Could not write to Redis server: $!")
+        unless defined $len;
+      substr $buf, 0, $len, "";
+    }
   }
 
   return;
@@ -505,8 +530,17 @@ sub __read_response {
   local $/ = "\r\n";
 
   ## no debug => fast path
-  return $self->__read_response_r($cmd, $collect_errors) unless $self->{debug};
-
+  if ( my $timeout = $self->{timeout} ) {
+    my $sock = $self->{sock};
+    if ( $self->{select}->can_read($timeout) ) {
+      my ($result, $error) = $self->__read_response_r($cmd, $collect_errors);
+      warn "[RECV] $cmd ", Dumper($result, $error) if $self->{debug};
+      return $result, $error;
+    }
+    else {
+      confess("Read timeout executing '$cmd'");
+    }
+  }
   my ($result, $error) = $self->__read_response_r($cmd, $collect_errors);
   warn "[RECV] $cmd ", Dumper($result, $error) if $self->{debug};
   return $result, $error;
