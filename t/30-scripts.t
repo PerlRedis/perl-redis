@@ -15,7 +15,10 @@ my $o = Redis->new(server => $srv);
 
 ## Make sure SCRIPT commands are available
 eval { $o->script_flush };
-plan skip_all => 'This redis-server lacks scripting support' if $@ && $@ =~ /ERR unknown command 'SCRIPT',/;
+if ($@ && $@ =~ /ERR unknown command 'SCRIPT',/) {
+  $c->();
+  plan skip_all => 'This redis-server lacks scripting support';
+}
 
 
 ## Commands related to Lua scripting

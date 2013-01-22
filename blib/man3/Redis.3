@@ -133,7 +133,7 @@
 .\" ========================================================================
 .\"
 .IX Title "Redis 3"
-.TH Redis 3 "2013-01-15" "perl v5.14.2" "User Contributed Perl Documentation"
+.TH Redis 3 "2013-01-22" "perl v5.14.2" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -142,7 +142,7 @@
 Redis \- Perl binding for Redis database
 .SH "VERSION"
 .IX Header "VERSION"
-version 1.958
+version 1.959
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 2
@@ -219,19 +219,19 @@ version 1.958
 .IX Header "DESCRIPTION"
 Pure perl bindings for <http://redis.io/>
 .PP
-This version supports protocol 2.x (multi-bulk) or later of Redis
-available at <https://github.com/antirez/redis/>.
+This version supports protocol 2.x (multi-bulk) or later of Redis available at
+<https://github.com/antirez/redis/>.
 .PP
 This documentation lists commands which are exercised in test suite, but
 additional commands will work correctly since protocol specifies enough
-information to support almost all commands with same piece of code with
-a little help of \f(CW\*(C`AUTOLOAD\*(C'\fR.
+information to support almost all commands with same piece of code with a
+little help of \f(CW\*(C`AUTOLOAD\*(C'\fR.
 .SH "PIPELINING"
 .IX Header "PIPELINING"
-Usually, running a command will wait for a response.  However, if you're
-doing large numbers of requests, it can be more efficient to use what Redis
-calls \fIpipelining\fR: send multiple commands to Redis without waiting for a
-response, then wait for the responses that come in.
+Usually, running a command will wait for a response.  However, if you're doing
+large numbers of requests, it can be more efficient to use what Redis calls
+\&\fIpipelining\fR: send multiple commands to Redis without waiting for a response,
+then wait for the responses that come in.
 .PP
 To use pipelining, add a coderef argument as the last argument to a command
 method call:
@@ -246,40 +246,37 @@ soon as at least one of the following conditions holds:
 A non-pipelined (synchronous) command has been sent on the same connection
 .IP "\(bu" 4
 A pub/sub subscription command (one of \f(CW\*(C`subscribe\*(C'\fR, \f(CW\*(C`unsubscribe\*(C'\fR,
-\&\f(CW\*(C`psubscribe\*(C'\fR, or \f(CW\*(C`punsubscribe\*(C'\fR) is about to be sent on the same
-connection.
+\&\f(CW\*(C`psubscribe\*(C'\fR, or \f(CW\*(C`punsubscribe\*(C'\fR) is about to be sent on the same connection.
 .IP "\(bu" 4
 The \*(L"wait_all_responses\*(R" method is called explicitly.
 .PP
 The coderef you supply to a pipelined command method is invoked once the
 response is available.  It takes two arguments, \f(CW$reply\fR and \f(CW$error\fR.  If
-\&\f(CW$error\fR is defined, it contains the text of an error reply sent by the
-Redis server.  Otherwise, \f(CW$reply\fR is the non-error reply.  For almost all
-commands, that means it's \f(CW\*(C`undef\*(C'\fR, or a defined but non-reference scalar,
-or an array ref of any of those; but see \*(L"keys\*(R", \*(L"info\*(R", and \*(L"exec\*(R".
+\&\f(CW$error\fR is defined, it contains the text of an error reply sent by the Redis
+server.  Otherwise, \f(CW$reply\fR is the non-error reply.  For almost all commands,
+that means it's \f(CW\*(C`undef\*(C'\fR, or a defined but non-reference scalar, or an array
+ref of any of those; but see \*(L"keys\*(R", \*(L"info\*(R", and \*(L"exec\*(R".
 .PP
 Note the contrast with synchronous commands, which throw an exception on
 receipt of an error reply, or return a non-error reply directly.
 .PP
-The fact that pipelined commands never throw an exception can be
-particularly useful for Redis transactions; see \*(L"exec\*(R".
+The fact that pipelined commands never throw an exception can be particularly
+useful for Redis transactions; see \*(L"exec\*(R".
 .SH "ENCODING"
 .IX Header "ENCODING"
-\&\fBThis feature is deprecated and will be removed before 2.000\fR. You
-should start testing your code with \f(CW\*(C`encoding => undef\*(C'\fR because
-that will be the new default with 2.000.
+\&\fBThis feature is deprecated and will be removed before 2.000\fR. You should
+start testing your code with \f(CW\*(C`encoding => undef\*(C'\fR because that will be the
+new default with 2.000.
 .PP
-Since Redis knows nothing about encoding, we are forcing utf\-8 flag on
-all data received from Redis. This change was introduced in 1.2001
-version. \fBPlease note\fR that this encoding option severely degrades
-performance.
+Since Redis knows nothing about encoding, we are forcing utf\-8 flag on all data
+received from Redis. This change was introduced in 1.2001 version. \fBPlease
+note\fR that this encoding option severely degrades performance.
 .PP
-You can disable this automatic encoding by passing an option to
-\&\*(L"new\*(R": \f(CW\*(C`encoding => undef\*(C'\fR.
+You can disable this automatic encoding by passing an option to \*(L"new\*(R": \f(CW\*(C`encoding => undef\*(C'\fR.
 .PP
-This allows us to round-trip utf\-8 encoded characters correctly, but
-might be problem if you push binary junk into Redis and expect to get it
-back without utf\-8 flag turned on.
+This allows us to round-trip utf\-8 encoded characters correctly, but might be
+problem if you push binary junk into Redis and expect to get it back without
+utf\-8 flag turned on.
 .SH "METHODS"
 .IX Header "METHODS"
 .SS "Constructors"
@@ -299,16 +296,16 @@ back without utf\-8 flag turned on.
 \&    my $r = Redis\->new( name => \*(Aqmy_connection_name\*(Aq ); ## Redis 2.6.9 required
 .Ve
 .PP
-The \f(CW\*(C`server\*(C'\fR parameter specifies the Redis server we should connect
-to, via \s-1TCP.\s0 Use the '\s-1IP:PORT\s0' format. If no \f(CW\*(C`server\*(C'\fR option is
-present, we will attempt to use the \f(CW\*(C`REDIS_SERVER\*(C'\fR environment
-variable. If neither of those options are present, it defaults to
-\&'127.0.0.1:6379'.
+The \f(CW\*(C`server\*(C'\fR parameter specifies the Redis server we should connect to,
+via \s-1TCP.\s0 Use the '\s-1IP:PORT\s0' format. If no \f(CW\*(C`server\*(C'\fR option is present, we
+will attempt to use the \f(CW\*(C`REDIS_SERVER\*(C'\fR environment variable. If neither of
+those options are present, it defaults to '127.0.0.1:6379'.
 .PP
-Alternatively you can use the \f(CW\*(C`sock\*(C'\fR parameter to specify the path
-of the \s-1UNIX\s0 domain socket where the Redis server is listening.
+Alternatively you can use the \f(CW\*(C`sock\*(C'\fR parameter to specify the path of the
+\&\s-1UNIX\s0 domain socket where the Redis server is listening.
 .PP
-The \f(CW\*(C`REDIS_SERVER\*(C'\fR can be used for \s-1UNIX\s0 domain sockets too. The following formats are supported:
+The \f(CW\*(C`REDIS_SERVER\*(C'\fR can be used for \s-1UNIX\s0 domain sockets too. The following
+formats are supported:
 .IP "\(bu" 4
 /path/to/sock
 .IP "\(bu" 4
@@ -318,48 +315,47 @@ unix:/path/to/sock
 .IP "\(bu" 4
 tcp:127.0.0.1:11011
 .PP
-The \f(CW\*(C`encoding\*(C'\fR parameter speficies the encoding we will use to
-decode all the data we receive and encode all the data sent to the redis
-server. Due to backwards-compatibility we default to \f(CW\*(C`utf8\*(C'\fR. To
-disable all this encoding/decoding, you must use \f(CW\*(C`encoding => undef\*(C'\fR.
-\&\fBThis is the recommended option\fR.
+The \f(CW\*(C`encoding\*(C'\fR parameter speficies the encoding we will use to decode all
+the data we receive and encode all the data sent to the redis server. Due to
+backwards-compatibility we default to \f(CW\*(C`utf8\*(C'\fR. To disable all this
+encoding/decoding, you must use \f(CW\*(C`encoding => undef\*(C'\fR. \fBThis is the
+recommended option\fR.
 .PP
-\&\fBWarning\fR: this option has several problems and it is
-\&\fBdeprecated\fR. A future version might add other filtering options though.
+\&\fBWarning\fR: this option has several problems and it is \fBdeprecated\fR. A
+future version might add other filtering options though.
 .PP
 The \f(CW\*(C`reconnect\*(C'\fR option enables auto-reconnection mode. If we cannot
-connect to the Redis server, or if a network write fails, we enter retry
-mode. We will try a new connection every \f(CW\*(C`every\*(C'\fR miliseconds
-(1000ms by default), up-to \f(CW\*(C`reconnect\*(C'\fR seconds.
+connect to the Redis server, or if a network write fails, we enter retry mode.
+We will try a new connection every \f(CW\*(C`every\*(C'\fR miliseconds (1000ms by
+default), up-to \f(CW\*(C`reconnect\*(C'\fR seconds.
 .PP
-Be aware that read errors will always thrown an exception, and will not
-trigger a retry until the new command is sent.
+Be aware that read errors will always thrown an exception, and will not trigger
+a retry until the new command is sent.
 .PP
-If we cannot re-establish a connection after \f(CW\*(C`reconnect\*(C'\fR seconds,
-an exception will be thrown.
+If we cannot re-establish a connection after \f(CW\*(C`reconnect\*(C'\fR seconds, an
+exception will be thrown.
 .PP
-If your Redis server requires authentication, you can use the
-\&\f(CW\*(C`password\*(C'\fR attribute. After each established connection (at the
-start or when reconnecting), the Redis \f(CW\*(C`AUTH\*(C'\fR command will be send
-to the server. If the password is wrong, an exception will be thrown and
-reconnect will be disabled.
+If your Redis server requires authentication, you can use the \f(CW\*(C`password\*(C'\fR
+attribute. After each established connection (at the start or when
+reconnecting), the Redis \f(CW\*(C`AUTH\*(C'\fR command will be send to the server. If the
+password is wrong, an exception will be thrown and reconnect will be disabled.
 .PP
 You can also provide a code reference that will be immediatly after each
-sucessfull connection. The \f(CW\*(C`on_connect\*(C'\fR attribute is used to
-provide the code reference, and it will be called with the first
-parameter being the Redis object.
+sucessfull connection. The \f(CW\*(C`on_connect\*(C'\fR attribute is used to provide the
+code reference, and it will be called with the first parameter being the Redis
+object.
 .PP
-Starting with Redis 2.6.9, you can set a name for each connection.
-This can be very useful for debugging purposes, using the
-\&\f(CW\*(C`CLIENT LIST\*(C'\fR command. To set a connection name, use the \f(CW\*(C`name\*(C'\fR
-parameter. Please note that there are restrictions on the name you can
-set, the most important of which is, no spaces. See the
-\&\s-1CLIENT SETNAME\s0 documentation <http://redis.io/commands/client-setname>
-for all the juicy details.
+Starting with Redis 2.6.9, you can set a name for each connection. This can be
+very useful for debugging purposes, using the \f(CW\*(C`CLIENT LIST\*(C'\fR command. To
+set a connection name, use the \f(CW\*(C`name\*(C'\fR parameter. Please note that there
+are restrictions on the name you can set, the most important of which is, no
+spaces. See the \s-1CLIENT SETNAME\s0
+documentation <http://redis.io/commands/client-setname> for all the juicy
+details.
 .PP
-The \f(CW\*(C`debug\*(C'\fR parameter enables debug information to \s-1STDERR,\s0
-including all interactions with the server. You can also enable debug
-with the \f(CW\*(C`REDIS_DEBUG\*(C'\fR environment variable.
+The \f(CW\*(C`debug\*(C'\fR parameter enables debug information to \s-1STDERR,\s0 including all
+interactions with the server. You can also enable debug with the \f(CW\*(C`REDIS_DEBUG\*(C'\fR
+environment variable.
 .SS "Connection Handling"
 .IX Subsection "Connection Handling"
 \fIquit\fR
@@ -388,9 +384,9 @@ The \f(CW\*(C`ping\*(C'\fR method does not support pipelined operation.
 \&  @clients = $r\->client_list;
 .Ve
 .PP
-Returns list of clients connected to the server. See
-\&\s-1CLIENT LIST\s0 documentation <http://redis.io/commands/client-list>
-for a description of the fields and their meaning.
+Returns list of clients connected to the server. See \s-1CLIENT LIST\s0
+documentation <http://redis.io/commands/client-list> for a description of the
+fields and their meaning.
 .PP
 \fIclient_getname\fR
 .IX Subsection "client_getname"
@@ -399,8 +395,8 @@ for a description of the fields and their meaning.
 \&  my $connection_name = $r\->client_getname;
 .Ve
 .PP
-Returns the name associated with this connection. See \*(L"client_setname\*(R"
-or the \f(CW\*(C`name\*(C'\fR parameter to \*(L"new\*(R" for ways to set this name.
+Returns the name associated with this connection. See \*(L"client_setname\*(R" or the
+\&\f(CW\*(C`name\*(C'\fR parameter to \*(L"new\*(R" for ways to set this name.
 .PP
 \fIclient_setname\fR
 .IX Subsection "client_setname"
@@ -409,24 +405,24 @@ or the \f(CW\*(C`name\*(C'\fR parameter to \*(L"new\*(R" for ways to set this na
 \&  $r\->client_setname(\*(Aqmy_connection_name\*(Aq);
 .Ve
 .PP
-Sets this connection name. See the
-\&\s-1CLIENT SETNAME\s0 documentation <http://redis.io/commands/client-setname>
-for restrictions on the connection name string. The most important one:
-no spaces.
+Sets this connection name. See the \s-1CLIENT SETNAME\s0
+documentation <http://redis.io/commands/client-setname> for restrictions on the
+connection name string. The most important one: no spaces.
 .SS "Pipeline management"
 .IX Subsection "Pipeline management"
 \fIwait_all_responses\fR
 .IX Subsection "wait_all_responses"
 .PP
-Waits until all pending pipelined responses have been received, and invokes
-the pipeline callback for each one.  See \*(L"\s-1PIPELINING\*(R"\s0.
+Waits until all pending pipelined responses have been received, and invokes the
+pipeline callback for each one.  See \*(L"\s-1PIPELINING\*(R"\s0.
 .SS "Transaction-handling commands"
 .IX Subsection "Transaction-handling commands"
-\&\fBWarning:\fR the behaviour of these commands when combined with
-pipelining is still under discussion, and you should \fB\s-1NOT\s0\fR use them at
-the same time just now.
+\&\fBWarning:\fR the behaviour of these commands when combined with pipelining is
+still under discussion, and you should \fB\s-1NOT\s0\fR use them at the same time just
+now.
 .PP
-You can follow the discussion to see the open issues with this <https://github.com/melo/perl-redis/issues/17>.
+You can follow the discussion to see the open issues with
+this <https://github.com/melo/perl-redis/issues/17>.
 .PP
 \fImulti\fR
 .IX Subsection "multi"
@@ -449,11 +445,10 @@ You can follow the discussion to see the open issues with this <https://github.c
 \&  my @individual_replies = $r\->exec;
 .Ve
 .PP
-\&\f(CW\*(C`exec\*(C'\fR has special behaviour when run in a pipeline: the \f(CW$reply\fR argument
-to the pipeline callback is an array ref whose elements are themselves
-\&\f(CW\*(C`[$reply, $error]\*(C'\fR pairs.  This means that you can accurately detect errors
-yielded by any command in the transaction, and without any exceptions being
-thrown.
+\&\f(CW\*(C`exec\*(C'\fR has special behaviour when run in a pipeline: the \f(CW$reply\fR argument to
+the pipeline callback is an array ref whose elements are themselves \f(CW\*(C`[$reply,
+$error]\*(C'\fR pairs.  This means that you can accurately detect errors yielded by
+any command in the transaction, and without any exceptions being thrown.
 .SS "Commands operating on string values"
 .IX Subsection "Commands operating on string values"
 \fIset\fR
@@ -529,9 +524,8 @@ thrown.
 .PP
 Note that synchronous \f(CW\*(C`keys\*(C'\fR calls in a scalar context return the number of
 matching keys (not an array ref of matching keys as you might expect).  This
-does not apply in pipelined mode: assuming the server returns a list of
-keys, as expected, it is always passed to the pipeline callback as an array
-ref.
+does not apply in pipelined mode: assuming the server returns a list of keys,
+as expected, it is always passed to the pipeline callback as an array ref.
 .PP
 \fIrandomkey\fR
 .IX Subsection "randomkey"
@@ -739,28 +733,27 @@ See also Redis::List for tie interface.
 .Ve
 .SS "Publish/Subscribe commands"
 .IX Subsection "Publish/Subscribe commands"
-When one of \*(L"subscribe\*(R" or \*(L"psubscribe\*(R" is used, the Redis object
-will enter \fIPubSub\fR mode. When in \fIPubSub\fR mode only commands in this
-section, plus \*(L"quit\*(R", will be accepted.
+When one of \*(L"subscribe\*(R" or \*(L"psubscribe\*(R" is used, the Redis object will
+enter \fIPubSub\fR mode. When in \fIPubSub\fR mode only commands in this section,
+plus \*(L"quit\*(R", will be accepted.
 .PP
-If you plan on using PubSub and other Redis functions, you should
-use two Redis objects, one dedicated to PubSub and the other for
-regular commands.
+If you plan on using PubSub and other Redis functions, you should use two Redis
+objects, one dedicated to PubSub and the other for regular commands.
 .PP
-All Pub/Sub commands receive a callback as the last parameter. This callback receives three arguments:
+All Pub/Sub commands receive a callback as the last parameter. This callback
+receives three arguments:
 .IP "\(bu" 4
 The published message.
 .IP "\(bu" 4
 The topic over which the message was sent.
 .IP "\(bu" 4
-The subscribed topic that matched the topic for the message. With
-\&\*(L"subscribe\*(R" these last two are the same, always. But with
-\&\*(L"psubscribe\*(R", this parameter tells you the pattern that matched.
+The subscribed topic that matched the topic for the message. With \*(L"subscribe\*(R"
+these last two are the same, always. But with \*(L"psubscribe\*(R", this parameter
+tells you the pattern that matched.
 .PP
-See the Pub/Sub notes <http://redis.io/topics/pubsub> for more
-information about the messages you will receive on your callbacks after
-each \*(L"subscribe\*(R", \*(L"unsubscribe\*(R", \*(L"psubscribe\*(R" and
-\&\*(L"punsubscribe\*(R".
+See the Pub/Sub notes <http://redis.io/topics/pubsub> for more information
+about the messages you will receive on your callbacks after each \*(L"subscribe\*(R",
+\&\*(L"unsubscribe\*(R", \*(L"psubscribe\*(R" and \*(L"punsubscribe\*(R".
 .PP
 \fIpublish\fR
 .IX Subsection "publish"
@@ -784,8 +777,8 @@ Publishes the \f(CW$message\fR to the \f(CW$topic\fR.
 \&  );
 .Ve
 .PP
-Subscribe one or more topics. Messages published into one of them will
-be received by Redis, and the specificed callback will be executed.
+Subscribe one or more topics. Messages published into one of them will be
+received by Redis, and the specificed callback will be executed.
 .PP
 \fIunsubscribe\fR
 .IX Subsection "unsubscribe"
@@ -804,8 +797,8 @@ Stops receiving messages for all the topics in \f(CW@topic_list\fR.
 \&  $r\->psubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
 .Ve
 .PP
-Subscribes a pattern of topics. All messages to topics that match the
-pattern will be delivered to the callback.
+Subscribes a pattern of topics. All messages to topics that match the pattern
+will be delivered to the callback.
 .PP
 \fIpunsubscribe\fR
 .IX Subsection "punsubscribe"
@@ -835,20 +828,20 @@ Returns true if we are in \fIPub/Sub\fR mode.
 \&  $r\->wait_for_messages($timeout) while $keep_going;
 .Ve
 .PP
-Blocks, waits for incoming messages and delivers them to the appropriate callbacks.
+Blocks, waits for incoming messages and delivers them to the appropriate
+callbacks.
 .PP
-Requires a single parameter, the number of seconds to wait for messages.
-Use 0 to wait for ever. If a positive non-zero value is used, it will
-return after that ammount of seconds without a single notification.
+Requires a single parameter, the number of seconds to wait for messages. Use 0
+to wait for ever. If a positive non-zero value is used, it will return after
+that ammount of seconds without a single notification.
 .PP
-Please note that the timeout is not a commitement to return control to
-the caller at most each \f(CW\*(C`timeout\*(C'\fR seconds, but more a idle timeout,
-were control will return to the caller if Redis is idle (as in no
-messages were received during the timeout period) for more than
-\&\f(CW\*(C`timeout\*(C'\fR seconds.
+Please note that the timeout is not a commitement to return control to the
+caller at most each \f(CW\*(C`timeout\*(C'\fR seconds, but more a idle timeout, were control
+will return to the caller if Redis is idle (as in no messages were received
+during the timeout period) for more than \f(CW\*(C`timeout\*(C'\fR seconds.
 .PP
-The \*(L"wait_for_messages\*(R" call returns the number of messages processed
-during the run.
+The \*(L"wait_for_messages\*(R" call returns the number of messages processed during
+the run.
 .SS "Persistence control commands"
 .IX Subsection "Persistence control commands"
 \fIsave\fR
@@ -912,8 +905,8 @@ Cache Lua script, returns \s-1SHA1\s0 digest that can be used with \*(L"evalsha\
 \&  my ($exists1, $exists2, ...) = $r\->script_exists($scrip1_sha, $script2_sha, ...);
 .Ve
 .PP
-Given a list of \s-1SHA1\s0 digests, returns a list of booleans, one for each
-\&\s-1SHA1,\s0 that report the existence of each script in the server cache.
+Given a list of \s-1SHA1\s0 digests, returns a list of booleans, one for each \s-1SHA1,\s0
+that report the existence of each script in the server cache.
 .PP
 \fIscript_kill\fR
 .IX Subsection "script_kill"
@@ -942,8 +935,8 @@ Flush the Lua scripts cache.
 .Ve
 .PP
 The \f(CW\*(C`info\*(C'\fR method is unique in that it decodes the server's response into a
-hashref, if possible.  This decoding happens in both synchronous and
-pipelined modes.
+hashref, if possible. This decoding happens in both synchronous and pipelined
+modes.
 .PP
 \fIshutdown\fR
 .IX Subsection "shutdown"

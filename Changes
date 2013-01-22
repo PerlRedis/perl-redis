@@ -1,5 +1,10 @@
 Revision history for Redis
 
+1.959     2013-01-22T14:46:42Z
+    * __try_read_sock: test error conditions more thoroughly (issue #31)
+    * Improve Test::SpawnRedisServer: multi-server support
+    * tidyall the code and docs
+
 1.958     2013-01-15T16:54:40Z
     * Support for name constructor parameter, set connection name
     * Add documentation for CLIENT * commands
