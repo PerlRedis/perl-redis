@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.959     2013-01-22T14:46:42Z
     * __try_read_sock: test error conditions more thoroughly (issue #31)
     * Improve Test::SpawnRedisServer: multi-server support
     * tidyall the code and docs
