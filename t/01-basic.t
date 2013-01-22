@@ -155,15 +155,9 @@ my $inter = [sort('foo', 'baz')];
 
 is_deeply([sort $o->sinter('test-set1', 'test-set2')], $inter, 'sinter');
 
-ok($o->sinterstore('test-set-inter', 'test-set1', 'test-set2'),
-  'sinterstore');
+ok($o->sinterstore('test-set-inter', 'test-set1', 'test-set2'), 'sinterstore');
 
-cmp_ok(
-  $o->scard('test-set-inter'),
-  '==',
-  $#$inter + 1,
-  'cardinality of intersection'
-);
+cmp_ok($o->scard('test-set-inter'), '==', $#$inter + 1, 'cardinality of intersection');
 
 is_deeply([$o->sdiff('test-set1', 'test-set2')], ['bar'], 'sdiff');
 ok($o->sdiffstore(qw( test-set-diff test-set1 test-set2 )), 'sdiffstore');
@@ -180,7 +174,7 @@ ok(scalar grep { $_ eq $first_rand } @union, 'srandmember');
 my $second_rand = $o->spop('test-set-union');
 ok(defined $first_rand, 'spop result is defined');
 ok(scalar grep { $_ eq $second_rand } @union, 'spop');
-is($o->scard('test-set-union'), scalar(@union)-1, 'new cardinality of union');
+is($o->scard('test-set-union'), scalar(@union) - 1, 'new cardinality of union');
 
 $o->del('test_set3');
 my @test_set3 = sort qw( foo bar baz );
@@ -201,7 +195,7 @@ my $zset = 'test-zset';
 $o->del($zset);
 
 ok($o->zadd($zset, 0, 'foo'));
-ok(!$o->zadd($zset, 1, 'foo')); # 0 returned because foo is already in the set
+ok(!$o->zadd($zset, 1, 'foo'));    # 0 returned because foo is already in the set
 
 is($o->zscore($zset, 'foo'), 1);
 
@@ -209,8 +203,7 @@ ok($o->zincrby($zset, 1, 'foo'));
 is($o->zscore($zset, 'foo'), 2);
 
 ok($o->zincrby($zset, 1, 'bar'));
-is($o->zscore($zset, 'bar'), 1)
-  ;    # bar was new, so its score got set to the increment
+is($o->zscore($zset, 'bar'), 1);    # bar was new, so its score got set to the increment
 
 is($o->zrank($zset, 'bar'), 0);
 is($o->zrank($zset, 'foo'), 1);
@@ -224,7 +217,7 @@ is_deeply([$o->zrange($zset, 0, 1)], [qw/bar foo/]);
 is_deeply([$o->zrevrange($zset, 0, 1)], [qw/baz foo/]);
 
 
-my $withscores = {$o->zrevrange($zset, 0, 1, 'WITHSCORES')};
+my $withscores = { $o->zrevrange($zset, 0, 1, 'WITHSCORES') };
 
 # this uglyness gets around floating point weirdness in the return (I.E. 2.1000000000000001);
 my $rounded_withscores = {
@@ -232,7 +225,7 @@ my $rounded_withscores = {
     keys %$withscores
 };
 
-is_deeply($rounded_withscores, {baz => 2.1, foo => 2});
+is_deeply($rounded_withscores, { baz => 2.1, foo => 2 });
 
 is_deeply([$o->zrangebyscore($zset, 2, 3)], [qw/foo baz/]);
 
@@ -292,7 +285,7 @@ is($o->hlen($hash), 4);
 
 is_deeply([$o->hkeys($hash)], [qw/foo bar baz qux/]);
 is_deeply([$o->hvals($hash)], [qw/1 2 3 4/]);
-is_deeply({$o->hgetall($hash)}, {foo => 1, bar => 2, baz => 3, qux => 4});
+is_deeply({ $o->hgetall($hash) }, { foo => 1, bar => 2, baz => 3, qux => 4 });
 
 ok($o->del($hash));                            # remove entire hash
 
@@ -336,21 +329,20 @@ ok(my $info = $o->info, 'info');
 isa_ok($info, 'HASH', '... yields a hash');
 ok(keys %$info, '... nonempty');
 unlike(join("\n", keys %$info), qr/#/, '... with no comments in the keys');
-unlike(join("\n", keys %$info), qr/\n\n|\A\n|\n\z/,
-       '... with no blank lines in the keys');
+unlike(join("\n", keys %$info), qr/\n\n|\A\n|\n\z/, '... with no blank lines in the keys');
 
 
 ## Connection handling
 
 ok($o->ping,  'ping() is true');
 ok($o->quit,  'quit');
-ok(!$o->quit,  'quit again, ok');
+ok(!$o->quit, 'quit again, ok');
 ok(!$o->ping, '... but after quit() returns false');
 
 $o = Redis->new(server => $srv);
-ok($o->shutdown(), 'shutdown() once is ok');
+ok($o->shutdown(),  'shutdown() once is ok');
 ok(!$o->shutdown(), '... twice also lives, but returns false');
-ok(!$o->ping(), 'ping() will be false after shutdown()');
+ok(!$o->ping(),     'ping() will be false after shutdown()');
 
 sleep(1);
 like(

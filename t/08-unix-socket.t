@@ -6,8 +6,7 @@ use Test::More;
 use Test::Fatal;
 use Redis;
 
-plan skip_all =>
-  'Define ENV TEST_REDIS_SERVER_SOCK_PATH to test UNIX socket support'
+plan skip_all => 'Define ENV TEST_REDIS_SERVER_SOCK_PATH to test UNIX socket support'
   unless $ENV{TEST_REDIS_SERVER_SOCK_PATH};
 
 my $conn = sub {
@@ -33,11 +32,7 @@ subtest 'basic tests' => sub {
   is($r->get('xpto'), '42', '... and get command ok too');
 
   is(exception { $r->quit }, undef, 'Connection closed ok');
-  like(
-    exception { $r->get('xpto') },
-    qr!Not connected to any server!,
-    'Command failed ok, no reconnect',
-  );
+  like(exception { $r->get('xpto') }, qr!Not connected to any server!, 'Command failed ok, no reconnect',);
 };
 
 
@@ -45,8 +40,7 @@ subtest 'reconnect over UNIX daemon' => sub {
   my $r = $conn->(reconnect => 2);
   ok($r->quit, '... and connection closed ok');
 
-  is(exception { $r->set(xpto => '43') },
-    undef, 'set command via UNIX ok, reconnected fine');
+  is(exception { $r->set(xpto => '43') }, undef, 'set command via UNIX ok, reconnected fine');
   is($r->get('xpto'), '43', '... and get command ok too');
 };
 
