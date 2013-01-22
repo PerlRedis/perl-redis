@@ -12,13 +12,17 @@ use IO::Socket::UNIX;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
+use Errno ();
 use Data::Dumper;
 use Carp qw/confess/;
 use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
-use constant WIN32 => $^O =~ /mswin32/i;
+use constant WIN32       => $^O =~ /mswin32/i;
+use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
+use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
+use constant EINTR       => eval {Errno::EINTR} || -1E9;
 
 
 sub new {
@@ -287,8 +291,13 @@ sub wait_for_messages {
   $s->add($sock);
 
   my $count = 0;
+MESSAGE:
   while ($s->can_read($timeout)) {
-    while (__try_read_sock($sock)) {
+    while (1) {
+      my $has_stuff = __try_read_sock($sock);
+      last MESSAGE unless defined $has_stuff;    ## Stop right now if EOF
+      last unless $has_stuff;                    ## back to select until timeout
+
       my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
       confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
       $self->__process_pubsub_msg($reply);
@@ -474,7 +483,7 @@ sub __send_command {
   ## Check to see if socket was closed: reconnect on EOF
   my $status = __try_read_sock($sock);
   $self->__throw_reconnect('Not connected to any server')
-    if defined $status && $status == 0;
+    unless defined $status;
 
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
@@ -619,25 +628,43 @@ sub __try_read_sock {
   ## See
   ##  * https://github.com/melo/perl-redis/issues/20
   ##  * https://github.com/melo/perl-redis/pull/21
-  my $result;
+  my $len;
   if (WIN32) {
-    $result = sysread($sock, $data, 1);
+    $len = sysread($sock, $data, 1);
   }
   else {
-    $result = read($sock, $data, 1);
+    $len = read($sock, $data, 1);
   }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
-  ## No errno?? This happens sometimes on my tests when the server
-  ## timesout the client. I traced the system calls and I see the read()
-  ## system call return 0 for EOF, but on this side of perl, we get
-  ## undef...
-  return 0 if !defined($result) && $err == 0;
+  if (defined($len)) {
+    ## Have stuff
+    if ($len > 0) {
+      $sock->ungetc(ord($data));
+      return 1;
+    }
+    ## EOF according to the docs
+    elsif ($len == 0) {
+      return;
+    }
+    else {
+      confess("read()/sysread() are really bonkers on $^O, return negative values ($len)");
+    }
+  }
 
-  return $result unless $result;
-  $sock->ungetc(ord($data));
-  return 1;
+  ## Keep going if nothing there, but socket is alive
+  return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN or $err == EINTR);
+
+  ## No errno, but result is undef?? This happens sometimes on my tests
+  ## when the server timesout the client. I traced the system calls and
+  ## I see the read() system call return 0 for EOF, but on this side of
+  ## perl, we get undef... We should see the 0 return code for EOF, I
+  ## suspect the fact that we are in non-blocking mode is the culprit
+  return if $err == 0;
+
+  ## For everything else, there is Mastercard...
+  confess("Unexpected error condition $err/$^O, please report this as a bug");
 }
 
 
