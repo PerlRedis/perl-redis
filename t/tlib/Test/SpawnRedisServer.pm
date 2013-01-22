@@ -9,7 +9,9 @@ use IPC::Cmd qw(can_run);
 use POSIX ":sys_wait_h";
 use base qw( Exporter );
 
-our @EXPORT = qw( redis );
+our @EXPORT    = qw( redis );
+our @EXPORT_OK = qw( redis reap );
+
 
 sub redis {
   my %params = (
