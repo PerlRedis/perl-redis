@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.960     2013-01-23T11:28:40Z
     * Make the new() name parameter safe to use with all redis-
       server versions
 
