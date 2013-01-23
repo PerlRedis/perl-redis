@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Make the new() name parameter safe to use with all redis-
+      server versions
 
 1.959     2013-01-22T14:46:42Z
     * __try_read_sock: test error conditions more thoroughly (issue #31)
