@@ -40,7 +40,7 @@ pipeline_ok 'info in pipelined mode',
   [info => [], code(sub { ref $_[0] eq 'HASH' && keys %{ $_[0] } })],
   [ info => [qw<oops oops>],
     undef,
-    re(qr/^ERR (?:syntax error|wrong number of arguments for 'info' command)$/)
+    re(qr{^ERR (?:syntax error|wrong number of arguments for 'info' command)$})
   ],
   );
 
@@ -80,9 +80,37 @@ subtest 'transaction with error and no pipeline' => sub {
   is($r->get('clunk'), 'QUEUED', 'transactional GET');
   like(
     exception { $r->exec },
-    qr/\[exec\] ERR Operation against a key holding the wrong kind of value,/,
+    qr{\[exec\] ERR Operation against a key holding the wrong kind of value,},
     'synchronous EXEC dies for intervening error'
   );
 };
+
+
+subtest 'wait_one_response' => sub {
+  my $first;
+  my $second;
+
+  $r->get('a', sub { $first++ });
+  $r->get('a', sub { $second++ });
+  $r->get('a', sub { $first++ });
+  $r->get('a', sub { $second++ });
+
+  $r->wait_one_response();
+  is($first,  1,     'after first wait_one_response(), first callback called');
+  is($second, undef, '... but not the second one');
+
+  $r->wait_one_response();
+  is($first,  1, 'after second wait_one_response(), first callback was not called again');
+  is($second, 1, '... but the second one was called');
+
+  $r->wait_all_responses();
+  is($first,  2, 'after final wait_all_responses(), first callback was called again');
+  is($second, 2, '... the second one was also called');
+
+  $r->wait_one_response();
+  is($first,  2, 'after final wait_one_response(), first callback was not called again');
+  is($second, 2, '... nor was the second one');
+};
+
 
 done_testing();
