@@ -12,7 +12,11 @@ my ($c, $srv) = redis();
 END { $c->() if $c }
 
 
-ok(my $o = Redis->new(server => $srv), 'connected to our test redis-server');
+my $o;
+is(
+  exception { $o = Redis->new(server => $srv, name => 'my_name_is_glorious') },
+  undef, 'connected to our test redis-server',
+);
 ok($o->ping, 'ping');
 
 

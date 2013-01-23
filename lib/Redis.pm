@@ -1,7 +1,7 @@
 package Redis;
 
 # ABSTRACT: Perl binding for Redis database
-our $VERSION = '1.959'; # VERSION
+our $VERSION = '1.960'; # VERSION
 our $AUTHORITY = 'cpan:MELO'; # AUTHORITY
 
 use warnings;
@@ -54,7 +54,8 @@ sub new {
   if (my $name = $args{name}) {
     my $on_conn = $self->{on_connect};
     $self->{on_connect} = sub {
-      $_[0]->client_setname($name);
+      my ($redis) = @_;
+      try { $redis->client_setname($name) };
       $on_conn->(@_) if $on_conn;
       }
   }
@@ -718,7 +719,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.959
+version 1.960
 
 =head1 SYNOPSIS
 
@@ -942,13 +943,14 @@ sucessfull connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
 
-Starting with Redis 2.6.9, you can set a name for each connection. This can be
-very useful for debugging purposes, using the C<< CLIENT LIST >> command. To
-set a connection name, use the C<< name >> parameter. Please note that there
-are restrictions on the name you can set, the most important of which is, no
-spaces. See the L<CLIENT SETNAME
-documentation|http://redis.io/commands/client-setname> for all the juicy
-details.
+You can also set a name for each connection. This can be very useful for
+debugging purposes, using the C<< CLIENT LIST >> command. To set a connection
+name, use the C<< name >> parameter. Please note that there are restrictions on
+the name you can set, the most important of which is, no spaces. See the
+L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname> for all
+the juicy details. This feature is safe to use with all versions of Redis
+servers. If C<< CLIENT SETNAME >> support is not available (Redis servers 2.6.9
+and above only), the name parameter is ignored.
 
 The C<< debug >> parameter enables debug information to STDERR, including all
 interactions with the server. You can also enable debug with the C<REDIS_DEBUG>

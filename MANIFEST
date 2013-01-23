@@ -28,6 +28,7 @@ t/20-tie-hash.t
 t/30-scripts.t
 t/42-client_cmds.t
 t/tlib/Test/SpawnRedisServer.pm
+tidyall.ini
 xt/author/test-eol.t
 xt/release/cpan-changes.t
 xt/release/dist-manifest.t
