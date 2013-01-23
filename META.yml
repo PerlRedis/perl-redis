@@ -32,13 +32,13 @@ no_index:
 provides:
   Redis:
     file: lib/Redis.pm
-    version: 1.959
+    version: 1.960
   Redis::Hash:
     file: lib/Redis/Hash.pm
-    version: 1.959
+    version: 1.960
   Redis::List:
     file: lib/Redis/List.pm
-    version: 1.959
+    version: 1.960
 requires:
   Try::Tiny: 0
   perl: v5.8.8
@@ -46,7 +46,7 @@ resources:
   bugtracker: https://github.com/melo/perl-redis/issues
   homepage: http://metacpan.org/release/Redis/
   repository: git://github.com/melo/perl-redis.git
-version: 1.959
+version: 1.960
 x_Dist_Zilla:
   perl:
     version: 5.014002

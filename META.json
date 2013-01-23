@@ -59,15 +59,15 @@
    "provides" : {
       "Redis" : {
          "file" : "lib/Redis.pm",
-         "version" : "1.959"
+         "version" : "1.960"
       },
       "Redis::Hash" : {
          "file" : "lib/Redis/Hash.pm",
-         "version" : "1.959"
+         "version" : "1.960"
       },
       "Redis::List" : {
          "file" : "lib/Redis/List.pm",
-         "version" : "1.959"
+         "version" : "1.960"
       }
    },
    "release_status" : "stable",
@@ -82,7 +82,7 @@
          "web" : "https://github.com/melo/perl-redis"
       }
    },
-   "version" : "1.959",
+   "version" : "1.960",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.014002"

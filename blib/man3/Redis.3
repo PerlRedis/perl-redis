@@ -133,7 +133,7 @@
 .\" ========================================================================
 .\"
 .IX Title "Redis 3"
-.TH Redis 3 "2013-01-22" "perl v5.14.2" "User Contributed Perl Documentation"
+.TH Redis 3 "2013-01-23" "perl v5.14.2" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -142,7 +142,7 @@
 Redis \- Perl binding for Redis database
 .SH "VERSION"
 .IX Header "VERSION"
-version 1.959
+version 1.960
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 2
@@ -345,13 +345,14 @@ sucessfull connection. The \f(CW\*(C`on_connect\*(C'\fR attribute is used to pro
 code reference, and it will be called with the first parameter being the Redis
 object.
 .PP
-Starting with Redis 2.6.9, you can set a name for each connection. This can be
-very useful for debugging purposes, using the \f(CW\*(C`CLIENT LIST\*(C'\fR command. To
-set a connection name, use the \f(CW\*(C`name\*(C'\fR parameter. Please note that there
-are restrictions on the name you can set, the most important of which is, no
-spaces. See the \s-1CLIENT SETNAME\s0
-documentation <http://redis.io/commands/client-setname> for all the juicy
-details.
+You can also set a name for each connection. This can be very useful for
+debugging purposes, using the \f(CW\*(C`CLIENT LIST\*(C'\fR command. To set a connection
+name, use the \f(CW\*(C`name\*(C'\fR parameter. Please note that there are restrictions on
+the name you can set, the most important of which is, no spaces. See the
+\&\s-1CLIENT SETNAME\s0 documentation <http://redis.io/commands/client-setname> for all
+the juicy details. This feature is safe to use with all versions of Redis
+servers. If \f(CW\*(C`CLIENT SETNAME\*(C'\fR support is not available (Redis servers 2.6.9
+and above only), the name parameter is ignored.
 .PP
 The \f(CW\*(C`debug\*(C'\fR parameter enables debug information to \s-1STDERR,\s0 including all
 interactions with the server. You can also enable debug with the \f(CW\*(C`REDIS_DEBUG\*(C'\fR
