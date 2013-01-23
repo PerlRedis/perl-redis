@@ -179,10 +179,20 @@ sub __run_cmd {
 sub wait_all_responses {
   my ($self) = @_;
 
-  for my $handler (splice @{ $self->{queue} }) {
-    my ($command, $cb, $collect_errors) = @$handler;
-    $cb->($self->__read_response($command, $collect_errors));
-  }
+  my $queue = $self->{queue};
+  $self->wait_one_response while @$queue;
+
+  return;
+}
+
+sub wait_one_response {
+  my ($self) = @_;
+
+  my $handler = shift @{ $self->{queue} };
+  return unless $handler;
+
+  my ($command, $cb, $collect_errors) = @$handler;
+  $cb->($self->__read_response($command, $collect_errors));
 
   return;
 }
@@ -747,6 +757,8 @@ __END__
     });
     long_computation();
     $redis->wait_all_responses;
+    ## or
+    $redis->wait_one_response();
 
     ## Or run a large batch of commands in a pipeline
     my %hash = _get_large_batch_of_commands();
@@ -810,23 +822,25 @@ soon as at least one of the following conditions holds:
 
 =item *
 
-A non-pipelined (synchronous) command has been sent on the same connection
+A non-pipelined (synchronous) command is called on the same connection
 
 =item *
 
 A pub/sub subscription command (one of C<subscribe>, C<unsubscribe>,
-C<psubscribe>, or C<punsubscribe>) is about to be sent on the same connection.
+C<psubscribe>, or C<punsubscribe>) is about to be called on the same
+connection.
 
 =item *
 
-The L</wait_all_responses> method is called explicitly.
+One of L</wait_all_responses> or L</wait_one_response> methods is called
+explicitly.
 
 =back
 
 The coderef you supply to a pipelined command method is invoked once the
 response is available.  It takes two arguments, C<$reply> and C<$error>.  If
 C<$error> is defined, it contains the text of an error reply sent by the Redis
-server.  Otherwise, C<$reply> is the non-error reply.  For almost all commands,
+server.  Otherwise, C<$reply> is the non-error reply. For almost all commands,
 that means it's C<undef>, or a defined but non-reference scalar, or an array
 ref of any of those; but see L</keys>, L</info>, and L</exec>.
 
@@ -990,6 +1004,11 @@ connection name string. The most important one: no spaces.
 
 Waits until all pending pipelined responses have been received, and invokes the
 pipeline callback for each one.  See L</PIPELINING>.
+
+=head3 wait_one_response
+
+Waits until the first pending pipelined response has been received, and invokes
+its callback.  See L</PIPELINING>.
 
 
 =head2 Transaction-handling commands
