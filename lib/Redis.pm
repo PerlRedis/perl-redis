@@ -55,7 +55,11 @@ sub new {
     my $on_conn = $self->{on_connect};
     $self->{on_connect} = sub {
       my ($redis) = @_;
-      try { $redis->client_setname($name) };
+      try {
+        my $n = $name;
+        $n = $n->($redis) if ref($n) eq 'CODE';
+        $redis->client_setname($n) if defined $n;
+      };
       $on_conn->(@_) if $on_conn;
       }
   }
@@ -724,7 +728,15 @@ __END__
     my $redis = Redis->new(server => 'redis.example.com:8080');
 
     ## Set the connection name (requires Redis 2.6.9)
-    my $redis = Redis->new(server => 'redis.example.com:8080', name => 'my_connection_name');
+    my $redis = Redis->new(
+      server => 'redis.example.com:8080',
+      name => 'my_connection_name',
+    );
+    my $generation = 0;
+    my $redis = Redis->new(
+      server => 'redis.example.com:8080',
+      name => sub { "cache-$$-".++$generation },
+    );
 
     ## Use UNIX domain socket
     my $redis = Redis->new(sock => '/path/to/socket');
@@ -883,7 +895,8 @@ utf-8 flag turned on.
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
     my $r = Redis->new( on_connect => sub { my ($redis) = @_; ... } );
-    my $r = Redis->new( name => 'my_connection_name' ); ## Redis 2.6.9 required
+    my $r = Redis->new( name => 'my_connection_name' );
+    my $r = Redis->new( name => sub { "cache-for-$$" });
 
 The C<< server >> parameter specifies the Redis server we should connect to,
 via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
@@ -948,12 +961,17 @@ object.
 
 You can also set a name for each connection. This can be very useful for
 debugging purposes, using the C<< CLIENT LIST >> command. To set a connection
-name, use the C<< name >> parameter. Please note that there are restrictions on
-the name you can set, the most important of which is, no spaces. See the
-L<CLIENT SETNAME documentation|http://redis.io/commands/client-setname> for all
-the juicy details. This feature is safe to use with all versions of Redis
-servers. If C<< CLIENT SETNAME >> support is not available (Redis servers 2.6.9
-and above only), the name parameter is ignored.
+name, use the C<< name >> parameter. You can use both a scalar value or a
+CodeRef. If the latter, it will be called after each connection, with the Redis
+object, and it should return the connection name to use. If it returns a
+undefined value, Redis will not set the connection name.
+
+Please note that there are restrictions on the name you can set, the most
+important of which is, no spaces. See the L<CLIENT SETNAME
+documentation|http://redis.io/commands/client-setname> for all the juicy
+details. This feature is safe to use with all versions of Redis servers. If C<<
+CLIENT SETNAME >> support is not available (Redis servers 2.6.9 and above
+only), the name parameter is ignored.
 
 The C<< debug >> parameter enables debug information to STDERR, including all
 interactions with the server. You can also enable debug with the C<REDIS_DEBUG>
