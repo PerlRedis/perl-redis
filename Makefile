@@ -21,7 +21,7 @@
 #     NAME => q[Redis]
 #     PREREQ_PM => { Test::More=>q[0.98], Try::Tiny=>q[0], IO::String=>q[0], Digest::SHA=>q[0], Test::Fatal=>q[0], IPC::Cmd=>q[0], Test::Deep=>q[0] }
 #     TEST_REQUIRES => {  }
-#     VERSION => q[1.960]
+#     VERSION => q[1.961]
 #     test => { TESTS=>q[t/*.t] }
 
 # --- MakeMaker post_initialize section:
@@ -61,11 +61,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Redis
 NAME_SYM = Redis
-VERSION = 1.960
+VERSION = 1.961
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_960
+VERSION_SYM = 1_961
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.960
+XS_VERSION = 1.961
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -267,7 +267,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Redis
-DISTVNAME = Redis-1.960
+DISTVNAME = Redis-1.961
 
 
 # --- MakeMaker macro section:
@@ -516,7 +516,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  Try::Tiny: 0' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: 1.960' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: 1.961' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -561,7 +561,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "1.960"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "1.961"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 

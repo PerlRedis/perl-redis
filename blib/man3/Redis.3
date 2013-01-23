@@ -142,7 +142,7 @@
 Redis \- Perl binding for Redis database
 .SH "VERSION"
 .IX Header "VERSION"
-version 1.960
+version 1.961
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 .Vb 2
@@ -185,6 +185,8 @@ version 1.960
 \&    });
 \&    long_computation();
 \&    $redis\->wait_all_responses;
+\&    ## or
+\&    $redis\->wait_one_response();
 \&
 \&    ## Or run a large batch of commands in a pipeline
 \&    my %hash = _get_large_batch_of_commands();
@@ -243,17 +245,19 @@ method call:
 Pending responses to pipelined commands are processed in a single batch, as
 soon as at least one of the following conditions holds:
 .IP "\(bu" 4
-A non-pipelined (synchronous) command has been sent on the same connection
+A non-pipelined (synchronous) command is called on the same connection
 .IP "\(bu" 4
 A pub/sub subscription command (one of \f(CW\*(C`subscribe\*(C'\fR, \f(CW\*(C`unsubscribe\*(C'\fR,
-\&\f(CW\*(C`psubscribe\*(C'\fR, or \f(CW\*(C`punsubscribe\*(C'\fR) is about to be sent on the same connection.
+\&\f(CW\*(C`psubscribe\*(C'\fR, or \f(CW\*(C`punsubscribe\*(C'\fR) is about to be called on the same
+connection.
 .IP "\(bu" 4
-The \*(L"wait_all_responses\*(R" method is called explicitly.
+One of \*(L"wait_all_responses\*(R" or \*(L"wait_one_response\*(R" methods is called
+explicitly.
 .PP
 The coderef you supply to a pipelined command method is invoked once the
 response is available.  It takes two arguments, \f(CW$reply\fR and \f(CW$error\fR.  If
 \&\f(CW$error\fR is defined, it contains the text of an error reply sent by the Redis
-server.  Otherwise, \f(CW$reply\fR is the non-error reply.  For almost all commands,
+server.  Otherwise, \f(CW$reply\fR is the non-error reply. For almost all commands,
 that means it's \f(CW\*(C`undef\*(C'\fR, or a defined but non-reference scalar, or an array
 ref of any of those; but see \*(L"keys\*(R", \*(L"info\*(R", and \*(L"exec\*(R".
 .PP
@@ -416,6 +420,12 @@ connection name string. The most important one: no spaces.
 .PP
 Waits until all pending pipelined responses have been received, and invokes the
 pipeline callback for each one.  See \*(L"\s-1PIPELINING\*(R"\s0.
+.PP
+\fIwait_one_response\fR
+.IX Subsection "wait_one_response"
+.PP
+Waits until the first pending pipelined response has been received, and invokes
+its callback.  See \*(L"\s-1PIPELINING\*(R"\s0.
 .SS "Transaction-handling commands"
 .IX Subsection "Transaction-handling commands"
 \&\fBWarning:\fR the behaviour of these commands when combined with pipelining is
