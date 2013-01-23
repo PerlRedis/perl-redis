@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.961     2013-01-23T15:09:47Z
     * Add wait_one_response() for better pipeline management
 
 1.960     2013-01-23T11:28:40Z
