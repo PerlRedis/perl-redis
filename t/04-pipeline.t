@@ -40,7 +40,7 @@ pipeline_ok 'info in pipelined mode',
   [info => [], code(sub { ref $_[0] eq 'HASH' && keys %{ $_[0] } })],
   [ info => [qw<oops oops>],
     undef,
-    re(qr/^ERR (?:syntax error|wrong number of arguments for 'info' command)$/)
+    re(qr{^ERR (?:syntax error|wrong number of arguments for 'info' command)$})
   ],
   );
 
@@ -80,7 +80,7 @@ subtest 'transaction with error and no pipeline' => sub {
   is($r->get('clunk'), 'QUEUED', 'transactional GET');
   like(
     exception { $r->exec },
-    qr/\[exec\] ERR Operation against a key holding the wrong kind of value,/,
+    qr{\[exec\] ERR Operation against a key holding the wrong kind of value,},
     'synchronous EXEC dies for intervening error'
   );
 };
