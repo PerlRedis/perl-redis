@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Add wait_one_response() for better pipeline management
 
 1.960     2013-01-23T11:28:40Z
     * Make the new() name parameter safe to use with all redis-
