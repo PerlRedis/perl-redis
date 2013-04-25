@@ -1229,6 +1229,103 @@ See also L<Redis::List> for tie interface.
 
   my $ok = $r->sunionstore( $dstkey, $key1, $key2, ... );
 
+=head2 Commands operating on hashes
+
+Hashes in Redis cannot be nested as in perl, if you want to store a nested
+hash, you need to serialize the hash first. If you want to have a named
+hash, you can use Redis-hashes. You will find an example in the tests
+of this module t/01-basic.t
+
+=head3 hset
+
+Sets the value to a key in a hash.
+  $r->hset('hashname', $key => $value); ## returns true on success
+
+
+=head3 hget
+  
+Gets the value to a key in a hash.
+
+  my $value = $r->hget('hashname', $key);
+
+=head3 hexists
+  
+  if($r->hexists('hashname', $key) {
+    ## do something, the key exists
+  }
+  else {
+    ## the key does not exist
+  }
+
+=head3 hdel
+
+Deletes a key from a hash
+  if($r->hdel('hashname', $key)) {
+    ## key is deleted
+  }
+  else {
+    ## oops
+  }
+
+=head3 hincrby
+
+Adds an integer to a value. The integer is signed, so a negative integer decrements.
+  
+  my $key = 'testkey';
+  $r->hset('hashname', $key => 1); ## value -> 1
+  my $increment = 1; ## has to be an integer
+  $r->hincrby('hashname', $key => $increment); ## value -> 2
+  $increment = 5;
+  $r->hincrby('hashname', $key => $increment); ## value -> 7
+  $increment = -1;
+  $r->hincrby('hashname', $key => $increment); ## value -> 6
+
+=head3 hsetnx
+
+Adds a key to a hash unless it is not already set.
+
+  my $key = 'testnx';
+  $r->hsetnx('hashname', $key => 1); ## returns true
+  $r->hsetnx('hashname', $key => 2); ## returns false because key already exists
+
+=head3 hmset
+
+Adds multiple keys to a hash.
+
+  $r->hmset('hashname', 'key1' => 'value1', 'key2' => 'value2'); ## returns true on success
+
+
+=head3 hmget
+
+Returns multiple keys of a hash.
+
+  my @values = $r->hmget('hashname', 'key1', 'key2');
+
+=head3 hgetall
+
+Returns the whole hash.
+
+  my %hash = $r->hgetall('hashname');
+
+=head3 hkeys
+
+Returns the keys of a hash.
+
+  my @keys = $r->hkeys('hashname');
+
+=head3 hvals
+
+Returns the values of a hash.
+
+  my @values = $r->hvals('hashname');
+
+=head3 hlen
+
+Returns the count of keys in a hash.
+
+  my $keycount = $r->hlen('hashname');
+
+
 
 =head2 Sorting
 
