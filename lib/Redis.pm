@@ -1517,6 +1517,13 @@ modes.
 
 The C<shutdown> method does not support pipelined operation.
 
+=head3 slowlog
+
+  my $nr_items = $r->slowlog("len");
+  my @last_ten_items = $r->slowlog("get", 10);
+
+The C<slowlog> command gives access to the server's slow log.
+
 
 =head2 Multiple databases handling commands
 
