@@ -32,6 +32,9 @@ sub new {
 
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
+  my $obuff = '';
+  $self->{obuff} = \$obuff;
+
   ## default to lax utf8
   $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
 
@@ -184,7 +187,12 @@ sub wait_all_responses {
   my ($self) = @_;
 
   my $queue = $self->{queue};
-  $self->wait_one_response while @$queue;
+  while (@$queue) {
+    my $handler = shift @$queue;
+    next unless $handler;
+    my ($command, $cb, $collect_errors) = @$handler;
+    $cb->($self->__read_response($command, $collect_errors));
+  }
 
   return;
 }
@@ -213,6 +221,7 @@ sub quit {
   try {
     $self->wait_all_responses;
     $self->__send_command('QUIT');
+    $self->flush;
   }
   catch {
     ## Ignore, we are quiting anyway...
@@ -234,6 +243,7 @@ sub shutdown {
 
   $self->wait_all_responses;
   $self->__send_command('SHUTDOWN');
+  $self->flush;
   close(delete $self->{sock}) || confess("Can't close socket: $!");
 
   return 1;
@@ -265,7 +275,8 @@ sub info {
   my $custom_decode = sub {
     my ($reply) = @_;
     return $reply if !defined $reply || ref $reply;
-    return { map { split(/:/, $_, 2) } grep {/^[^#]/} split(/\r\n/, $reply) };
+    return { map { split(/:/, $_, 2) }
+                 grep(/^[^#]/, split(/\015\012/, $reply)) };
   };
 
   my $cb = @_ && ref $_[-1] eq 'CODE' ? pop : undef;
@@ -315,6 +326,8 @@ sub wait_for_messages {
   my ($self, $timeout) = @_;
   my $sock = $self->{sock};
 
+  $self->flush  if ${$self->{obuff}} ne '';
+
   my $s = IO::Select->new;
   $s->add($sock);
 
@@ -359,6 +372,7 @@ sub __subscription_cmd {
       return unless @subs;
 
       $self->__send_command($command, @subs);
+      $self->flush;
 
       my %cbs = map { ("${pr}message:$_" => $cb) } @subs;
       return $self->__process_subscription_changes($command, \%cbs);
@@ -495,6 +509,7 @@ sub __send_command {
   my $cmd  = uc(shift);
   my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
+  my $obuff_ref = $self->{obuff};
 
   my $sock = $self->{sock}
     || $self->__throw_reconnect('Not connected to any server');
@@ -504,27 +519,56 @@ sub __send_command {
   ## Encode command using multi-bulk format
   my @cmd     = split /_/, $cmd;
   my $n_elems = scalar(@_) + scalar(@cmd);
-  my $buf     = "\*$n_elems\r\n";
-  for my $elem (@cmd, @_) {
-    my $bin = $enc ? encode($enc, $elem) : $elem;
-    $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
+  my $buf     = "*$n_elems\015\012";
+  if ($enc) {
+    for my $elem (@cmd, @_) {
+      my $bin = encode($enc, $elem);
+      $buf .= defined($bin) ? '$' . length($bin) . "\015\012$bin\015\012"
+                            : "\$-1\015\012";
+    }
+  } else {
+    for my $elem (@cmd, @_) {
+      $buf .= defined($elem) ? '$' . length($elem) . "\015\012$elem\015\012"
+                             : "\$-1\015\012";
+    }
   }
 
-  ## Check to see if socket was closed: reconnect on EOF
-  my $status = __try_read_sock($sock);
-  $self->__throw_reconnect('Not connected to any server')
-    unless defined $status;
-
-  ## Send command, take care for partial writes
+  ## Send command
   warn "[SEND RAW] $buf" if $deb;
-  while ($buf) {
-    my $len = syswrite $sock, $buf, length $buf;
-    $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless defined $len;
-    substr $buf, 0, $len, "";
-  }
+
+  $$obuff_ref .= $buf;
+
+  # MSS on a loopback interface is often about 16 kB, or sometimes 64 kB.
+  # Try not to exceed unnecessarily a packet size by some small fraction.
+  $self->flush  if length $$obuff_ref >= 15000;
 
   return;
+}
+
+sub flush {
+  my ($self) = @_;
+  my $obuff_ref = $self->{obuff};
+
+  warn "[FLUSH] '$$obuff_ref'\n" if $self->{debug};
+
+  return 1  if $$obuff_ref eq '';
+
+  my $sock = $self->{sock}
+    || $self->__throw_reconnect('Not connected to any server');
+
+# ## Check to see if socket was closed: reconnect on EOF
+# my $status = __try_read_sock($sock);
+# $self->__throw_reconnect('Not connected to any server')
+#   unless defined $status;
+
+  ## take care of partial writes
+  while ($$obuff_ref ne '') {
+    my $len = syswrite $sock, $$obuff_ref, length $$obuff_ref;
+    $self->__throw_reconnect("Could not write to Redis server: $!")
+      unless defined $len;
+    substr $$obuff_ref, 0, $len, "";
+  }
+  1;
 }
 
 sub __read_response {
@@ -532,7 +576,7 @@ sub __read_response {
 
   confess("Not connected to any server") unless $self->{sock};
 
-  local $/ = "\r\n";
+  local $/ = "\015\012";
 
   ## no debug => fast path
   return $self->__read_response_r($cmd, $collect_errors) unless $self->{debug};
@@ -581,6 +625,8 @@ sub __read_response_r {
 sub __read_line {
   my $self = $_[0];
   my $sock = $self->{sock};
+
+  $self->flush  if ${$self->{obuff}} ne '';
 
   my $data = <$sock>;
   confess("Error while reading from Redis server: $!")
@@ -929,7 +975,7 @@ tcp:127.0.0.1:11011
 
 =back
 
-The C<< encoding >> parameter speficies the encoding we will use to decode all
+The C<< encoding >> parameter specifies the encoding we will use to decode all
 the data we receive and encode all the data sent to the redis server. Due to
 backwards-compatibility we default to C<< utf8 >>. To disable all this
 encoding/decoding, you must use C<< encoding => undef >>. B<< This is the
@@ -955,7 +1001,7 @@ reconnecting), the Redis C<< AUTH >> command will be send to the server. If the
 password is wrong, an exception will be thrown and reconnect will be disabled.
 
 You can also provide a code reference that will be immediatly after each
-sucessfull connection. The C<< on_connect >> attribute is used to provide the
+successful connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
 
