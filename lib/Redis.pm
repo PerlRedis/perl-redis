@@ -171,6 +171,8 @@ sub __run_cmd {
   $self->__send_command($command, @args);
   push @{ $self->{queue} }, [$command, $wrapper, $collect_errors];
 
+  $self->{accumulate_commands} = 1 if $cb;
+
   return 1 if $cb;
 
   $self->wait_all_responses;
@@ -182,6 +184,18 @@ sub __run_cmd {
 
 sub wait_all_responses {
   my ($self) = @_;
+
+  # if in pipelined (accumulated) mode, send the accumulated buffer at once
+  # and clear the buffer, then parse results
+
+  if ($self->{accumulate_commands} && exists $self->{buffer}) {
+    my $buf = join('', @{ $self->{buffer} });
+    if ($buf) {
+      $self->__send_buffer($buf);
+    }
+    delete $self->{buffer};
+  }
+  $self->{accumulate_commands} = undef;
 
   my $queue = $self->{queue};
   $self->wait_one_response while @$queue;
@@ -490,14 +504,33 @@ sub __build_sock {
   return;
 }
 
+sub __send_buffer {
+  my ($self, $buf) = @_;
+
+  my $sock = $self->{sock}
+    || $self->__throw_reconnect('Not connected to any server');
+
+  ## Check to see if socket was closed: reconnect on EOF
+  my $status = __try_read_sock($sock);
+  $self->__throw_reconnect('Not connected to any server')
+    unless defined $status;
+
+  ## Send command, take care for partial writes
+  warn "[SEND RAW] $buf" if $self->{debug};
+
+  while ($buf) {
+    my $len = syswrite $sock, $buf, length $buf;
+    $self->__throw_reconnect("Could not write to Redis server: $!")
+      unless defined $len;
+    substr $buf, 0, $len, "";
+  }
+}
+
 sub __send_command {
   my $self = shift;
   my $cmd  = uc(shift);
   my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
-
-  my $sock = $self->{sock}
-    || $self->__throw_reconnect('Not connected to any server');
 
   warn "[SEND] $cmd ", Dumper([@_]) if $deb;
 
@@ -510,19 +543,13 @@ sub __send_command {
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
-  ## Check to see if socket was closed: reconnect on EOF
-  my $status = __try_read_sock($sock);
-  $self->__throw_reconnect('Not connected to any server')
-    unless defined $status;
-
-  ## Send command, take care for partial writes
-  warn "[SEND RAW] $buf" if $deb;
-  while ($buf) {
-    my $len = syswrite $sock, $buf, length $buf;
-    $self->__throw_reconnect("Could not write to Redis server: $!")
-      unless defined $len;
-    substr $buf, 0, $len, "";
+  if ($self->{accumulate_commands}) {
+    $self->{buffer} = [] unless exists $self->{buffer};
+    push @{ $self->{buffer} }, $buf;
+    return;
   }
+
+  $self->__send_buffer($buf);
 
   return;
 }
