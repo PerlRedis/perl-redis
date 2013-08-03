@@ -9,6 +9,36 @@ use IPC::Cmd qw(can_run);
 use POSIX ":sys_wait_h";
 use base qw( Exporter );
 
+our($io_socket_module_name, $have_inet4, $have_inet6);
+
+BEGIN {
+  # prefer using module IO::Socket::IP if available,
+  # otherwise fall back to IO::Socket::INET6 or to IO::Socket::INET
+  if (eval { require IO::Socket::IP }) {
+    $io_socket_module_name = 'IO::Socket::IP';
+  } elsif (eval { require IO::Socket::INET6 }) {
+    $io_socket_module_name = 'IO::Socket::INET6';
+  } elsif (eval { require IO::Socket::INET }) {
+    $io_socket_module_name = 'IO::Socket::INET';
+  }
+  $have_inet4 =  # can we create a PF_INET socket?
+    defined $io_socket_module_name && eval {
+      my $sock =
+        $io_socket_module_name->new(LocalAddr => '0.0.0.0', Proto => 'tcp');
+      $sock->close or die "error closing socket: $!"  if $sock;
+      $sock ? 1 : undef;
+    };
+  $have_inet6 =  # can we create a PF_INET6 socket?
+    defined $io_socket_module_name &&
+    $io_socket_module_name ne 'IO::Socket::INET' &&
+    eval {
+      my $sock =
+        $io_socket_module_name->new(LocalAddr => '::', Proto => 'tcp');
+      $sock->close or die "error closing socket: $!"  if $sock;
+      $sock ? 1 : undef;
+    };
+}
+
 our @EXPORT    = qw( redis );
 our @EXPORT_OK = qw( redis reap );
 
@@ -24,7 +54,12 @@ sub redis {
   my ($fh, $fn) = File::Temp::tempfile();
 
   $port++;
-  my $addr = "127.0.0.1:$port";
+
+  # ensure the test can run on an IPv6-only host (has no 127.0.0.1 address)
+  my $loopback_ip_addr = $have_inet6 && !$have_inet4 ? '::1' : '127.0.0.1';
+
+  my $addr = $loopback_ip_addr =~ /:/ ? "[$loopback_ip_addr]:$port"
+                                      : "$loopback_ip_addr:$port";
 
   unlink("redis-server-$addr.log");
   unlink('dump.rdb');
@@ -34,7 +69,7 @@ sub redis {
     appendonly no
     daemonize no
     port $port
-    bind 127.0.0.1
+    bind $loopback_ip_addr
     loglevel debug
     logfile redis-server-$addr.log
   ");

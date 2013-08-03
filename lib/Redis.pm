@@ -7,7 +7,6 @@ package Redis;
 use warnings;
 use strict;
 
-use IO::Socket::INET;
 use IO::Socket::UNIX;
 use IO::Select;
 use IO::Handle;
@@ -24,6 +23,18 @@ use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
 
+our $io_socket_module_name;
+BEGIN {
+  # prefer using module IO::Socket::IP if available,
+  # otherwise fall back to IO::Socket::INET6 or to IO::Socket::INET
+  if (eval { require IO::Socket::IP }) {
+    $io_socket_module_name = 'IO::Socket::IP';
+  } elsif (eval { require IO::Socket::INET6 }) {
+    $io_socket_module_name = 'IO::Socket::INET6';
+  } elsif (eval { require IO::Socket::INET }) {
+    $io_socket_module_name = 'IO::Socket::INET';
+  }
+}
 
 sub new {
   my $class = shift;
@@ -64,19 +75,34 @@ sub new {
       }
   }
 
-  if ($args{sock}) {
-    $self->{server} = $args{sock};
-    $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
+  { my @servers;
+    if ($args{sock}) {
+      $args{sock} =~ m{^/}
+        or die "A unix socket path must be absolute: $args{sock}\n";
+      push(@servers, $args{sock});
+    }
+    if ($args{server}) {
+      push(@servers, ref $args{server} ? @{$args{server}} : $args{server});
+    }
+    push(@servers, '127.0.0.1:6379', '[::1]:6379')  if !@servers;
+    $self->{server} = \@servers;
   }
-  else {
-    $self->{server} = $args{server} || '127.0.0.1:6379';
-    $self->{builder} = sub {
-      IO::Socket::INET->new(
-        PeerAddr => $_[0]->{server},
-        Proto    => 'tcp',
-      );
-    };
-  }
+  $self->{builder} = sub {
+    my $self = $_[0];
+    my $sock;
+    for my $server (@{$self->{server}}) {
+      if ($server =~ m{^/}) {
+        $sock = IO::Socket::UNIX->new($server);
+      } else {
+        $sock = $io_socket_module_name->new(
+          PeerAddr => $server,
+          Proto    => 'tcp',
+        );
+      }
+      last if $sock;
+    }
+    $sock;
+  };
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
@@ -475,7 +501,8 @@ sub __build_sock {
   my ($self) = @_;
 
   $self->{sock} = $self->{builder}->($self)
-    || confess("Could not connect to Redis server at $self->{server}: $!");
+    || confess(sprintf("Could not connect to Redis server at %s: %s",
+                       join(", ",@{$self->{server}}), $!));
 
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
@@ -722,7 +749,7 @@ __END__
 
 =head1 SYNOPSIS
 
-    ## Defaults to $ENV{REDIS_SERVER} or 127.0.0.1:6379
+    ## Defaults to $ENV{REDIS_SERVER} or 127.0.0.1:6379 or [::1]:6379
     my $redis = Redis->new;
 
     my $redis = Redis->new(server => 'redis.example.com:8080');
@@ -887,10 +914,11 @@ utf-8 flag turned on.
 
 =head3 new
 
-    my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
+    my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379 or [::1]:6379
 
-    my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
+    my $r = Redis->new( server => 'localhost:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( server => '[::1]:6379', encoding => undef );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
@@ -899,12 +927,22 @@ utf-8 flag turned on.
     my $r = Redis->new( name => sub { "cache-for-$$" });
 
 The C<< server >> parameter specifies the Redis server we should connect to,
-via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
-will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
-those options are present, it defaults to '127.0.0.1:6379'.
+via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present,
+we will attempt to use the C<< REDIS_SERVER >> environment variable.
+The IP part can be a host name or an IPv4 or an IPv6 address. An IPv6 address
+must be enclosed in square brackets, e.g. '[::1]:6379'. If neither the
+C<< server >> parameter nor the C<< sock >> parameter are present, it attempts
+connection to 127.0.0.1:6379 or (if that fails) to [::1]:6379.
+
+An INET6 (IPv6) protocol family is supported starting with redis server 2.8.0.
+For communication over an IP socket (of any protocol family) the Redis module
+will attempt to use an underlying module IO::Socket::IP if available, falling
+back to older IO::Socket::INET6, and as a last resort use IO::Socket::INET
+which has no support for IPv6.
 
 Alternatively you can use the C<< sock >> parameter to specify the path of the
-UNIX domain socket where the Redis server is listening.
+UNIX domain socket where the Redis server is listening. The specified path
+must be absolute (starting with a slash).
 
 The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
 formats are supported:
@@ -922,6 +960,14 @@ unix:/path/to/sock
 =item *
 
 127.0.0.1:11011
+
+=item *
+
+[::1]:11011
+
+=item *
+
+localhost:11011
 
 =item *
 

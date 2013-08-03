@@ -98,7 +98,7 @@ ok(my $nr_keys = $o->dbsize, 'dbsize');
 
 like(
   exception { $o->lpush('foo', 'bar') },
-  qr/\[lpush\] ERR Operation against a key holding the wrong kind of value,/,
+  qr/\[lpush\] (?:ERR|WRONGTYPE) Operation against a key holding the wrong kind of value,/,
   'Error responses throw exception'
 );
 
@@ -351,7 +351,7 @@ ok(!$o->ping(),     'ping() will be false after shutdown()');
 sleep(1);
 like(
   exception { Redis->new(server => $srv) },
-  qr/Could not connect to Redis server at $srv/,
+  qr/Could not connect to Redis server at \Q$srv\E/,
   'Failed connection throws exception'
 );
 
