@@ -69,7 +69,7 @@ pipeline_ok 'transaction',
   [rpush => ['clunk' => 'oops'], 'QUEUED'],
   [get => ['clunk'], 'QUEUED'],
   [ exec => [],
-    [['OK', undef], [undef, 'ERR Operation against a key holding the wrong kind of value'], ['eth', undef],]
+    [['OK', undef], [undef, re(qr{^(?:ERR|WRONGTYPE) Operation against a key holding the wrong kind of value$})], ['eth', undef],]
   ],
   );
 
@@ -80,7 +80,7 @@ subtest 'transaction with error and no pipeline' => sub {
   is($r->get('clunk'), 'QUEUED', 'transactional GET');
   like(
     exception { $r->exec },
-    qr{\[exec\] ERR Operation against a key holding the wrong kind of value,},
+    qr{\[exec\] (?:ERR|WRONGTYPE) Operation against a key holding the wrong kind of value,},
     'synchronous EXEC dies for intervening error'
   );
 };
