@@ -68,8 +68,8 @@ sub new {
     $self->{builder} = sub {
       IO::Socket::UNIX->new::with::timeout(
         $_[0]->{server},
-        TimeoutRead => $args{timeout},
-        TimeoutWrite => $args{timeout},
+        ReadTimeout => $args{timeout},
+        WriteTimeout => $args{timeout},
       )
     };
   }
@@ -80,8 +80,8 @@ sub new {
         PeerAddr => $_[0]->{server},
         Proto    => 'tcp',
         Timeout => $args{timeout},
-        TimeoutRead => $args{timeout},
-        TimeoutWrite => $args{timeout},
+        ReadTimeout => $args{timeout},
+        WriteTimeout => $args{timeout},
       );
     };
   }
@@ -226,7 +226,7 @@ sub quit {
     ## Ignore, we are quiting anyway...
   };
 
-  delete($self->{sock})->close if $self->{sock};
+  close(delete $self->{sock}) if $self->{sock};
 
   return 1;
 }
@@ -242,7 +242,7 @@ sub shutdown {
 
   $self->wait_all_responses;
   $self->__send_command('SHUTDOWN');
-  delete($self->{sock})->close || confess("Can't close socket: $!");
+  close(delete $self->{sock}) || confess("Can't close socket: $!");
 
   return 1;
 }
@@ -261,7 +261,7 @@ sub ping {
     $self->__std_cmd('PING');
   }
   catch {
-      delete($self->{sock})->close;
+    close(delete $self->{sock});
     return;
   };
 }
@@ -526,7 +526,7 @@ sub __send_command {
   ## Send command, take care for partial writes
   warn "[SEND RAW] $buf" if $deb;
   while ($buf) {
-    my $len = $sock->syswrite($buf, length $buf);
+    my $len = syswrite $sock, $buf, length $buf;
     $self->__throw_reconnect("Could not write to Redis server: $!")
       unless defined $len;
     substr $buf, 0, $len, "";
@@ -590,7 +590,7 @@ sub __read_line {
   my $self = $_[0];
   my $sock = $self->{sock};
 
-  my $data = $sock->getline;
+  my $data = <$sock>;
   confess("Error while reading from Redis server: $!")
     unless defined $data;
 
@@ -608,7 +608,7 @@ sub __read_len {
   my $data   = '';
   my $offset = 0;
   while ($len) {
-    my $bytes = $self->{sock}->read($data, $len, $offset);
+    my $bytes = read $self->{sock}, $data, $len, $offset;
     confess("Error while reading from Redis server: $!")
       unless defined $bytes;
     confess("Redis server closed connection") unless $bytes;
@@ -667,15 +667,13 @@ sub __try_read_sock {
   ##  * https://github.com/melo/perl-redis/issues/20
   ##  * https://github.com/melo/perl-redis/pull/21
 
-  # Because we are in non blocking mode, it's not going to play well with
-  # IO::Socket::Timeout. So we use the original sysread and read.
   my $len;
   if (WIN32) {
-    # Here we are not using sysread with timeout
+    # sysread is bypassing the timeout perlio layer
     $len = sysread($sock, $data, 1);
   }
   else {
-    # Here we are not using read with timeout
+    # read is not bypassing the timeout perlio layer
     $len = read($sock, $data, 1);
   }
   my $err = 0 + $!;
