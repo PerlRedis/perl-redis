@@ -4,9 +4,11 @@ use warnings;
 use strict;
 use Test::More;
 use Test::Fatal;
-use Redis;
-use lib 't/tlib';
+use FindBin qw($Bin);
+use lib "$Bin/tlib";
 use Test::SpawnFakeRedis;
+use Redis;
+use POSIX qw(ETIMEDOUT strerror);
 
 my ( $kill_server, $address ) = redis();
 
@@ -21,12 +23,13 @@ ok( my $o = Redis->new( server => $address, timeout => 2 ),
 ok( $o->ping, '... and ping it' );
 # Commands operating on string values
 
+my $etimedout = strerror(ETIMEDOUT);
+
 like(
     exception {
-#        $DB::single = 1;
         $o->set( foo => 'bar' )
     },
-    qr/^Error while reading from Redis server: Operation timed out/,
+    qr/^Error while reading from Redis server: $etimedout/,
     '... and a read timeout should throw an exception'
 );
 done_testing;

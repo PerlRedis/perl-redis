@@ -86,6 +86,7 @@ sub spawn_server {
             }
             close $new_socket;
         }
+        exit(-1);
     }
     die "Could not fork(): $!";
 }

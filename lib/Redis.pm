@@ -67,7 +67,7 @@ sub new {
     $self->{server} = $args{sock};
     $self->{builder} = sub {
       IO::Socket::UNIX->new::with::timeout(
-        $_[0]->{server},
+        PeerAddr => $_[0]->{server},
         ReadTimeout => $args{timeout},
         WriteTimeout => $args{timeout},
       )
@@ -673,13 +673,20 @@ sub __try_read_sock {
     $len = sysread($sock, $data, 1);
   }
   else {
-    # read is not bypassing the timeout perlio layer
-    $len = read($sock, $data, 1);
+      # read is not bypassing the timeout perlio layer
+      use PerlIO::via::Timeout qw(timeout_strategy);
+      my $strategy = timeout_strategy($sock);
+      my $is_enabled = $strategy->timeout_enabled();
+      $strategy->disable_timeout();
+      $len = read($sock, $data, 1);
+      $strategy->timeout_enabled($is_enabled);
   }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
-  if (defined($len)) {
+  # sometimes there is an error, and instead of retunring undef, it returns 0
+  # and sets $!
+  if (defined($len) && !$err) {
     ## Have stuff
     if ($len > 0) {
       $sock->ungetc(ord($data));
