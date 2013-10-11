@@ -7,8 +7,7 @@ package Redis;
 use warnings;
 use strict;
 
-use IO::Socket::INET;
-use IO::Socket::UNIX;
+use IO::Socket::Timeout;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
@@ -66,14 +65,23 @@ sub new {
 
   if ($args{sock}) {
     $self->{server} = $args{sock};
-    $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
+    $self->{builder} = sub {
+      IO::Socket::UNIX->new::with::timeout(
+        PeerAddr => $_[0]->{server},
+        ReadTimeout => $args{timeout},
+        WriteTimeout => $args{timeout},
+      )
+    };
   }
   else {
     $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
-      IO::Socket::INET->new(
+      IO::Socket::INET->new::with::timeout(
         PeerAddr => $_[0]->{server},
         Proto    => 'tcp',
+        Timeout => $args{timeout},
+        ReadTimeout => $args{timeout},
+        WriteTimeout => $args{timeout},
       );
     };
   }
@@ -658,17 +666,26 @@ sub __try_read_sock {
   ## See
   ##  * https://github.com/melo/perl-redis/issues/20
   ##  * https://github.com/melo/perl-redis/pull/21
+
   my $len;
   if (WIN32) {
+    # sysread is bypassing the timeout perlio layer
     $len = sysread($sock, $data, 1);
   }
   else {
-    $len = read($sock, $data, 1);
+      # read is not bypassing the timeout perlio layer
+      use PerlIO::via::Timeout qw(timeout_enabled);
+      my $is_enabled = timeout_enabled($sock);
+      timeout_enabled($sock, 0);
+      $len = read($sock, $data, 1);
+      timeout_enabled($sock, $is_enabled);
   }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
 
-  if (defined($len)) {
+  # sometimes there is an error, and instead of retunring undef, it returns 0
+  # and sets $!
+  if (defined($len) && !$err) {
     ## Have stuff
     if ($len > 0) {
       $sock->ungetc(ord($data));
