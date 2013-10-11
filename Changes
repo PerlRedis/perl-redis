@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * Add support of read / write timeouts (Damien Krotkine)
     * Parameter name to new() can be a CodeRef, dynamic connection names
 
 1.961     2013-01-23T15:09:47Z

@@ -674,12 +674,11 @@ sub __try_read_sock {
   }
   else {
       # read is not bypassing the timeout perlio layer
-      use PerlIO::via::Timeout qw(timeout_strategy);
-      my $strategy = timeout_strategy($sock);
-      my $is_enabled = $strategy->timeout_enabled();
-      $strategy->disable_timeout();
+      use PerlIO::via::Timeout qw(timeout_enabled);
+      my $is_enabled = timeout_enabled($sock);
+      timeout_enabled($sock, 0);
       $len = read($sock, $data, 1);
-      $strategy->timeout_enabled($is_enabled);
+      timeout_enabled($sock, $is_enabled);
   }
   my $err = 0 + $!;
   __fh_nonblocking($sock, 0);
