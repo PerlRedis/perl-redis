@@ -73,7 +73,7 @@ subtest "Bad commnands don't trigger reconnect" => sub {
   my $prev_sock = "$r->{sock}";
   like(
     exception { $r->set(bad => reconnect => 1) },
-    qr{ERR wrong number of arguments for 'set' command},
+    qr{ERR wrong number of arguments for 'set' command|ERR syntax error},
     'Bad commands still die',
   );
   is("$r->{sock}", $prev_sock, "... and don't trigger a reconnect");
