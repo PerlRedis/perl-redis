@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.962     2013-10-16T14:58:30Z
     * merge #54 (fix for broken test)
     * Parameter name to new() can be a CodeRef, dynamic connection names
     * admin: added co-maintainer Damien Krotkine <dams@zarb.org>
