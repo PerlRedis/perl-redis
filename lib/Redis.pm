@@ -451,6 +451,7 @@ sub __connect {
   # to reconnect.  The new connection will never get a response to any of
   # the pending commands, so delete all those pending responses now.
   $self->{queue} = [];
+  $self->{pid}   = $$;
 
   ## Fast path, no reconnect
   return $self->__build_sock() unless $self->{reconnect};
@@ -495,6 +496,10 @@ sub __send_command {
   my $cmd  = uc(shift);
   my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
+
+  if ($self->{pid} != $$) {
+    $self->__connect;
+  }
 
   my $sock = $self->{sock}
     || $self->__throw_reconnect('Not connected to any server');
