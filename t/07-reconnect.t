@@ -67,7 +67,7 @@ subtest 'KEYS commands with extra logic triggers reconnect' => sub {
 };
 
 
-subtest "Bad commnands don't trigger reconnect" => sub {
+subtest "Bad commands don't trigger reconnect" => sub {
   ok(my $r = Redis->new(reconnect => 2, server => $srv), 'connected to our test redis-server');
 
   my $prev_sock = "$r->{sock}";
