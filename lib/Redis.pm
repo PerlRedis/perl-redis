@@ -1217,7 +1217,7 @@ See also L<Redis::List> for tie interface.
 
   my $element = $r->spop( $key );
 
-=head3 spop
+=head3 srandmemeber
 
   my $element = $r->srandmember( $key );
 
