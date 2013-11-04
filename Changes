@@ -2,6 +2,10 @@ Revision history for Redis
 
 {{$NEXT}}
 
+    * Add documentation for the slowlog command PR #44 (rgs)
+    * doc fix, duplicate spop PR #48 (nightlord)
+    * Redis client is now fork safe PR #51 (songmu)
+
 1.962     2013-10-16T14:58:30Z
     * merge #54 (fix for broken test)
     * Parameter name to new() can be a CodeRef, dynamic connection names
