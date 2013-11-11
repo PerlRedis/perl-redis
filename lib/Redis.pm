@@ -32,9 +32,6 @@ sub new {
 
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
-  ## default to lax utf8
-  $self->{encoding} = exists $args{encoding} ? $args{encoding} : 'utf8';
-
   ## Deal with REDIS_SERVER ENV
   if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
@@ -494,7 +491,6 @@ sub __build_sock {
 sub __send_command {
   my $self = shift;
   my $cmd  = uc(shift);
-  my $enc  = $self->{encoding};
   my $deb  = $self->{debug};
 
   if ($self->{pid} != $$) {
@@ -510,8 +506,9 @@ sub __send_command {
   my @cmd     = split /_/, $cmd;
   my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
-  for my $elem (@cmd, @_) {
-    my $bin = $enc ? encode($enc, $elem) : $elem;
+  for my $bin (@cmd, @_) {
+    # force to consider inputs as bytes strings.
+    Encode::_utf8_off($bin);
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
@@ -595,8 +592,7 @@ sub __read_line {
   warn "[RECV RAW] '$data'" if $self->{debug};
 
   my $type = substr($data, 0, 1, '');
-  return ($type, $data) unless $self->{encoding};
-  return ($type, decode($self->{encoding}, $data));
+  return ($type, $data);
 }
 
 sub __read_len {
@@ -617,8 +613,7 @@ sub __read_len {
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
 
-  return $data unless $self->{encoding};
-  return decode($self->{encoding}, $data);
+  return $data;
 }
 
 
@@ -754,10 +749,6 @@ __END__
     ## Try each 100ms upto 2 seconds (every is in milisecs)
     my $redis = Redis->new(reconnect => 2, every => 100);
 
-    ## Disable the automatic utf8 encoding => much more performance
-    ## !!!! This will be the default after 2.000, see ENCODING below
-    my $redis = Redis->new(encoding => undef);
-
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
     ## See http://redis.io/commands for full list
@@ -870,21 +861,12 @@ useful for Redis transactions; see L</exec>.
 
 =head1 ENCODING
 
-B<This feature is deprecated and will be removed before 2.000>. You should
-start testing your code with C<< encoding => undef >> because that will be the
-new default with 2.000.
+There is no encoding feature anymore, it has been deprecated and finally
+removed. This module consider that any data sent to the Redis server is a raw
+octets string, even if it has utf8 flag set. And it doesn't do anything when
+getting data from the Redis server.
 
-Since Redis knows nothing about encoding, we are forcing utf-8 flag on all data
-received from Redis. This change was introduced in 1.2001 version. B<Please
-note> that this encoding option severely degrades performance.
-
-You can disable this automatic encoding by passing an option to L</new>: C<<
-encoding => undef >>.
-
-This allows us to round-trip utf-8 encoded characters correctly, but might be
-problem if you push binary junk into Redis and expect to get it back without
-utf-8 flag turned on.
-
+So, do you pre-encoding or post-decoding operation yourself if needed !
 
 =head1 METHODS
 
