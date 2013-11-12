@@ -26,8 +26,7 @@ use constant EINTR       => eval {Errno::EINTR} || -1E9;
 
 
 sub new {
-  my $class = shift;
-  my %args  = @_;
+  my ($class, %args) = @_;
   my $self  = bless {}, $class;
 
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
@@ -40,13 +39,16 @@ sub new {
     elsif ($ENV{REDIS_SERVER} =~ m!^unix:(.+)!) {
       $args{sock} = $1;
     }
-    elsif ($ENV{REDIS_SERVER} =~ m!^(tcp:)?(.+)!) {
-      $args{server} = $2;
+    elsif ($ENV{REDIS_SERVER} =~ m!^(?:tcp:)?(.+)!) {
+      $args{server} = $1;
     }
   }
 
-  $self->{password}   = $args{password}   if $args{password};
-  $self->{on_connect} = $args{on_connect} if $args{on_connect};
+  $args{password}
+    and $self->{password} = $args{password};
+
+  $args{on_connect}
+    and $self->{on_connect} = $args{on_connect};
 
   if (my $name = $args{name}) {
     my $on_conn = $self->{on_connect};
@@ -57,7 +59,8 @@ sub new {
         $n = $n->($redis) if ref($n) eq 'CODE';
         $redis->client_setname($n) if defined $n;
       };
-      $on_conn->(@_) if $on_conn;
+      $on_conn
+        and $on_conn->(@_);
       }
   }
 
@@ -122,8 +125,8 @@ sub __std_cmd {
   my $collect_errors = $cb && uc($command) eq 'EXEC';
 
   ## Fast path, no reconnect;
-  return $self->__run_cmd($command, $collect_errors, undef, $cb, @_)
-    unless $self->{reconnect};
+  $self->{reconnect}
+    or return $self->__run_cmd($command, $collect_errors, undef, $cb, @_)
 
   my @cmd_args = @_;
   $self->__with_reconnect(
@@ -137,12 +140,14 @@ sub __with_reconnect {
   my ($self, $cb) = @_;
 
   ## Fast path, no reconnect
-  return $cb->() unless $self->{reconnect};
+  $self->{reconnect}
+    or return $cb->();
 
   return &try(
     $cb,
     catch {
-      die $_ unless ref($_) eq 'Redis::X::Reconnect';
+      ref($_) eq 'Redis::X::Reconnect'
+        or die $_;
 
       $self->__connect;
       $cb->();
@@ -156,13 +161,13 @@ sub __run_cmd {
   my $ret;
   my $wrapper = $cb && $custom_decode
     ? sub {
-    my ($reply, $error) = @_;
-    $cb->(scalar $custom_decode->($reply), $error);
+      my ($reply, $error) = @_;
+      $cb->(scalar $custom_decode->($reply), $error);
     }
     : $cb || sub {
-    my ($reply, $error) = @_;
-    confess "[$command] $error, " if defined $error;
-    $ret = $reply;
+      my ($reply, $error) = @_;
+      confess "[$command] $error, " if defined $error;
+      $ret = $reply;
     };
 
   $self->__send_command($command, @args);
@@ -210,9 +215,6 @@ sub quit {
   try {
     $self->wait_all_responses;
     $self->__send_command('QUIT');
-  }
-  catch {
-    ## Ignore, we are quiting anyway...
   };
 
   close(delete $self->{sock}) if $self->{sock};
@@ -742,7 +744,7 @@ __END__
     my $redis = Redis->new(sock => '/path/to/socket');
 
     ## Enable auto-reconnect
-    ## Try to reconnect every 500ms up to 60 seconds until success
+    ## Try to reconnect every 1s up to 60 seconds until success
     ## Die if you can't after that
     my $redis = Redis->new(reconnect => 60);
 
