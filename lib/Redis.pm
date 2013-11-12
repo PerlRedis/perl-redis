@@ -126,7 +126,7 @@ sub __std_cmd {
 
   ## Fast path, no reconnect;
   $self->{reconnect}
-    or return $self->__run_cmd($command, $collect_errors, undef, $cb, @_)
+    or return $self->__run_cmd($command, $collect_errors, undef, $cb, @_);
 
   my @cmd_args = @_;
   $self->__with_reconnect(
