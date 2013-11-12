@@ -5,6 +5,7 @@ Revision history for Redis
     * Add documentation for the slowlog command PR #44 (rgs)
     * doc fix, duplicate spop PR #48 (nightlord)
     * Redis client is now fork safe PR #51 (songmu)
+    * rewrite dist.ini
 
 1.962     2013-10-16T14:58:30Z
     * merge #54 (fix for broken test)
