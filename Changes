@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.963     2013-11-13 22:44:29 Europe/Paris
+
     * Add documentation for the slowlog command PR #44 (rgs)
     * doc fix, duplicate spop PR #48 (nightlord)
     * Redis client is now fork safe PR #51 (songmu)
