@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * minor fix to dist.ini to fix github url
 
 1.963     2013-11-13 22:44:29 Europe/Paris
 
