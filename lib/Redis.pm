@@ -622,7 +622,7 @@ sub __read_len {
 #
 # The reason for this code:
 #
-# IO::Select and buffered reads like <$sock> and read() dont mix
+# IO::Select and buffered reads like <$sock> and read() don't mix
 # For example, if I receive two MESSAGE messages (from Redis PubSub),
 # the first read for the first message will probably empty to socket
 # buffer and move the data to the perl IO buffer.
@@ -918,7 +918,7 @@ tcp:127.0.0.1:11011
 
 =back
 
-The C<< encoding >> parameter speficies the encoding we will use to decode all
+The C<< encoding >> parameter specifies the encoding we will use to decode all
 the data we receive and encode all the data sent to the redis server. Due to
 backwards-compatibility we default to C<< utf8 >>. To disable all this
 encoding/decoding, you must use C<< encoding => undef >>. B<< This is the
@@ -929,7 +929,7 @@ future version might add other filtering options though.
 
 The C<< reconnect >> option enables auto-reconnection mode. If we cannot
 connect to the Redis server, or if a network write fails, we enter retry mode.
-We will try a new connection every C<< every >> miliseconds (1000ms by
+We will try a new connection every C<< every >> milliseconds (1000ms by
 default), up-to C<< reconnect >> seconds.
 
 Be aware that read errors will always thrown an exception, and will not trigger
@@ -943,8 +943,8 @@ attribute. After each established connection (at the start or when
 reconnecting), the Redis C<< AUTH >> command will be send to the server. If the
 password is wrong, an exception will be thrown and reconnect will be disabled.
 
-You can also provide a code reference that will be immediatly after each
-sucessfull connection. The C<< on_connect >> attribute is used to provide the
+You can also provide a code reference that will be immediately after each
+successful connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
 
@@ -1374,7 +1374,7 @@ Publishes the C<< $message >> to the C<< $topic >>.
   );
 
 Subscribe one or more topics. Messages published into one of them will be
-received by Redis, and the specificed callback will be executed.
+received by Redis, and the specified callback will be executed.
 
 =head3 unsubscribe
 
@@ -1414,9 +1414,9 @@ callbacks.
 
 Requires a single parameter, the number of seconds to wait for messages. Use 0
 to wait for ever. If a positive non-zero value is used, it will return after
-that ammount of seconds without a single notification.
+that amount of seconds without a single notification.
 
-Please note that the timeout is not a commitement to return control to the
+Please note that the timeout is not a commitment to return control to the
 caller at most each C<timeout> seconds, but more a idle timeout, were control
 will return to the caller if Redis is idle (as in no messages were received
 during the timeout period) for more than C<timeout> seconds.
