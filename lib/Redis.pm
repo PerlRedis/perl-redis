@@ -50,19 +50,8 @@ sub new {
   $args{on_connect}
     and $self->{on_connect} = $args{on_connect};
 
-  if (my $name = $args{name}) {
-    my $on_conn = $self->{on_connect};
-    $self->{on_connect} = sub {
-      my ($redis) = @_;
-      try {
-        my $n = $name;
-        $n = $n->($redis) if ref($n) eq 'CODE';
-        $redis->client_setname($n) if defined $n;
-      };
-      $on_conn
-        and $on_conn->(@_);
-      }
-  }
+  defined $args{name}
+    and $self->{name} = $args{name};
 
   if ($args{sock}) {
     $self->{server} = $args{sock};
@@ -90,6 +79,13 @@ sub new {
 
 sub is_subscriber { $_[0]{is_subscriber} }
 
+sub select {
+  my $self = shift;
+  my $database = shift;
+  my $ret = $self->__std_cmd('select', $database, @_);
+  $self->{current_database} = $database;
+  $ret;
+}
 
 ### we don't want DESTROY to fallback into AUTOLOAD
 sub DESTROY { }
@@ -485,10 +481,30 @@ sub __build_sock {
     };
   }
 
-  $self->{on_connect}->($self) if exists $self->{on_connect};
+  $self->__on_connection;
 
   return;
 }
+
+sub __on_connection {
+
+    my ($self) = @_;
+
+    defined $self->{name}
+      and try {
+          my $n = $self->{name};
+          $n = $n->($self) if ref($n) eq 'CODE';
+          $self->client_setname($n) if defined $n;
+      };
+
+    defined $self->{current_database}
+      and $self->select($self->{current_database});
+
+    defined $self->{on_connect}
+      and $self->{on_connect}->($self);
+
+}
+
 
 sub __send_command {
   my $self = shift;
