@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+    * fix #38: select new database doesn't survive after reconnect
+    * minor documentation fixes
+
 1.964     2013-11-14 15:45:08 Europe/Amsterdam
     * minor fix to dist.ini to fix github url
 
