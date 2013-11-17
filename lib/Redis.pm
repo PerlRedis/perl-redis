@@ -29,6 +29,10 @@ sub new {
   my ($class, %args) = @_;
   my $self  = bless {}, $class;
 
+  if ($self->{USE_SYSREAD} = $ENV{REDIS_USE_SYSREAD}) {
+      print "REDIS IS USING SYSREAD\n";
+  }
+
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
@@ -309,6 +313,7 @@ sub keys {
 sub wait_for_messages {
   my ($self, $timeout) = @_;
   my $sock = $self->{sock};
+  confess "wait_for_messages IS NOT IMPLEMENTER IN USE_SYSREAD MODE" if $self->{USE_SYSREAD};
 
   my $s = IO::Select->new;
   $s->add($sock);
@@ -531,7 +536,7 @@ sub __send_command {
   }
 
   ## Check to see if socket was closed: reconnect on EOF
-  my $status = __try_read_sock($sock);
+  my $status = $self->{USE_SYSREAD} ? __try_read_sock_sysread($sock) : __try_read_sock($sock);
   $self->__throw_reconnect('Not connected to any server')
     unless defined $status;
 
@@ -565,7 +570,8 @@ sub __read_response {
 sub __read_response_r {
   my ($self, $command, $collect_errors) = @_;
 
-  my ($type, $result) = $self->__read_line;
+  my ($type, $result) = $self->{USE_SYSREAD} ? $self->__read_line_sysread
+                                             : $self->__read_line;
 
   if ($type eq '-') {
     return undef, $result;
@@ -575,6 +581,10 @@ sub __read_response_r {
   }
   elsif ($type eq '$') {
     return undef, undef if $result < 0;
+    if ($self->{USE_SYSREAD}) {
+        return $self->__read_len_sysread($result + 2), undef;
+    }
+
     return $self->__read_len($result + 2), undef;
   }
   elsif ($type eq '*') {
@@ -628,6 +638,64 @@ sub __read_len {
     $len -= $bytes;
   }
 
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
+
+  return $data;
+}
+
+sub __read_line_sysread {
+  my $self = $_[0];
+  my $sock = $self->{sock};
+
+  my $data = $self->__read_line_sysread_raw;
+  confess("Error while reading from Redis server: $!")
+    unless defined $data;
+
+  chomp $data;
+  warn "[RECV RAW] '$data'" if $self->{debug};
+
+  my $type = substr($data, 0, 1, '');
+  return ($type, $data);
+}
+
+sub __read_line_sysread_raw {
+  my $self = $_[0];
+  my $sock = $self->{sock};
+  my $read_line_buf = \$self->{__read_line_buf};
+
+  if ($$read_line_buf) {
+    my $idx = index($$read_line_buf, "\n");
+    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 1, '');
+  }
+
+  while (1) {
+    my $bytes = sysread($sock, $$read_line_buf, 4096, length($$read_line_buf) || 0);
+    next if !defined $bytes && $! == EINTR;
+    return unless defined $bytes && $bytes;
+
+    my $idx = index($$read_line_buf, "\n", length($$read_line_buf) - $bytes);
+    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 1, '');
+  }
+}
+
+sub __read_len_sysread {
+  my ($self, $len) = @_;
+  my $read_line_buf = \$self->{__read_line_buf};
+  my $buf_len = length($$read_line_buf) || 0;
+
+  if ($buf_len < $len) {
+    my $to_read = $len - $buf_len;
+    while ($to_read > 0) {
+      my $bytes = sysread($self->{sock}, $$read_line_buf, 4096, length($$read_line_buf) || 0);
+      next if !defined $bytes && $! == EINTR;
+      confess("Error while reading from Redis server: $!") unless defined $bytes;
+      confess("Redis server closed connection") unless $bytes;
+      $to_read -= $bytes;
+    }
+  }
+
+  my $data = substr($$read_line_buf, 0, $len, '');
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
 
@@ -715,6 +783,26 @@ sub __try_read_sock {
   confess("Unexpected error condition $err/$^O, please report this as a bug");
 }
 
+sub __try_read_sock_sysread {
+  my $sock = shift;
+  my $data;
+
+  while (1) {
+      my $res = recv($sock, $data, 1, MSG_PEEK | MSG_DONTWAIT);
+      my $err = 0 + $!;
+
+      # TODO check corner cases :-)
+      if (defined $res) {
+          return length($data) > 0 ? 1 : undef;
+      }
+
+      # TODO: and here too
+      next if $err && $err == EINTR;
+      return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN);
+      return if $err == 0;
+      confess("Unexpected error condition $err/$^O, please report this as a bug");
+  }
+}
 
 ### Copied from AnyEvent::Util
 BEGIN {
