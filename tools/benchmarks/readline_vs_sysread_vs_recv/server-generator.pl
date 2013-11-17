@@ -20,10 +20,10 @@ while (my $client = $sock->accept()) {
     my $line = <$client>;
     chomp $line;
 
-#    my ($cnt, $len) = split(',', $line);
-#    next unless $cnt || $len;
+    my ($cnt, $len) = split(',', $line);
+    next unless $cnt || $len;
 
-#    for (my $i = 1; $i <= $cnt; ++$i) {
-#        print $client '.' x $len, "\n";
-#    }
+    for (my $i = 1; $i <= $cnt; ++$i) {
+        print $client '.' x $len, "\n";
+    }
 }
