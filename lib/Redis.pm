@@ -308,25 +308,50 @@ sub keys {
 ### PubSub
 sub wait_for_messages {
   my ($self, $timeout) = @_;
-  my $sock = $self->{sock};
 
   my $s = IO::Select->new;
-  $s->add($sock);
 
   my $count = 0;
-MESSAGE:
-  while ($s->can_read($timeout)) {
-    while (1) {
-      my $has_stuff = __try_read_sock($sock);
-      last MESSAGE unless defined $has_stuff;    ## Stop right now if EOF
-      last unless $has_stuff;                    ## back to select until timeout
 
-      my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
-      confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
-      $self->__process_pubsub_msg($reply);
-      $count++;
-    }
-  }
+
+  my $e;
+
+  try {
+    $self->__with_reconnect( sub {
+
+      # the socket can be changed due to reconnection, so get it each time
+      my $sock = $self->{sock};
+      $s->remove($s->handles);
+      $s->add($sock);
+
+      while ($s->can_read($timeout)) {      
+        my $has_stuff = __try_read_sock($sock);
+        # If the socket is ready to read but there is nothing to read, ( so
+        # it's an EOF ), try to reconnect.
+        defined $has_stuff
+          or $self->__throw_reconnect('EOF from server');
+        while (1) {
+          my $has_stuff = __try_read_sock($sock);
+          $has_stuff
+            or last ; ## no data ( or socket became EOF), back to select until
+                      ## timeout
+      
+          my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
+          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
+          $self->__process_pubsub_msg($reply);
+          $count++;
+        }
+      }
+    
+    });
+
+  } catch {
+    $e = $_;
+};
+
+# if We had an error and it was not an EOF, die
+defined $e && $e ne 'EOF from server'
+  and die $e;
 
   return $count;
 }
@@ -490,15 +515,37 @@ sub __on_connection {
 
     my ($self) = @_;
 
-    defined $self->{name}
-      and try {
-          my $n = $self->{name};
-          $n = $n->($self) if ref($n) eq 'CODE';
-          $self->client_setname($n) if defined $n;
-      };
+    # If we are in PubSub mode we shouldn't perform any command besides
+    # (p)(un)subscribe
+    if (! $self->{is_subscriber}) {
+      defined $self->{name}
+        and try {
+            my $n = $self->{name};
+            $n = $n->($self) if ref($n) eq 'CODE';
+            $self->client_setname($n) if defined $n;
+        };
+  
+      defined $self->{current_database}
+        and $self->select($self->{current_database});
+    }
 
-    defined $self->{current_database}
-      and $self->select($self->{current_database});
+    # TODO: don't use each
+    while (my ($topic, $cbs) = each %{$self->{subscribers}}) {
+      if ($topic =~ /(p?message):(.*)$/ ) {
+        my ($key, $channel) = ($1, $2);
+        if ($key eq 'message') {
+            $self->__send_command('subscribe', $channel);
+            my (undef, $error) = $self->__read_response('subscribe');
+            defined $error
+              and confess "[subscribe] $error";
+        } else {
+            $self->__send_command('psubscribe', $channel);
+            my (undef, $error) = $self->__read_response('psubscribe');
+            defined $error
+              and confess "[psubscribe] $error";
+        }
+      }
+    }
 
     defined $self->{on_connect}
       and $self->{on_connect}->($self);

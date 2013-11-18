@@ -24,7 +24,12 @@ sub redis {
   my ($fh, $fn) = File::Temp::tempfile();
 
   $port++;
-  my $addr = "127.0.0.1:$port";
+
+  my $local_port = $port;
+  $params{port}
+    and $local_port = $params{port};
+
+  my $addr = "127.0.0.1:$local_port";
 
   unlink("redis-server-$addr.log");
   unlink('dump.rdb');
@@ -33,7 +38,7 @@ sub redis {
     timeout $params{timeout}
     appendonly no
     daemonize no
-    port $port
+    port $local_port
     bind 127.0.0.1
     loglevel debug
     logfile redis-server-$addr.log
@@ -72,7 +77,7 @@ sub redis {
     }
   }
 
-  return ($c, $addr, $ver, split(/[.]/, $ver));
+  return ($c, $addr, $ver, split(/[.]/, $ver), $local_port);
 }
 
 sub spawn_server {

@@ -12,6 +12,9 @@ use Test::SpawnRedisServer qw( redis reap );
 my ($c, $srv) = redis();
 END { $c->() if $c }
 
+my ($another_kill_switch, $yet_another_kill_switch);
+END { $_ and $_->() for($another_kill_switch, $yet_another_kill_switch) }
+
 subtest 'basics' => sub {
   my %got;
   ok(my $pub = Redis->new(server => $srv), 'connected to our test redis-server (pub)');
@@ -157,13 +160,82 @@ subtest 'server is killed while waiting for subscribe' => sub {
     die '## Missed sync while waiting for parent' unless defined $sync->blpop('wake_up_child', 4);
 
     ## This is the test, next wait_for_messages() should not block
-    diag("now, check wait_for_messages(), should not block...");
-    $sub->wait_for_messages(0);
-    diag("wait_for_messages(0) did not block");
+    diag("now, check wait_for_messages(), should die...");
+    like(
+      exception { $sub->wait_for_messages(0) },
+      qr/EOF from server/,
+      "properly died with EOF"
+    );
     exit(0);
   }
 };
 
+subtest 'server is restarted while waiting for subscribe' => sub {
+  my @ret = redis();
+  my ($another_kill_switch, $another_server) = @ret;
+  my $port = pop @ret;
+
+  my $pid = fork();
+  BAIL_OUT("Fork failed, aborting") unless defined $pid;
+
+  if ($pid) {    ## parent, we'll wait for the child to die quickly
+
+    ok(my $sync = Redis->new(server => $srv), 'PARENT: connected to our test redis-server (sync parent)');
+    BAIL_OUT('Missed sync while waiting for child') unless defined $sync->blpop('wake_up_parent', 4);
+
+    ok($another_kill_switch->(), "PARENT: pub/sub redis server killed");
+    diag("PARENT: killed pub/sub redis server, signal child to proceed");
+    $sync->lpush('wake_up_child', 'the redis-server is dead, waiting before respawning it');
+
+    sleep 5;
+
+    # relaunch it on the same port
+    my ($yet_another_kill_switch) = redis(port => $port);
+    my $pub  = Redis->new(server => $another_server);
+
+    diag("PARENT: has relaunched the server...");
+    sleep 5;
+
+    is($pub->publish('chan', 'v1'), 1, "PARENT: published and the child is subscribed");
+
+    diag("PARENT: waiting for child $pid...");
+    my $failed = reap($pid, 5);
+    if ($failed) {
+      fail("PARENT: wait_for_messages() hangs when the server goes away...");
+      kill(9, $pid);
+      reap($pid) and fail('PARENT: ... failed to reap the dead child');
+    }
+    else {
+      pass("PARENT: child has properly quit after wait_for_messages()");
+    }
+    ok($yet_another_kill_switch->(), "PARENT: pub/sub redis server killed");
+  }
+  else {    ## child
+    my $sync = Redis->new(server => $srv);
+    my $sub  = Redis->new(server => $another_server,
+                          reconnect => 10,
+                          on_connect => sub { diag "CHILD: reconnected (with a 10s timeout)"; }
+                         );
+
+    my %got;
+    $sub->subscribe('chan', sub { my ($v, $t, $s) = @_; $got{$s} = "$v:$t" });
+
+    diag("CHILD: is ready to test, signal parent to restart our server");
+    $sync->lpush('wake_up_parent', 'we are ready on this side, kill the server...');
+    die '## Missed sync while waiting for parent' unless defined $sync->blpop('wake_up_child', 4);
+
+    ## This is the test, wait_for_messages() should reconnect to the respawned server
+    while (1) {
+        diag("CHILD: launch wait_for_messages(2), with reconnect...");
+        my $r = $sub->wait_for_messages(2);
+        $r and last;
+        diag("CHILD: after 2 sec, nothing yet, retrying");
+    }
+    diag("CHILD: child received the message");
+    cmp_deeply(\%got, { 'chan' => 'v1:chan' }, "CHILD: the message is what we want");
+    exit(0);
+  }
+};
 
 ## And we are done
 done_testing();
