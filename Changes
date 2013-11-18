@@ -2,6 +2,7 @@ Revision history for Redis
 
 {{$NEXT}}
 
+    * fix #34: perl-redis doesn't receive subcribed message if server restart 
     * fix #38: select new database doesn't survive after reconnect
     * minor documentation fixes
 
