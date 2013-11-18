@@ -17,6 +17,7 @@ END { $c->() if $c }
 ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
 
 sub r {
+  $r = Redis->new(server => $srv);
   $r->{sock} = IO::String->new(join('', map {"$_\r\n"} @_));
 }
 

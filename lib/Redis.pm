@@ -486,6 +486,7 @@ sub __build_sock {
     };
   }
 
+  $self->{USE_SYSREAD} and delete $self->{__read_line_buf};
   $self->__on_connection;
 
   return;
@@ -665,8 +666,8 @@ sub __read_line_sysread_raw {
   my $read_line_buf = \$self->{__read_line_buf};
 
   if ($$read_line_buf) {
-    my $idx = index($$read_line_buf, "\n");
-    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 1, '');
+    my $idx = index($$read_line_buf, "\r\n");
+    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 2, '');
   }
 
   while (1) {
@@ -674,8 +675,8 @@ sub __read_line_sysread_raw {
     next if !defined $bytes && $! == EINTR;
     return unless defined $bytes && $bytes;
 
-    my $idx = index($$read_line_buf, "\n", length($$read_line_buf) - $bytes);
-    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 1, '');
+    my $idx = index($$read_line_buf, "\r\n", length($$read_line_buf) - $bytes);
+    $idx >= 0 and return substr($$read_line_buf, 0, $idx + 2, '');
   }
 }
 
