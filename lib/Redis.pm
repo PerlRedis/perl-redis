@@ -1291,8 +1291,8 @@ of this module t/01-basic.t
 =head3 hset
 
 Sets the value to a key in a hash.
-  $r->hset('hashname', $key => $value); ## returns true on success
 
+  $r->hset('hashname', $key => $value); ## returns true on success
 
 =head3 hget
   
