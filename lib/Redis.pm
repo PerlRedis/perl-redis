@@ -1312,6 +1312,7 @@ Gets the value to a key in a hash.
 =head3 hdel
 
 Deletes a key from a hash
+
   if($r->hdel('hashname', $key)) {
     ## key is deleted
   }
