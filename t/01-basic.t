@@ -99,7 +99,7 @@ ok(my $nr_keys = $o->dbsize, 'dbsize');
 
 like(
   exception { $o->lpush('foo', 'bar') },
-  qr/\[lpush\] ERR Operation against a key holding the wrong kind of value,/,
+  qr/\[lpush\] (?:ERR|WRONGTYPE) Operation against a key holding the wrong kind of value,/,
   'Error responses throw exception'
 );
 
