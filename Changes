@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.966     2013-12-17 13:58:33 Europe/Amsterdam
+    * fix tests for Redis 2.8
+
 1.965     2013-11-29 09:28:36 Europe/Amsterdam
 
     * fix #60: TEST_REQUIRES needs newer MakeMaker
