@@ -9,6 +9,7 @@ use strict;
 
 use IO::Socket::INET;
 use IO::Socket::UNIX;
+use IO::Socket::Timeout;
 use IO::Select;
 use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
@@ -53,24 +54,55 @@ sub new {
   defined $args{name}
     and $self->{name} = $args{name};
 
+  $self->{cnx_timeout}   = $args{cnx_timeout};
+  $self->{write_timeout} = $args{write_timeout};
+  $self->{read_timeout}  = $args{read_timeout};
+  $self->{reconnect}     = $args{reconnect} || 0;
+  $self->{every}         = $args{every} || 1000;
+
   if ($args{sock}) {
     $self->{server} = $args{sock};
-    $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
+    $self->{builder} = sub {
+        my ($self) = @_;
+        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
+            IO::Socket::UNIX->new::with::timeout(
+                Peer => $self->{server},
+                ( $self->{cnx_timeout}   ? ( Timeout => $self->{cnx_timeout}        ) : () ),
+                ( $self->{read_timeout}  ? ( ReadTimeout => $self->{read_timeout}   ) : () ),
+                ( $self->{write_timeout} ? ( WriteTimeout => $self->{write_timeout} ) : () ),
+            );
+        } else {
+            IO::Socket::UNIX->new(
+                Peer => $self->{server},
+                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ): () ),
+            );
+        }
+    };
   }
   else {
     $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
-      IO::Socket::INET->new(
-        PeerAddr => $_[0]->{server},
-        Proto    => 'tcp',
-      );
+        my ($self) = @_;
+        if ($self->{read_timeout} || $self->{write_timeout}) {
+            IO::Socket::INET->new::with::timeout(
+                PeerAddr => $self->{server},
+                Proto    => 'tcp',
+                ( $self->{cnx_timeout}   ? ( Timeout => $self->{cnx_timeout}        ) : () ),
+                ( $self->{read_timeout}  ? ( ReadTimeout => $self->{read_timeout}   ) : () ),
+                ( $self->{write_timeout} ? ( WriteTimeout => $self->{write_timeout} ) : () ),
+            );
+        } else {
+            IO::Socket::INET->new(
+                PeerAddr => $self->{server},
+                Proto    => 'tcp',
+                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
+            );
+        }
     };
   }
 
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
-  $self->{reconnect}     = $args{reconnect} || 0;
-  $self->{every}         = $args{every} || 1000;
 
   $self->__connect;
 
@@ -814,6 +846,15 @@ __END__
     ## Try each 100ms upto 2 seconds (every is in milisecs)
     my $redis = Redis->new(reconnect => 2, every => 100);
 
+    ## Enable connection timeout (in seconds)
+    my $redis = Redis->new(cnx_timeout => 60);
+
+    ## Enable read timeout (in seconds)
+    my $redis = Redis->new(read_timeout => 0,5);
+
+    ## Enable read timeout (in seconds)
+    my $redis = Redis->new(write_timeout => 1,2);
+
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
     ## See http://redis.io/commands for full list
@@ -891,7 +932,7 @@ method call:
 Pending responses to pipelined commands are processed in a single batch, as
 soon as at least one of the following conditions holds:
 
-=over 4
+=over
 
 =item *
 
@@ -961,7 +1002,7 @@ UNIX domain socket where the Redis server is listening.
 The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
 formats are supported:
 
-=over 4
+=over
 
 =item *
 
@@ -981,15 +1022,6 @@ tcp:127.0.0.1:11011
 
 =back
 
-The C<< encoding >> parameter specifies the encoding we will use to decode all
-the data we receive and encode all the data sent to the redis server. Due to
-backwards-compatibility we default to C<< utf8 >>. To disable all this
-encoding/decoding, you must use C<< encoding => undef >>. B<< This is the
-recommended option >>.
-
-B<< Warning >>: this option has several problems and it is B<deprecated>. A
-future version might add other filtering options though.
-
 The C<< reconnect >> option enables auto-reconnection mode. If we cannot
 connect to the Redis server, or if a network write fails, we enter retry mode.
 We will try a new connection every C<< every >> milliseconds (1000ms by
@@ -1000,6 +1032,18 @@ a retry until the new command is sent.
 
 If we cannot re-establish a connection after C<< reconnect >> seconds, an
 exception will be thrown.
+
+The C<< cnx_timeout >> option enables connection timeout. The Redis client will
+wait at most that number of seconds (can be fractional) before giving up
+connecting to a server.
+
+The C<< read_timeout >> option enables read timeout. The Redis client will wait
+at most that number of seconds (can be fractional) before giving up when
+reading from the server.
+
+The C<< write_timeout >> option enables write timeout. The Redis client will wait
+at most that number of seconds (can be fractional) before giving up when
+reading from the server.
 
 If your Redis server requires authentication, you can use the C<< password >>
 attribute. After each established connection (at the start or when
@@ -1399,7 +1443,7 @@ objects, one dedicated to PubSub and the other for regular commands.
 All Pub/Sub commands receive a callback as the last parameter. This callback
 receives three arguments:
 
-=over 4
+=over
 
 =item *
 
@@ -1596,7 +1640,7 @@ The C<slowlog> command gives access to the server's slow log.
 
 The following persons contributed to this project (alphabetical order):
 
-=over 4
+=over
 
 =item *
 
@@ -1625,6 +1669,10 @@ Thiago Berlitz Rondon
 =item *
 
 Ulrich Habel
+
+=item *
+
+Ivan Kruglov
 
 =back
 
