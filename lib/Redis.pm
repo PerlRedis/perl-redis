@@ -53,6 +53,8 @@ sub new {
   defined $args{name}
     and $self->{name} = $args{name};
 
+  $self->{every}         = $args{every} || 1000;
+
   if ($args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub { IO::Socket::UNIX->new($_[0]->{server}) };
@@ -63,6 +65,7 @@ sub new {
       IO::Socket::INET->new(
         PeerAddr => $_[0]->{server},
         Proto    => 'tcp',
+        Timeout  => $self->{every} / 1000,
       );
     };
   }
@@ -70,7 +73,6 @@ sub new {
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
   $self->{reconnect}     = $args{reconnect} || 0;
-  $self->{every}         = $args{every} || 1000;
 
   $self->__connect;
 
@@ -482,11 +484,13 @@ sub __connect {
 
   ## Reconnect...
   while (1) {
+    my $t1 = [Time::HiRes::gettimeofday()];
     eval { $self->__build_sock };
 
     last unless $@;    ## Connected!
     die if Time::HiRes::tv_interval($t0) > $self->{reconnect};    ## Timeout
-    Time::HiRes::usleep($self->{every});                          ## Retry in...
+    my $ms_left = int($self->{every} - (Time::HiRes::tv_interval($t1) * 1000));
+    Time::HiRes::usleep($ms_left) unless ($ms_left < 1);
   }
 
   return;
