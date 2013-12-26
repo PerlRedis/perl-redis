@@ -852,7 +852,7 @@ __END__
     ## Enable read timeout (in seconds)
     my $redis = Redis->new(read_timeout => 0,5);
 
-    ## Enable read timeout (in seconds)
+    ## Enable write timeout (in seconds)
     my $redis = Redis->new(write_timeout => 1,2);
 
     ## Use all the regular Redis commands, they all accept a list of
