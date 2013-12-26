@@ -850,10 +850,10 @@ __END__
     my $redis = Redis->new(cnx_timeout => 60);
 
     ## Enable read timeout (in seconds)
-    my $redis = Redis->new(read_timeout => 0,5);
+    my $redis = Redis->new(read_timeout => 0.5);
 
     ## Enable write timeout (in seconds)
-    my $redis = Redis->new(write_timeout => 1,2);
+    my $redis = Redis->new(write_timeout => 1.2);
 
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
