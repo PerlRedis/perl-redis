@@ -39,10 +39,7 @@ sub get_master_address {
 
     my $master_addr = [$sentinel_conn->sentinel("get-master-addr-by-name", $service_name)];
 
-    if (   not @$master_addr
-        or not defined $master_addr->[0]
-        or $master_addr->[0] eq 'IDONTKNOW')
-    {
+    if (not @$master_addr or not defined $master_addr->[0]) {
       # Try next one if not exhausted
       if (++$sentinel_idx > $#{ $self->{sentinels} }) {
         # sentinel list exhausted
@@ -51,6 +48,10 @@ sub get_master_address {
       }
       $master_addr = undef;
       next;
+    }
+    elsif ($master_addr->[0] eq 'IDONTKNOW') {
+      confess("Failed to look up master address for '$service_name'. Sentinel '"
+              . $self->{sentinels}[$sentinel_idx] . "' replied with 'IDONTKNOW'");
     }
 
     # If we hit this, then we have a valid master address, put Sentinel
