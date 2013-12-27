@@ -83,6 +83,31 @@ sub new {
         }
     };
   }
+  elsif ($args{sentinels}) {
+    # Using {server} slot to make error messages work sensibly
+    $self->{server} = $args{service};
+    if (not defined $self->{server}) {
+      confess("Need 'service' name when using 'sentinels'!");
+    }
+
+    require Redis::Sentinels;
+    if (Scalar::Util::blessed($args{sentinels})) {
+      $self->{sentinels} = $args{sentinels};
+    }
+    else {
+      $self->{sentinels} = Redis::Sentinels->new(
+        sentinels => $args{sentinels},
+      );
+    }
+
+    $self->{builder} = sub {
+      my $srv = $self->{sentinels}->get_master_address($self->{server});
+      return IO::Socket::INET->new(
+        PeerAddr => $srv,
+        Proto    => 'tcp',
+      );
+    };
+  }
   else {
     $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
