@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.967     2013-12-28 22:58:55 Europe/Paris
     * use new IO::Socket::Timeout with different API
 
 1.966     2013-12-17 13:58:33 Europe/Amsterdam
