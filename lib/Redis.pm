@@ -65,12 +65,16 @@ sub new {
     $self->{builder} = sub {
         my ($self) = @_;
         if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
-            IO::Socket::UNIX->new::with::timeout(
+            my $socket = IO::Socket::UNIX->new(
                 Peer => $self->{server},
-                ( $self->{cnx_timeout}   ? ( Timeout => $self->{cnx_timeout}        ) : () ),
-                ( $self->{read_timeout}  ? ( ReadTimeout => $self->{read_timeout}   ) : () ),
-                ( $self->{write_timeout} ? ( WriteTimeout => $self->{write_timeout} ) : () ),
+                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
             );
+            IO::Socket::Timeout->enable_timeouts_on($socket);
+            $self->{read_timeout}
+              and $socket->read_timeout($self->{read_timeout});
+            $self->{write_timeout}
+              and $socket->write_timeout($self->{write_timeout});
+            $socket;
         } else {
             IO::Socket::UNIX->new(
                 Peer => $self->{server},
@@ -83,14 +87,18 @@ sub new {
     $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
-        if ($self->{read_timeout} || $self->{write_timeout}) {
-            IO::Socket::INET->new::with::timeout(
+        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
+            my $socket = IO::Socket::INET->new(
                 PeerAddr => $self->{server},
                 Proto    => 'tcp',
-                ( $self->{cnx_timeout}   ? ( Timeout => $self->{cnx_timeout}        ) : () ),
-                ( $self->{read_timeout}  ? ( ReadTimeout => $self->{read_timeout}   ) : () ),
-                ( $self->{write_timeout} ? ( WriteTimeout => $self->{write_timeout} ) : () ),
+                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
             );
+            IO::Socket::Timeout->enable_timeouts_on($socket);
+            $self->{read_timeout}
+              and $socket->read_timeout($self->{read_timeout});
+            $self->{write_timeout}
+              and $socket->write_timeout($self->{write_timeout});
+            $socket;
         } else {
             IO::Socket::INET->new(
                 PeerAddr => $self->{server},
