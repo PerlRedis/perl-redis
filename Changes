@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+    * use new IO::Socket::Timeout with different API
 
 1.966     2013-12-17 13:58:33 Europe/Amsterdam
     * fix tests for Redis 2.8
