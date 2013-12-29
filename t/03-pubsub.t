@@ -11,6 +11,11 @@ use Test::SpawnRedisServer qw( redis reap );
 
 my ($c, $srv) = redis();
 END { $c->() if $c }
+{
+my $r = Redis->new(server => $srv);
+eval { $r->publish( 'aa', 'v1' ) };
+plan 'skip_all' => "pubsub not implemented on this redis server"  if $@ && $@ =~ /unknown command/;
+}
 
 my ($another_kill_switch, $yet_another_kill_switch);
 END { $_ and $_->() for($another_kill_switch, $yet_another_kill_switch) }
