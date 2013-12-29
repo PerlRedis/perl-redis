@@ -125,6 +125,7 @@ sub reap {
   $limit = 3  unless $limit;
 
   my $try = 0;
+  local $?;
   while ($try++ < $limit) {
     my $ok = waitpid($pid, WNOHANG);
     $try = 0, last if $ok > 0;
