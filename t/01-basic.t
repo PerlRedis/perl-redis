@@ -210,11 +210,15 @@ is($o->zscore($zset, 'foo'), 2);
 ok($o->zincrby($zset, 1, 'bar'));
 is($o->zscore($zset, 'bar'), 1);    # bar was new, so its score got set to the increment
 
+SKIP: {
+eval { $o->zrank($zset, 'bar') };
+skip "zrank not implemented in this redis", 4 if $@ && $@ =~ /unknown command/;
 is($o->zrank($zset, 'bar'), 0);
 is($o->zrank($zset, 'foo'), 1);
 
 is($o->zrevrank($zset, 'bar'), 1);
 is($o->zrevrank($zset, 'foo'), 0);
+}
 
 ok($o->zadd($zset, 2.1, 'baz'));    # we now have bar foo baz
 
@@ -234,7 +238,11 @@ is_deeply($rounded_withscores, { baz => 2.1, foo => 2 });
 
 is_deeply([$o->zrangebyscore($zset, 2, 3)], [qw/foo baz/]);
 
+SKIP: {
+eval { $o->zcount($zset, 2, 3) };
+skip "zcount not implemented in this redis", 1 if $@ && $@ =~ /unknown command/;
 is($o->zcount($zset, 2, 3), 2);
+}
 
 is($o->zcard($zset), 3);
 
@@ -246,7 +254,10 @@ my @zkeys = (qw/foo bar baz qux quux quuux quuuux quuuuux/);
 ok($o->zadd($zset, $score++, $_)) for @zkeys;
 is_deeply([$o->zrangebyscore($zset, 0, 8)], \@zkeys);
 
-is($o->zremrangebyrank($zset, 5, 8), 3);    # remove quux and up
+SKIP: {
+my $retval = eval { $o->zremrangebyrank($zset, 5, 8) };
+skip "zremrangebyrank not implemented in this redis", 5 if $@ && $@ =~ /unknown command/;
+is($retval, 3);    # remove quux and up
 is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[0 .. 4]]);
 
 is($o->zremrangebyscore($zset, 0, 2), 2);    # remove foo and bar
@@ -254,6 +265,7 @@ is_deeply([$o->zrangebyscore($zset, 0, 8)], [@zkeys[2 .. 4]]);
 
 # only left with 3
 is($o->zcard($zset), 3);
+}
 
 ok($o->del($zset));                          # cleanup
 
@@ -263,7 +275,10 @@ ok($o->del($zset));                          # cleanup
 my $hash = 'test-hash';
 $o->del($hash);
 
-ok($o->hset($hash, foo => 'bar'));
+SKIP: {
+my $retval = eval { $o->hset($hash, foo => 'bar') };
+skip "hset not implemented in this redis", 20 if $@ && $@ =~ /unknown command/;
+ok($retval);
 is($o->hget($hash, 'foo'), 'bar');
 ok($o->hexists($hash, 'foo'));
 ok($o->hdel($hash, 'foo'));
@@ -293,7 +308,7 @@ is_deeply([$o->hvals($hash)], [qw/1 2 3 4/]);
 is_deeply({ $o->hgetall($hash) }, { foo => 1, bar => 2, baz => 3, qux => 4 });
 
 ok($o->del($hash));                            # remove entire hash
-
+}
 
 ## Multiple databases handling commands
 

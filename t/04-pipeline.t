@@ -11,6 +11,12 @@ use Test::Deep;
 
 my ($c, $srv) = redis();
 END { $c->() if $c }
+{
+my $r = Redis->new(server => $srv);
+eval { $r->multi( ); };
+plan 'skip_all' => "multi without arguments not implemented on this redis server"  if $@ && $@ =~ /unknown command/;
+}
+
 
 ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
 
