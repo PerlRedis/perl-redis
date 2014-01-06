@@ -17,7 +17,7 @@ sub create_server_with_timeout {
                 Reuse     => 1,
                 Blocking  => 1,
                 LocalPort => $port
-            ) or die "ops $!";
+            ) or die "failed to connect to RedisTimeoutServer: $!";
 
             my $buffer;
             while (1) {
@@ -26,16 +26,6 @@ sub create_server_with_timeout {
                     sleep $timeout;
                     $client->print("+42\r\n");
                 }
-
-                # sleep($in_timeout) if $in_timeout;
-                # if ( $client->sysread( $buffer, 5 ) ) {
-                #     my $response =
-                #       pack( 'N a*', bytes::length($message), $message );
-
-                #     $client->syswrite($response);
-                #     sleep(1);
-                # }
-
             }
         },
     );
