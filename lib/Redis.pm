@@ -15,7 +15,7 @@ use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
 use Errno ();
 use Data::Dumper;
-use Carp qw/confess/;
+use Carp;
 use Encode;
 use Try::Tiny;
 use Scalar::Util ();
@@ -33,7 +33,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
+  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server} && !$args{sentinel}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
       $args{sock} = $ENV{REDIS_SERVER};
     }
@@ -45,14 +45,8 @@ sub new {
     }
   }
 
-  $args{password}
-    and $self->{password} = $args{password};
-
-  $args{on_connect}
-    and $self->{on_connect} = $args{on_connect};
-
-  defined $args{name}
-    and $self->{name} = $args{name};
+  defined $args{$_}
+    and $self->{$_} = $args{$_} for qw(password on_connect name);
 
   $self->{cnx_timeout}   = $args{cnx_timeout};
   $self->{write_timeout} = $args{write_timeout};
@@ -87,7 +81,7 @@ sub new {
     # Using {server} slot to make error messages work sensibly
     $self->{server} = $args{service};
     if (not defined $self->{server}) {
-      confess("Need 'service' name when using 'sentinels'!");
+      croak("Need 'service' name when using 'sentinels'!");
     }
 
     require Redis::Sentinels;
@@ -227,7 +221,7 @@ sub __run_cmd {
     }
     : $cb || sub {
       my ($reply, $error) = @_;
-      confess "[$command] $error, " if defined $error;
+      croak "[$command] $error, " if defined $error;
       $ret = $reply;
     };
 
@@ -270,7 +264,7 @@ sub quit {
   my ($self) = @_;
   return unless $self->{sock};
 
-  confess "[quit] only works in synchronous mode, "
+  croak "[quit] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   try {
@@ -287,14 +281,14 @@ sub shutdown {
   my ($self) = @_;
   $self->__is_valid_command('SHUTDOWN');
 
-  confess "[shutdown] only works in synchronous mode, "
+  croak "[shutdown] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   return unless $self->{sock};
 
   $self->wait_all_responses;
   $self->__send_command('SHUTDOWN');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  close(delete $self->{sock}) || croak("Can't close socket: $!");
 
   return 1;
 }
@@ -303,7 +297,7 @@ sub ping {
   my $self = shift;
   $self->__is_valid_command('PING');
 
-  confess "[ping] only works in synchronous mode, "
+  croak "[ping] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   return unless exists $self->{sock};
@@ -402,7 +396,7 @@ sub wait_for_messages {
                       ## timeout
       
           my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
-          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
+          croak "[WAIT_FOR_MESSAGES] $error, " if defined $error;
           $self->__process_pubsub_msg($reply);
           $count++;
         }
@@ -428,7 +422,7 @@ sub __subscription_cmd {
   my $command = shift;
   my $cb      = pop;
 
-  confess("Missing required callback in call to $command(), ")
+  croak("Missing required callback in call to $command(), ")
     unless ref($cb) eq 'CODE';
 
   $self->wait_all_responses;
@@ -479,7 +473,7 @@ sub __process_subscription_changes {
 
   while (%$expected) {
     my ($m, $error) = $self->__read_response($cmd);
-    confess "[$cmd] $error, " if defined $error;
+    croak "[$cmd] $error, " if defined $error;
 
     ## Deal with pending PUBLISH'ed messages
     if ($m->[0] =~ /^p?message$/) {
@@ -522,7 +516,7 @@ sub __process_pubsub_msg {
 sub __is_valid_command {
   my ($self, $cmd) = @_;
 
-  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ")
+  croak("Cannot use command '$cmd' while in SUBSCRIBE mode, ")
     if $self->{is_subscriber};
 }
 
@@ -561,13 +555,13 @@ sub __build_sock {
   my ($self) = @_;
 
   $self->{sock} = $self->{builder}->($self)
-    || confess("Could not connect to Redis server at $self->{server}: $!");
+    || croak("Could not connect to Redis server at $self->{server}: $!");
 
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
       $self->{reconnect} = 0;
-      confess("Redis server refused password");
+      croak("Redis server refused password");
     };
   }
 
@@ -602,12 +596,12 @@ sub __on_connection {
             $self->__send_command('subscribe', $channel);
             my (undef, $error) = $self->__read_response('subscribe');
             defined $error
-              and confess "[subscribe] $error";
+              and croak "[subscribe] $error";
         } else {
             $self->__send_command('psubscribe', $channel);
             my (undef, $error) = $self->__read_response('psubscribe');
             defined $error
-              and confess "[psubscribe] $error";
+              and croak "[psubscribe] $error";
         }
       }
     }
@@ -662,7 +656,7 @@ sub __send_command {
 sub __read_response {
   my ($self, $cmd, $collect_errors) = @_;
 
-  confess("Not connected to any server") unless $self->{sock};
+  croak("Not connected to any server") unless $self->{sock};
 
   local $/ = "\r\n";
 
@@ -699,14 +693,14 @@ sub __read_response_r {
         push @list, \@nested;
       }
       else {
-        confess "[$command] $nested[1], " if defined $nested[1];
+        croak "[$command] $nested[1], " if defined $nested[1];
         push @list, $nested[0];
       }
     }
     return \@list, undef;
   }
   else {
-    confess "unknown answer type: $type ($result), ";
+    croak "unknown answer type: $type ($result), ";
   }
 }
 
@@ -715,7 +709,7 @@ sub __read_line {
   my $sock = $self->{sock};
 
   my $data = <$sock>;
-  confess("Error while reading from Redis server: $!")
+  croak("Error while reading from Redis server: $!")
     unless defined $data;
 
   chomp $data;
@@ -732,9 +726,9 @@ sub __read_len {
   my $offset = 0;
   while ($len) {
     my $bytes = read $self->{sock}, $data, $len, $offset;
-    confess("Error while reading from Redis server: $!")
+    croak("Error while reading from Redis server: $!")
       unless defined $bytes;
-    confess("Redis server closed connection") unless $bytes;
+    croak("Redis server closed connection") unless $bytes;
 
     $offset += $bytes;
     $len -= $bytes;
@@ -809,7 +803,7 @@ sub __try_read_sock {
       return;
     }
     else {
-      confess("read()/sysread() are really bonkers on $^O, return negative values ($len)");
+      croak("read()/sysread() are really bonkers on $^O, return negative values ($len)");
     }
   }
 
@@ -824,7 +818,7 @@ sub __try_read_sock {
   return if $err == 0;
 
   ## For everything else, there is Mastercard...
-  confess("Unexpected error condition $err/$^O, please report this as a bug");
+  croak("Unexpected error condition $err/$^O, please report this as a bug");
 }
 
 

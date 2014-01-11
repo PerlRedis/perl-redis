@@ -7,14 +7,14 @@ package Redis::Sentinels;
 use warnings;
 use strict;
 use Redis;
-use Carp qw/confess/;
+use Carp;
 
 sub new {
   my ($class, %args) = @_;
 
   my $sent_addrs = $args{sentinels};
   if (not ref($sent_addrs) eq 'ARRAY' or not @$sent_addrs) {
-    confess("Need 'sentinels' option as a list of sentinel addresses");
+    croak("Need 'sentinels' option as a list of sentinel addresses");
   }
 
   my $self = bless({
@@ -63,7 +63,7 @@ sub _get_sentinel_connection {
     return($conn, $sentinel_idx);
   }
 
-  confess("Failed to connect to any Redis Sentinels!");
+  croak("Failed to connect to any Redis Sentinels!");
 }
 
 
@@ -96,7 +96,7 @@ sub _update_sentinels_list {
 sub get_master_address {
   my ($self, $service_name) = @_;
   if (not defined $service_name) {
-    confess("Need name of service to look up using Redis sentinels");
+    croak("Need name of service to look up using Redis sentinels");
   }
 
   my $master_addr;
@@ -109,14 +109,14 @@ sub get_master_address {
       # Try next one if not exhausted
       if (++$sentinel_idx > $#{ $self->{sentinels} }) {
         # sentinel list exhausted
-        confess("Failed to look up master address for '$service_name' "
+        croak("Failed to look up master address for '$service_name' "
                 . "from any Sentinel");
       }
       $master_addr = undef;
       next;
     }
     elsif ($master_addr->[0] eq 'IDONTKNOW') {
-      confess("Failed to look up master address for '$service_name'. Sentinel '"
+      croak("Failed to look up master address for '$service_name'. Sentinel '"
               . $self->{sentinels}[$sentinel_idx] . "' replied with 'IDONTKNOW'");
     }
 
