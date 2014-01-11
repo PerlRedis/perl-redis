@@ -23,7 +23,7 @@ sub new {
     # The index of the next sentinel to try to connect to
     current_sentinel_idx  => 0,
     sentinels_auto_update => $args{sentinels_auto_update},
-  }) => $class;
+  }, $class);
 
   return $self;
 }
@@ -163,7 +163,7 @@ sub failover {
 
 sub _move_sentinel_to_front {
   my ($self, $sentinel_idx) = @_;
-  return() if $sentinel_idx == 0;
+  return() if ($sentinel_idx || 0) == 0;
 
   my $sentinels = $self->{sentinels};
   my $sent_addr = splice(@$sentinels, $sentinel_idx, 1);
