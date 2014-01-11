@@ -27,13 +27,12 @@ diag "sentinel address: $sentinel_addr\n";
     my $redis = Redis->new(server => $sentinel_addr);
     my $got = { @{$redis->sentinel('masters')->[0]} };
 
-    delete @{$got}{qw(last-ok-ping-reply last-ping-reply runid role-reported-time info-refresh)};
+    delete @{$got}{qw(last-ok-ping-reply last-ping-reply runid role-reported-time info-refresh pending-commands)};
 
     is_deeply($got, { name => 'mymaster',
                       ip => '127.0.0.1',
                       port => $redis_port,
                       flags => 'master',
-                      'pending-commands' => 0,
                       'role-reported' => 'master',
                       'config-epoch' => 0,
                       'num-slaves' => 0,
