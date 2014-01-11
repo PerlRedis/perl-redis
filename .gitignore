@@ -8,3 +8,5 @@ Makefile.old
 dump.rdb
 Redis-*
 .build/
+*.log
+
