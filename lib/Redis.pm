@@ -20,11 +20,24 @@ use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
+use Redis::Sentinel;
+
 use constant WIN32       => $^O =~ /mswin32/i;
 use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
 
+sub _maybe_enable_timeouts {
+    my ($self, $socket) = @_;
+    exists $self->{read_timeout} || exists $self->{write_timeout}
+      or return $socket;
+    IO::Socket::Timeout->enable_timeouts_on($socket);
+    defined $self->{read_timeout}
+      and $socket->read_timeout($self->{read_timeout});
+    defined $self->{write_timeout}
+      and $socket->write_timeout($self->{write_timeout});
+    $socket;
+}
 
 sub new {
   my ($class, %args) = @_;
@@ -46,85 +59,90 @@ sub new {
   }
 
   defined $args{$_}
-    and $self->{$_} = $args{$_} for qw(password on_connect name);
+    and $self->{$_} = $args{$_} for 
+      qw(password on_connect name cnx_timeout write_timeout read_timeout);
 
-  $self->{cnx_timeout}   = $args{cnx_timeout};
-  $self->{write_timeout} = $args{write_timeout};
-  $self->{read_timeout}  = $args{read_timeout};
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
 
   if ($args{sock}) {
-    $self->{server} = $args{sock};
-    $self->{builder} = sub {
-        my ($self) = @_;
-        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
-            my $socket = IO::Socket::UNIX->new(
-                Peer => $self->{server},
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
-            IO::Socket::Timeout->enable_timeouts_on($socket);
-            $self->{read_timeout}
-              and $socket->read_timeout($self->{read_timeout});
-            $self->{write_timeout}
-              and $socket->write_timeout($self->{write_timeout});
-            $socket;
-        } else {
-            IO::Socket::UNIX->new(
-                Peer => $self->{server},
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ): () ),
-            );
-        }
-    };
-  }
-  elsif ($args{sentinels}) {
-    # Using {server} slot to make error messages work sensibly
-    $self->{server} = $args{service};
-    if (not defined $self->{server}) {
-      croak("Need 'service' name when using 'sentinels'!");
-    }
-
-    require Redis::Sentinels;
-    if (Scalar::Util::blessed($args{sentinels})) {
+      $self->{server} = $args{sock};
+      $self->{builder} = sub {
+          my ($self) = @_;
+          $self->_maybe_enable_timeouts( IO::Socket::UNIX->new(
+                  Peer => $self->{server},
+                  ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ): () ),
+              )
+          );
+      };
+  } elsif ($args{sentinels}) {
       $self->{sentinels} = $args{sentinels};
-    }
-    else {
-      $self->{sentinels} = Redis::Sentinels->new(
-        sentinels => $args{sentinels},
-      );
-    }
 
-    $self->{builder} = sub {
-      my $srv = $self->{sentinels}->get_master_address($self->{server});
-      return IO::Socket::INET->new(
-        PeerAddr => $srv,
-        Proto    => 'tcp',
-      );
-    };
-  }
-  else {
+      ref $self->{sentinels} eq 'ARRAY'
+        or croak("'sentinels' param must be an ArrayRef");
+
+      defined($self->{service} = $args{service})
+        or croak("Need 'service' name when using 'sentinels'!");
+
+      $self->{builder} = sub {
+          # try to connect to a sentinel
+          my $status;
+          foreach my $sentinel_address (@{$self->{sentinels}}) {
+              my $sentinel = eval {
+                  Redis::Sentinel->new( server => $sentinel_address,
+                                        cnx_timeout => 0.1,
+                                        read_timeout => 1,
+                                        write_timeout => 1,
+                                      ) # TODO make the timeout configurable
+              } or next;
+              my $server_address = $sentinel->get_service_address($self->{service});
+              defined $server_address
+                or $status ||= "Sentinels don't know this service",
+                   next;
+              $server_address eq 'IDONTKNOW'
+                and $status = "service is configured in one Sentinel, but was never reached",
+                    next;
+
+              # we found the service, set the server
+              $self->{server} = $server_address;
+
+              # move the elected sentinel at the front of the list and add
+              # additional sentinels
+              my $idx = 2;
+              my %h = ( ( map { $_ => $idx++ } @{$self->{sentinels}}),
+                        $sentinel_address => 1,
+                      );
+              # TODO : make sentinel list update configurable
+              $self->{sentinels} = [
+                  ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
+                  grep { ! $h{$_}; }                      # list of unknown
+                  map { +{ @$_ }->{name}; }               # names of
+                  $sentinel->sentinel(                    # sentinels 
+                    sentinels => $self->{service}         # for this service
+                  )
+              ];
+
+              return $self->_maybe_enable_timeouts(
+                  IO::Socket::INET->new(
+                      PeerAddr => $server_address,
+                      Proto    => 'tcp',
+                      ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
+                  )
+              );
+          }
+          croak($status || "failed to connect to any of the sentinels");
+      };
+  } else {
     $self->{server} = $args{server} || '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
-        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
-            my $socket = IO::Socket::INET->new(
-                PeerAddr => $self->{server},
-                Proto    => 'tcp',
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
-            IO::Socket::Timeout->enable_timeouts_on($socket);
-            $self->{read_timeout}
-              and $socket->read_timeout($self->{read_timeout});
-            $self->{write_timeout}
-              and $socket->write_timeout($self->{write_timeout});
-            $socket;
-        } else {
+        $self->_maybe_enable_timeouts(
             IO::Socket::INET->new(
                 PeerAddr => $self->{server},
                 Proto    => 'tcp',
                 ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
-        }
+            )
+        )
     };
   }
 
