@@ -645,7 +645,7 @@ sub __read_response {
   return $self->__read_response_r($cmd, $collect_errors) unless $self->{debug};
 
   my ($result, $error) = $self->__read_response_r($cmd, $collect_errors);
-  warn "[RECV] $cmd ", Dumper($result, $error) if $self->{debug};
+  warn "[RECV] $cmd ", Dumper($result, $error);
   return $result, $error;
 }
 
@@ -1469,7 +1469,7 @@ tells you the pattern that matched.
 
 =back
 
-See the L<Pub/Sub notes|http://redis.io/topics/pubsub> for more information
+See the L<Pub-Sub notes|http://redis.io/topics/pubsub> for more information
 about the messages you will receive on your callbacks after each L</subscribe>,
 L</unsubscribe>, L</psubscribe> and L</punsubscribe>.
 
