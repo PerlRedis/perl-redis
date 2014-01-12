@@ -1729,6 +1729,10 @@ Ulrich Habel
 
 Ivan Kruglov
 
+=item *
+
+Steffen Mueller <smueller@cpan.org>
+
 =back
 
 =cut
