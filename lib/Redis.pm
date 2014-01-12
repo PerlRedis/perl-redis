@@ -900,6 +900,9 @@ __END__
     ## Enable write timeout (in seconds)
     my $redis = Redis->new(write_timeout => 1.2);
 
+    ## Connect via a list of Sentinels to a given service
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
+
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
     ## See http://redis.io/commands for full list
@@ -1036,6 +1039,9 @@ So, do you pre-encoding or post-decoding operation yourself if needed !
     my $r = Redis->new( name => 'my_connection_name' );
     my $r = Redis->new( name => sub { "cache-for-$$" });
 
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345', '127.0.0.1:23456' ],
+                           service => 'mymaster');
+
 The C<< server >> parameter specifies the Redis server we should connect to,
 via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
 will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
@@ -1043,6 +1049,10 @@ those options are present, it defaults to '127.0.0.1:6379'.
 
 Alternatively you can use the C<< sock >> parameter to specify the path of the
 UNIX domain socket where the Redis server is listening.
+
+Alternatively you can use the C<< sentinels >> parameter and the C<< service >>
+parameter to specify a list of sentinels to contact and try to get the address
+of the given service name.
 
 The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
 formats are supported:
