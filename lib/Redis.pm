@@ -1469,7 +1469,7 @@ tells you the pattern that matched.
 
 =back
 
-See the L<Pub/Sub notes|http://redis.io/topics/pubsub> for more information
+See the L<Pub-Sub notes|http://redis.io/topics/pubsub> for more information
 about the messages you will receive on your callbacks after each L</subscribe>,
 L</unsubscribe>, L</psubscribe> and L</punsubscribe>.
 
