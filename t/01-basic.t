@@ -11,6 +11,14 @@ use Test::SpawnRedisServer;
 my ($c, $srv) = redis();
 END { $c->() if $c }
 
+my $n;
+is(
+  exception { $n = Redis->new(server => $srv, name => 'no_auto_connect', no_auto_connect_on_new => 1) },
+  undef, 'Got an unconnected object',
+);
+ok(!$n->ping, "ping doesn't work yet");
+$n->connect;
+ok($n->ping, "ping works after connection");
 
 my $o;
 is(
