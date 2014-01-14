@@ -112,7 +112,7 @@ sub new {
   $self->{is_subscriber} = 0;
   $self->{subscribers}   = {};
 
-  $self->__connect;
+  $self->connect unless $args{no_auto_connect_on_new};
 
   return $self;
 }
@@ -503,7 +503,7 @@ sub __is_valid_command {
 
 
 ### Socket operations
-sub __connect {
+sub connect {
   my ($self) = @_;
   delete $self->{sock};
 
@@ -1062,6 +1062,12 @@ You can also provide a code reference that will be immediately after each
 successful connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
+
+You can also provide C<< no_auto_connect_on_new >> in which case C<<
+new >> won't call C<< $obj->connect >> for you implicitly, you'll have
+to do that yourself. This is useful for figuring out how long
+connection setup takes so you can configure the C<< cnx_timeout >>
+appropriately.
 
 You can also set a name for each connection. This can be very useful for
 debugging purposes, using the C<< CLIENT LIST >> command. To set a connection
