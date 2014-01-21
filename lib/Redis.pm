@@ -68,7 +68,7 @@ sub new {
             my $socket = IO::Socket::UNIX->new(
                 Peer => $self->{server},
                 ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
+            ) or return;
             IO::Socket::Timeout->enable_timeouts_on($socket);
             $self->{read_timeout}
               and $socket->read_timeout($self->{read_timeout});
@@ -92,7 +92,7 @@ sub new {
                 PeerAddr => $self->{server},
                 Proto    => 'tcp',
                 ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
+            ) or return;
             IO::Socket::Timeout->enable_timeouts_on($socket);
             $self->{read_timeout}
               and $socket->read_timeout($self->{read_timeout});
