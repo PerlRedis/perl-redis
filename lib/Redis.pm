@@ -24,12 +24,13 @@ use constant WIN32       => $^O =~ /mswin32/i;
 use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
-
+use constant BUFSIZE     => 4096;
 
 sub new {
   my ($class, %args) = @_;
-  my $self  = bless {}, $class;
+  my $self = bless {}, $class;
 
+  $self->{__buf} = '';
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
@@ -253,7 +254,7 @@ sub quit {
     $self->__send_command('QUIT');
   };
 
-  close(delete $self->{sock}) if $self->{sock};
+  $self->__close_sock() if $self->{sock};
 
   return 1;
 }
@@ -269,7 +270,7 @@ sub shutdown {
 
   $self->wait_all_responses;
   $self->__send_command('SHUTDOWN');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  $self->__close_sock() || confess("Can't close socket: $!");
 
   return 1;
 }
@@ -288,7 +289,7 @@ sub ping {
     $self->__std_cmd('PING');
   }
   catch {
-    close(delete $self->{sock});
+    $self->__close_sock();
     return;
   };
 }
@@ -376,10 +377,12 @@ sub wait_for_messages {
             or last ; ## no data ( or socket became EOF), back to select until
                       ## timeout
       
-          my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
-          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
-          $self->__process_pubsub_msg($reply);
-          $count++;
+          do {
+              my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
+              confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
+              $self->__process_pubsub_msg($reply);
+              $count++;
+          } while ($self->{__buf});
         }
       }
     
@@ -538,6 +541,8 @@ sub __build_sock {
   $self->{sock} = $self->{builder}->($self)
     || confess("Could not connect to Redis server at $self->{server}: $!");
 
+  $self->{__buf} = '';
+
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
@@ -549,6 +554,12 @@ sub __build_sock {
   $self->__on_connection;
 
   return;
+}
+
+sub __close_sock {
+  my ($self) = @_;
+  $self->{__buf} = '';
+  return close(delete $self->{sock});
 }
 
 sub __on_connection {
@@ -689,7 +700,7 @@ sub __read_line {
   my $self = $_[0];
   my $sock = $self->{sock};
 
-  my $data = <$sock>;
+  my $data = $self->__read_line_raw;
   confess("Error while reading from Redis server: $!")
     unless defined $data;
 
@@ -700,116 +711,80 @@ sub __read_line {
   return ($type, $data);
 }
 
-sub __read_len {
-  my ($self, $len) = @_;
+sub __read_line_raw {
+  my $self = $_[0];
+  my $sock = $self->{sock};
+  my $buf = \$self->{__buf};
 
-  my $data   = '';
-  my $offset = 0;
-  while ($len) {
-    my $bytes = read $self->{sock}, $data, $len, $offset;
-    confess("Error while reading from Redis server: $!")
-      unless defined $bytes;
-    confess("Redis server closed connection") unless $bytes;
-
-    $offset += $bytes;
-    $len -= $bytes;
+  if ($$buf) {
+    my $idx = index($$buf, "\r\n");
+    $idx >= 0 and return substr($$buf, 0, $idx + 2, '');
   }
 
+  while (1) {
+    my $bytes = sysread($sock, $$buf, BUFSIZE, length($$buf));
+    next if !defined $bytes && $! == EINTR;
+    return unless defined $bytes && $bytes;
+
+    # start looking for \r\n where we stopped last time
+    # extracting one is required to handle corner case
+    # where \r\n are split and therefore read by two conseqent sysreads
+    my $idx = index($$buf, "\r\n", length($$buf) - $bytes - 1);
+    $idx >= 0 and return substr($$buf, 0, $idx + 2, '');
+  }
+}
+
+sub __read_len {
+  my ($self, $len) = @_;
+  my $buf = \$self->{__buf};
+  my $buflen = length($$buf);
+
+  if ($buflen < $len) {
+    my $to_read = $len - $buflen;
+    while ($to_read > 0) {
+      my $bytes = sysread($self->{sock}, $$buf, BUFSIZE, length($$buf));
+      next if !defined $bytes && $! == EINTR;
+      confess("Error while reading from Redis server: $!") unless defined $bytes;
+      confess("Redis server closed connection") unless $bytes;
+      $to_read -= $bytes;
+    }
+  }
+
+  my $data = substr($$buf, 0, $len, '');
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
 
   return $data;
 }
 
-
-#
-# The reason for this code:
-#
-# IO::Select and buffered reads like <$sock> and read() don't mix
-# For example, if I receive two MESSAGE messages (from Redis PubSub),
-# the first read for the first message will probably empty to socket
-# buffer and move the data to the perl IO buffer.
-#
-# This means that IO::Select->can_read will return false (after all
-# the socket buffer is empty) but from the application point of view
-# there is still data to be read and process
-#
-# Hence this code. We try to do a non-blocking read() of 1 byte, and if
-# we succeed, we put it back and signal "yes, Virginia, there is still
-# stuff out there"
-#
-# We could just use sysread and leave the socket buffer with the second
-# message, and then use IO::Select as intended, and previous versions of
-# this code did that (check the git history for this file), but
-# performance suffers, about 20/30% slower, mostly because we do a lot
-# of "read one line", where <$sock> beats the crap of anything you can
-# write on Perl-land.
-#
 sub __try_read_sock {
   my $sock = shift;
   my $data = '';
 
-  __fh_nonblocking($sock, 1);
+  while (1) {
+      my $res = recv($sock, $data, 1, MSG_PEEK | MSG_DONTWAIT);
+      my $err = 0 + $!;
 
-  ## Lots of problems with Windows here. This is a temporary fix until I
-  ## figure out what is happening there. It looks like the wrong fix
-  ## because we should not mix sysread (unbuffered I/O) with ungetc()
-  ## below (buffered I/O), so I do expect to revert this soon.
-  ## Call it a run through the CPAN Testers Gautlet fix. If I had to
-  ## guess (and until my Windows box has a new power supply I do have to
-  ## guess), I would say that the problems lies with the call
-  ## __fh_nonblocking(), where on Windows we don't end up with a non-
-  ## blocking socket.
-  ## See
-  ##  * https://github.com/melo/perl-redis/issues/20
-  ##  * https://github.com/melo/perl-redis/pull/21
-  my $len;
-  if (WIN32) {
-    $len = sysread($sock, $data, 1);
+      if (defined $res) {
+        ## have data
+        length($data) and return 1;
+
+        ## no data but also no error means EOF
+        return;
+      }
+
+      next if $err && $err == EINTR;
+
+      ## Keep going if nothing there, but socket is alive
+      return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN);
+
+      ## result is undef but err is 0? should never happen
+      return if $err == 0;
+
+      ## For everything else, there is Mastercard...
+      confess("Unexpected error condition $err/$^O, please report this as a bug");
   }
-  else {
-    $len = read($sock, $data, 1);
-  }
-  my $err = 0 + $!;
-  __fh_nonblocking($sock, 0);
-
-  if (defined($len)) {
-    ## Have stuff
-    if ($len > 0) {
-      $sock->ungetc(ord($data));
-      return 1;
-    }
-    ## EOF according to the docs
-    elsif ($len == 0) {
-      return;
-    }
-    else {
-      confess("read()/sysread() are really bonkers on $^O, return negative values ($len)");
-    }
-  }
-
-  ## Keep going if nothing there, but socket is alive
-  return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN or $err == EINTR);
-
-  ## No errno, but result is undef?? This happens sometimes on my tests
-  ## when the server timesout the client. I traced the system calls and
-  ## I see the read() system call return 0 for EOF, but on this side of
-  ## perl, we get undef... We should see the 0 return code for EOF, I
-  ## suspect the fact that we are in non-blocking mode is the culprit
-  return if $err == 0;
-
-  ## For everything else, there is Mastercard...
-  confess("Unexpected error condition $err/$^O, please report this as a bug");
 }
-
-
-### Copied from AnyEvent::Util
-BEGIN {
-  *__fh_nonblocking = (WIN32)
-    ? sub($$) { ioctl $_[0], 0x8004667e, pack "L", $_[1]; }    # FIONBIO
-    : sub($$) { fcntl $_[0], F_SETFL, $_[1] ? O_NONBLOCK : 0; };
-}
-
 
 ##########################
 # I take exception to that
