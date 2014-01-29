@@ -1489,7 +1489,7 @@ Publishes the C<< $message >> to the C<< $topic >>.
 
   $r->subscribe(
       @topics_to_subscribe_to,
-      sub {
+      my $savecallback = sub {
         my ($message, $topic, $subscribed_topic) = @_;
         ...
       },
@@ -1500,14 +1500,14 @@ received by Redis, and the specified callback will be executed.
 
 =head3 unsubscribe
 
-  $r->unsubscribe(@topic_list, sub { my ($m, $t, $s) = @_; ... });
+  $r->unsubscribe(@topic_list, $savecallback);
 
-Stops receiving messages for all the topics in C<@topic_list>.
+Stops receiving messages via C<$savecallback> for all the topics in C<@topic_list>.
 
 =head3 psubscribe
 
   my @topic_matches = ('prefix1.*', 'prefix2.*');
-  $r->psubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
+  $r->psubscribe(@topic_matches, my $savecallback = sub { my ($m, $t, $s) = @_; ... });
 
 Subscribes a pattern of topics. All messages to topics that match the pattern
 will be delivered to the callback.
@@ -1515,9 +1515,9 @@ will be delivered to the callback.
 =head3 punsubscribe
 
   my @topic_matches = ('prefix1.*', 'prefix2.*');
-  $r->punsubscribe(@topic_matches, sub { my ($m, $t, $s) = @_; ... });
+  $r->punsubscribe(@topic_matches, $savecallback);
 
-Stops receiving messages for all the topics pattern matches in C<@topic_list>.
+Stops receiving messages via C<$savecallback> for all the topics pattern matches in C<@topic_list>.
 
 =head3 is_subscriber
 
