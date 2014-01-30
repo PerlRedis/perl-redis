@@ -1502,7 +1502,10 @@ received by Redis, and the specified callback will be executed.
 
   $r->unsubscribe(@topic_list, $savecallback);
 
-Stops receiving messages via C<$savecallback> for all the topics in C<@topic_list>.
+Stops receiving messages via C<$savecallback> for all the topics in
+C<@topic_list>. B<WARNING:> it is important that you give the same calleback
+that you used for subscribtion. The value of the CodeRef must be the same, as
+this is how internally the code identifies it.
 
 =head3 psubscribe
 
@@ -1517,7 +1520,10 @@ will be delivered to the callback.
   my @topic_matches = ('prefix1.*', 'prefix2.*');
   $r->punsubscribe(@topic_matches, $savecallback);
 
-Stops receiving messages via C<$savecallback> for all the topics pattern matches in C<@topic_list>.
+Stops receiving messages via C<$savecallback> for all the topics pattern
+matches in C<@topic_list>. B<WARNING:> it is important that you give the same
+calleback that you used for subscribtion. The value of the CodeRef must be the
+same, as this is how internally the code identifies it.
 
 =head3 is_subscriber
 
