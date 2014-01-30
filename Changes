@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.968     2014-01-30 12:19:11 Europe/Amsterdam
+
     * Add a no_auto_connect_on_new parameter to new() to allow users
       to call $x = Redis->new and then $x->connect, instead of Redis
       auto-connecting. Useful for tuning the cnx_timeout parameter.
