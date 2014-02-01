@@ -764,6 +764,7 @@ sub __try_read_sock {
   ##  * https://github.com/melo/perl-redis/issues/20
   ##  * https://github.com/melo/perl-redis/pull/21
   my $len;
+  local $! = 0;
   if (WIN32) {
     $len = sysread($sock, $data, 1);
   }
@@ -780,7 +781,11 @@ sub __try_read_sock {
       return 1;
     }
     ## EOF according to the docs
+    ## (however FreeBSD seems to return $len = 0 when read fails)
     elsif ($len == 0) {
+      if ($err and ($err == EWOULDBLOCK or $err == EAGAIN or $err == EINTR)) {
+        return 0;
+      } 
       return;
     }
     else {
