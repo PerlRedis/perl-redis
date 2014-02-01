@@ -1090,6 +1090,14 @@ environment variable.
 
 =head2 Connection Handling
 
+=head3 connect
+
+  $r->connect();
+
+Connects to the Redis server. This is done by default when the obect is
+constructed using C<new()>, unless C<no_auto_connect_on_new> has been set. See
+this option in the C<new()> constructor.
+
 =head3 quit
 
   $r->quit;

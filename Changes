@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+   * skip some tests that fail on some platforms for now
+
 1.970     2014-01-30 15:07:42 Europe/Amsterdam
 
    * fix tests breaking in some case
