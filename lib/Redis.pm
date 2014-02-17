@@ -33,7 +33,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && !$args{sock} && !$args{server}) {
+  if ($ENV{REDIS_SERVER} && !$args{sock} && ! exists $args{server}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
       $args{sock} = $ENV{REDIS_SERVER};
     }
@@ -60,7 +60,7 @@ sub new {
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
 
-  if ($args{sock}) {
+  if (exists $args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub {
         my ($self) = @_;
@@ -84,7 +84,7 @@ sub new {
     };
   }
   else {
-    $self->{server} = $args{server} || '127.0.0.1:6379';
+    $self->{server} = exists $args{server} ? $args{server} : '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
         if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
