@@ -61,7 +61,9 @@ sub new {
 
   defined $args{$_}
     and $self->{$_} = $args{$_} for 
-      qw(password on_connect name cnx_timeout write_timeout read_timeout);
+      qw(password on_connect name no_auto_connect_on_new cnx_timeout
+         write_timeout read_timeout sentinels_cnx_timeout sentinels_write_timeout
+         sentinels_read_timeout no_sentinels_list_update);
 
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
@@ -87,18 +89,19 @@ sub new {
         or croak("Need 'service' name when using 'sentinels'!");
 
       $self->{builder} = sub {
+          my ($self) = @_;
           # try to connect to a sentinel
           my $status;
           foreach my $sentinel_address (@{$self->{sentinels}}) {
               my $sentinel = eval {
                   Redis::Sentinel->new(
                       server => $sentinel_address,
-                      ( cnx_timeout   => $args{cnx_timeout}   ) x exists $args{cnx_timeout},
-                      ( read_timeout  => $args{read_timeout}  ) x exists $args{read_timeout},
-                      ( write_timeout => $args{write_timeout} ) x exists $args{write_timeout},
-                      sentinel_cnx_timeout   => ( exists $args{sentinel_cnx_timeout}   ? $args{sentinel_cnx_timeout}   : 0.1),
-                      sentinel_read_timeout  => ( exists $args{sentinel_read_timeout}  ? $args{sentinel_read_timeout}  : 1  ),
-                      sentinel_write_timeout => ( exists $args{sentinel_write_timeout} ? $args{sentinel_write_timeout} : 1  ),
+                      cnx_timeout   => (   exists $self->{sentinels_cnx_timeout}
+                                         ? $self->{sentinels_cnx_timeout}   : 0.1),
+                      read_timeout  => (   exists $self->{sentinels_read_timeout}
+                                         ? $self->{sentinels_read_timeout}  : 1  ),
+                      write_timeout => (   exists $self->{sentinels_write_timeout}
+                                         ? $self->{sentinels_write_timeout} : 1  ),
                   )
               } or next;
               my $server_address = $sentinel->get_service_address($self->{service});
@@ -112,22 +115,23 @@ sub new {
               # we found the service, set the server
               $self->{server} = $server_address;
 
-              # move the elected sentinel at the front of the list and add
-              # additional sentinels
-              my $idx = 2;
-              my %h = ( ( map { $_ => $idx++ } @{$self->{sentinels}}),
-                        $sentinel_address => 1,
-                      );
-              # TODO : make sentinel list update configurable
-              $self->{sentinels} = [
-                  ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
-                  grep { ! $h{$_}; }                      # list of unknown
-                  map { +{ @$_ }->{name}; }               # names of
-                  $sentinel->sentinel(                    # sentinels 
-                    sentinels => $self->{service}         # for this service
-                  )
-              ];
-
+              if (! $self->{no_sentinels_list_update} ) {
+                  # move the elected sentinel at the front of the list and add
+                  # additional sentinels
+                  my $idx = 2;
+                  my %h = ( ( map { $_ => $idx++ } @{$self->{sentinels}}),
+                            $sentinel_address => 1,
+                          );
+                  $self->{sentinels} = [
+                      ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
+                      grep { ! $h{$_}; }                      # list of unknown
+                      map { +{ @$_ }->{name}; }               # names of
+                      $sentinel->sentinel(                    # sentinels 
+                        sentinels => $self->{service}         # for this service
+                      )
+                  ];
+              }
+              
               return $self->_maybe_enable_timeouts(
                   IO::Socket::INET->new(
                       PeerAddr => $server_address,
@@ -915,9 +919,9 @@ __END__
 
     ## Same, but with connection, read and write timeout on the sentinel hosts
     my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'mymaster',
-                            sentinel_cnx_timeout => 0.1,
-                            sentinel_read_timeout => 1,
-                            sentinel_write_timeout => 1,
+                            sentinels_cnx_timeout => 0.1,
+                            sentinels_read_timeout => 1,
+                            sentinels_write_timeout => 1,
                           );
 
     ## Use all the regular Redis commands, they all accept a list of
@@ -1059,6 +1063,16 @@ So, do you pre-encoding or post-decoding operation yourself if needed !
     my $redis = Redis->new(sentinels => [ '127.0.0.1:12345', '127.0.0.1:23456' ],
                            service => 'mymaster');
 
+    ## Connect via a list of Sentinels to a given service
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
+
+    ## Same, but with connection, read and write timeout on the sentinel hosts
+    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'mymaster',
+                            sentinels_cnx_timeout => 0.1,
+                            sentinels_read_timeout => 1,
+                            sentinels_write_timeout => 1,
+                          );
+
 The C<< server >> parameter specifies the Redis server we should connect to,
 via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
 will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
@@ -1069,7 +1083,8 @@ UNIX domain socket where the Redis server is listening.
 
 Alternatively you can use the C<< sentinels >> parameter and the C<< service >>
 parameter to specify a list of sentinels to contact and try to get the address
-of the given service name.
+of the given service name. C<< sentinels >> must be an ArrayRef and C<< service
+>> an Str.
 
 The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
 formats are supported:
@@ -1109,7 +1124,7 @@ The C<< cnx_timeout >> option enables connection timeout. The Redis client will
 wait at most that number of seconds (can be fractional) before giving up
 connecting to a server.
 
-The C<< sentinel_cnx_timeout >> option enables sentinel connection timeout.
+The C<< sentinels_cnx_timeout >> option enables sentinel connection timeout.
 When using the sentinels feature, Redis client will wait at most that number of
 seconds (can be fractional) before giving up connecting to a sentinel.
 B<Default>: 0.1
@@ -1118,7 +1133,7 @@ The C<< read_timeout >> option enables read timeout. The Redis client will wait
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
 
-The C<< sentinel_read_timeout >> option enables sentinel read timeout. When
+The C<< sentinels_read_timeout >> option enables sentinel read timeout. When
 using the sentinels feature, the Redis client will wait at most that number of
 seconds (can be fractional) before giving up when reading from a sentinel
 server. B<Default>: 1
@@ -1127,7 +1142,7 @@ The C<< write_timeout >> option enables write timeout. The Redis client will wai
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
 
-The C<< sentinel_write_timeout >> option enables sentinel write timeout. When
+The C<< sentinels_write_timeout >> option enables sentinel write timeout. When
 using the sentinels feature, the Redis client will wait at most that number of
 seconds (can be fractional) before giving up when reading from a sentinel
 server. B<Default>: 1
@@ -1147,6 +1162,13 @@ new >> won't call C<< $obj->connect >> for you implicitly, you'll have
 to do that yourself. This is useful for figuring out how long
 connection setup takes so you can configure the C<< cnx_timeout >>
 appropriately.
+
+You can also provide C<< no_sentinels_list_update >>. By default (that is,
+without this option), when successfully contacting a sentinel server, the Redis
+client will ask it for the list of sentinels known for the given service, and
+merge it with its list of sentinels (in the C<< sentinels >> attribute). You
+can disable this behavior by setting C<< no_sentinels_list_update >> to a true
+value.
 
 You can also set a name for each connection. This can be very useful for
 debugging purposes, using the C<< CLIENT LIST >> command. To set a connection
