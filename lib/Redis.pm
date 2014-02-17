@@ -84,7 +84,7 @@ sub new {
     };
   }
   else {
-    $self->{server} = $args{server} || '127.0.0.1:6379';
+    $self->{server} = exists $args{server} ? $args{server} : '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
         if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
