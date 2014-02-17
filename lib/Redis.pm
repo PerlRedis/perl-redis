@@ -569,8 +569,7 @@ sub __on_connection {
         and $self->select($self->{current_database});
     }
 
-    # TODO: don't use each
-    while (my ($topic, $cbs) = each %{$self->{subscribers}}) {
+    foreach my $topic (CORE::keys(%{$self->{subscribers}})) {
       if ($topic =~ /(p?message):(.*)$/ ) {
         my ($key, $channel) = ($1, $2);
         if ($key eq 'message') {
