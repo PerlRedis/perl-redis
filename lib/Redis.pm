@@ -91,11 +91,15 @@ sub new {
           my $status;
           foreach my $sentinel_address (@{$self->{sentinels}}) {
               my $sentinel = eval {
-                  Redis::Sentinel->new( server => $sentinel_address,
-                                        cnx_timeout => 0.1,
-                                        read_timeout => 1,
-                                        write_timeout => 1,
-                                      ) # TODO make the timeout configurable
+                  Redis::Sentinel->new(
+                      server => $sentinel_address,
+                      ( cnx_timeout   => $args{cnx_timeout}   ) x exists $args{cnx_timeout},
+                      ( read_timeout  => $args{read_timeout}  ) x exists $args{read_timeout},
+                      ( write_timeout => $args{write_timeout} ) x exists $args{write_timeout},
+                      sentinel_cnx_timeout   => ( exists $args{sentinel_cnx_timeout}   ? $args{sentinel_cnx_timeout}   : 0.1),
+                      sentinel_read_timeout  => ( exists $args{sentinel_read_timeout}  ? $args{sentinel_read_timeout}  : 1  ),
+                      sentinel_write_timeout => ( exists $args{sentinel_write_timeout} ? $args{sentinel_write_timeout} : 1  ),
+                  )
               } or next;
               my $server_address = $sentinel->get_service_address($self->{service});
               defined $server_address
@@ -909,6 +913,13 @@ __END__
     ## Connect via a list of Sentinels to a given service
     my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
 
+    ## Same, but with connection, read and write timeout on the sentinel hosts
+    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'mymaster',
+                            sentinel_cnx_timeout => 0.1,
+                            sentinel_read_timeout => 1,
+                            sentinel_write_timeout => 1,
+                          );
+
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
     ## See http://redis.io/commands for full list
@@ -1098,13 +1109,28 @@ The C<< cnx_timeout >> option enables connection timeout. The Redis client will
 wait at most that number of seconds (can be fractional) before giving up
 connecting to a server.
 
+The C<< sentinel_cnx_timeout >> option enables sentinel connection timeout.
+When using the sentinels feature, Redis client will wait at most that number of
+seconds (can be fractional) before giving up connecting to a sentinel.
+B<Default>: 0.1
+
 The C<< read_timeout >> option enables read timeout. The Redis client will wait
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
 
+The C<< sentinel_read_timeout >> option enables sentinel read timeout. When
+using the sentinels feature, the Redis client will wait at most that number of
+seconds (can be fractional) before giving up when reading from a sentinel
+server. B<Default>: 1
+
 The C<< write_timeout >> option enables write timeout. The Redis client will wait
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
+
+The C<< sentinel_write_timeout >> option enables sentinel write timeout. When
+using the sentinels feature, the Redis client will wait at most that number of
+seconds (can be fractional) before giving up when reading from a sentinel
+server. B<Default>: 1
 
 If your Redis server requires authentication, you can use the C<< password >>
 attribute. After each established connection (at the start or when

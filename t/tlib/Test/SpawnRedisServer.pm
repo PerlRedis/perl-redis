@@ -87,7 +87,7 @@ sub sentinel {
 
   my ($fh, $fn) = File::Temp::tempfile();
 
-  $port++;
+  my $port = empty_port();
 
   my $local_port = $port;
   $params{port}
