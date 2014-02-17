@@ -2,6 +2,12 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.972     2014-02-18 00:54:01 Europe/Amsterdam
+   * Sentinel features (connections, timeouts, etc) support
+   * various bugfixes and testfixes
+   * fix network code for BSDs
+   * no_auto_connect_on_new
+
 1.971     2014-02-01 09:55:11 Europe/Paris
 
    * skip some tests that fail on some platforms for now
