@@ -15,16 +15,30 @@ use IO::Handle;
 use Fcntl qw( O_NONBLOCK F_SETFL );
 use Errno ();
 use Data::Dumper;
-use Carp qw/confess/;
+use Carp;
 use Encode;
 use Try::Tiny;
 use Scalar::Util ();
+
+use Redis::Sentinel;
 
 use constant WIN32       => $^O =~ /mswin32/i;
 use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
 
+sub _maybe_enable_timeouts {
+    my ($self, $socket) = @_;
+    $socket or return;
+    exists $self->{read_timeout} || exists $self->{write_timeout}
+      or return $socket;
+    IO::Socket::Timeout->enable_timeouts_on($socket);
+    defined $self->{read_timeout}
+      and $socket->read_timeout($self->{read_timeout});
+    defined $self->{write_timeout}
+      and $socket->write_timeout($self->{write_timeout});
+    $socket;
+}
 
 sub new {
   my ($class, %args) = @_;
@@ -33,7 +47,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && ! exists $args{sock} && ! exists $args{server}) {
+  if ($ENV{REDIS_SERVER} && ! exists $args{sock} && ! exists $args{server} && ! exists $args{sentinel}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
       $args{sock} = $ENV{REDIS_SERVER};
     }
@@ -45,18 +59,10 @@ sub new {
     }
   }
 
-  $args{password}
-    and $self->{password} = $args{password};
+  defined $args{$_}
+    and $self->{$_} = $args{$_} for 
+      qw(password on_connect name cnx_timeout write_timeout read_timeout);
 
-  $args{on_connect}
-    and $self->{on_connect} = $args{on_connect};
-
-  defined $args{name}
-    and $self->{name} = $args{name};
-
-  $self->{cnx_timeout}   = $args{cnx_timeout};
-  $self->{write_timeout} = $args{write_timeout};
-  $self->{read_timeout}  = $args{read_timeout};
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
 
@@ -64,48 +70,81 @@ sub new {
     $self->{server} = $args{sock};
     $self->{builder} = sub {
         my ($self) = @_;
-        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
-            my $socket = IO::Socket::UNIX->new(
-                Peer => $self->{server},
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            ) or return;
-            IO::Socket::Timeout->enable_timeouts_on($socket);
-            $self->{read_timeout}
-              and $socket->read_timeout($self->{read_timeout});
-            $self->{write_timeout}
-              and $socket->write_timeout($self->{write_timeout});
-            $socket;
-        } else {
+        $self->_maybe_enable_timeouts(
             IO::Socket::UNIX->new(
                 Peer => $self->{server},
                 ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ): () ),
-            );
-        }
+            )
+        );
     };
-  }
-  else {
+  } elsif ($args{sentinels}) {
+      $self->{sentinels} = $args{sentinels};
+
+      ref $self->{sentinels} eq 'ARRAY'
+        or croak("'sentinels' param must be an ArrayRef");
+
+      defined($self->{service} = $args{service})
+        or croak("Need 'service' name when using 'sentinels'!");
+
+      $self->{builder} = sub {
+          # try to connect to a sentinel
+          my $status;
+          foreach my $sentinel_address (@{$self->{sentinels}}) {
+              my $sentinel = eval {
+                  Redis::Sentinel->new( server => $sentinel_address,
+                                        cnx_timeout => 0.1,
+                                        read_timeout => 1,
+                                        write_timeout => 1,
+                                      ) # TODO make the timeout configurable
+              } or next;
+              my $server_address = $sentinel->get_service_address($self->{service});
+              defined $server_address
+                or $status ||= "Sentinels don't know this service",
+                   next;
+              $server_address eq 'IDONTKNOW'
+                and $status = "service is configured in one Sentinel, but was never reached",
+                    next;
+
+              # we found the service, set the server
+              $self->{server} = $server_address;
+
+              # move the elected sentinel at the front of the list and add
+              # additional sentinels
+              my $idx = 2;
+              my %h = ( ( map { $_ => $idx++ } @{$self->{sentinels}}),
+                        $sentinel_address => 1,
+                      );
+              # TODO : make sentinel list update configurable
+              $self->{sentinels} = [
+                  ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
+                  grep { ! $h{$_}; }                      # list of unknown
+                  map { +{ @$_ }->{name}; }               # names of
+                  $sentinel->sentinel(                    # sentinels 
+                    sentinels => $self->{service}         # for this service
+                  )
+              ];
+
+              return $self->_maybe_enable_timeouts(
+                  IO::Socket::INET->new(
+                      PeerAddr => $server_address,
+                      Proto    => 'tcp',
+                      ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
+                  )
+              );
+          }
+          croak($status || "failed to connect to any of the sentinels");
+      };
+  } else {
     $self->{server} = exists $args{server} ? $args{server} : '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
-        if (exists $self->{read_timeout} || exists $self->{write_timeout}) {
-            my $socket = IO::Socket::INET->new(
-                PeerAddr => $self->{server},
-                Proto    => 'tcp',
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            ) or return;
-            IO::Socket::Timeout->enable_timeouts_on($socket);
-            $self->{read_timeout}
-              and $socket->read_timeout($self->{read_timeout});
-            $self->{write_timeout}
-              and $socket->write_timeout($self->{write_timeout});
-            $socket;
-        } else {
+        $self->_maybe_enable_timeouts(
             IO::Socket::INET->new(
                 PeerAddr => $self->{server},
                 Proto    => 'tcp',
                 ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            );
-        }
+            )
+        );
     };
   }
 
@@ -202,7 +241,7 @@ sub __run_cmd {
     }
     : $cb || sub {
       my ($reply, $error) = @_;
-      confess "[$command] $error, " if defined $error;
+      croak "[$command] $error, " if defined $error;
       $ret = $reply;
     };
 
@@ -245,7 +284,7 @@ sub quit {
   my ($self) = @_;
   return unless $self->{sock};
 
-  confess "[quit] only works in synchronous mode, "
+  croak "[quit] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   try {
@@ -262,14 +301,14 @@ sub shutdown {
   my ($self) = @_;
   $self->__is_valid_command('SHUTDOWN');
 
-  confess "[shutdown] only works in synchronous mode, "
+  croak "[shutdown] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   return unless $self->{sock};
 
   $self->wait_all_responses;
   $self->__send_command('SHUTDOWN');
-  close(delete $self->{sock}) || confess("Can't close socket: $!");
+  close(delete $self->{sock}) || croak("Can't close socket: $!");
 
   return 1;
 }
@@ -278,7 +317,7 @@ sub ping {
   my $self = shift;
   $self->__is_valid_command('PING');
 
-  confess "[ping] only works in synchronous mode, "
+  croak "[ping] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
   return unless exists $self->{sock};
@@ -377,7 +416,7 @@ sub wait_for_messages {
                       ## timeout
       
           my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
-          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
+          croak "[WAIT_FOR_MESSAGES] $error, " if defined $error;
           $self->__process_pubsub_msg($reply);
           $count++;
         }
@@ -403,7 +442,7 @@ sub __subscription_cmd {
   my $command = shift;
   my $cb      = pop;
 
-  confess("Missing required callback in call to $command(), ")
+  croak("Missing required callback in call to $command(), ")
     unless ref($cb) eq 'CODE';
 
   $self->wait_all_responses;
@@ -454,7 +493,7 @@ sub __process_subscription_changes {
 
   while (%$expected) {
     my ($m, $error) = $self->__read_response($cmd);
-    confess "[$cmd] $error, " if defined $error;
+    croak "[$cmd] $error, " if defined $error;
 
     ## Deal with pending PUBLISH'ed messages
     if ($m->[0] =~ /^p?message$/) {
@@ -497,7 +536,7 @@ sub __process_pubsub_msg {
 sub __is_valid_command {
   my ($self, $cmd) = @_;
 
-  confess("Cannot use command '$cmd' while in SUBSCRIBE mode, ")
+  croak("Cannot use command '$cmd' while in SUBSCRIBE mode, ")
     if $self->{is_subscriber};
 }
 
@@ -536,13 +575,13 @@ sub __build_sock {
   my ($self) = @_;
 
   $self->{sock} = $self->{builder}->($self)
-    || confess("Could not connect to Redis server at $self->{server}: $!");
+    || croak("Could not connect to Redis server at $self->{server}: $!");
 
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
       $self->{reconnect} = 0;
-      confess("Redis server refused password");
+      croak("Redis server refused password");
     };
   }
 
@@ -576,12 +615,12 @@ sub __on_connection {
             $self->__send_command('subscribe', $channel);
             my (undef, $error) = $self->__read_response('subscribe');
             defined $error
-              and confess "[subscribe] $error";
+              and croak "[subscribe] $error";
         } else {
             $self->__send_command('psubscribe', $channel);
             my (undef, $error) = $self->__read_response('psubscribe');
             defined $error
-              and confess "[psubscribe] $error";
+              and croak "[psubscribe] $error";
         }
       }
     }
@@ -636,7 +675,7 @@ sub __send_command {
 sub __read_response {
   my ($self, $cmd, $collect_errors) = @_;
 
-  confess("Not connected to any server") unless $self->{sock};
+  croak("Not connected to any server") unless $self->{sock};
 
   local $/ = "\r\n";
 
@@ -673,14 +712,14 @@ sub __read_response_r {
         push @list, \@nested;
       }
       else {
-        confess "[$command] $nested[1], " if defined $nested[1];
+        croak "[$command] $nested[1], " if defined $nested[1];
         push @list, $nested[0];
       }
     }
     return \@list, undef;
   }
   else {
-    confess "unknown answer type: $type ($result), ";
+    croak "unknown answer type: $type ($result), ";
   }
 }
 
@@ -689,7 +728,7 @@ sub __read_line {
   my $sock = $self->{sock};
 
   my $data = <$sock>;
-  confess("Error while reading from Redis server: $!")
+  croak("Error while reading from Redis server: $!")
     unless defined $data;
 
   chomp $data;
@@ -706,9 +745,9 @@ sub __read_len {
   my $offset = 0;
   while ($len) {
     my $bytes = read $self->{sock}, $data, $len, $offset;
-    confess("Error while reading from Redis server: $!")
+    croak("Error while reading from Redis server: $!")
       unless defined $bytes;
-    confess("Redis server closed connection") unless $bytes;
+    croak("Redis server closed connection") unless $bytes;
 
     $offset += $bytes;
     $len -= $bytes;
@@ -788,7 +827,7 @@ sub __try_read_sock {
       return;
     }
     else {
-      confess("read()/sysread() are really bonkers on $^O, return negative values ($len)");
+      croak("read()/sysread() are really bonkers on $^O, return negative values ($len)");
     }
   }
 
@@ -803,7 +842,7 @@ sub __try_read_sock {
   return if $err == 0;
 
   ## For everything else, there is Mastercard...
-  confess("Unexpected error condition $err/$^O, please report this as a bug");
+  croak("Unexpected error condition $err/$^O, please report this as a bug");
 }
 
 
@@ -866,6 +905,9 @@ __END__
 
     ## Enable write timeout (in seconds)
     my $redis = Redis->new(write_timeout => 1.2);
+
+    ## Connect via a list of Sentinels to a given service
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
 
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
@@ -1003,6 +1045,9 @@ So, do you pre-encoding or post-decoding operation yourself if needed !
     my $r = Redis->new( name => 'my_connection_name' );
     my $r = Redis->new( name => sub { "cache-for-$$" });
 
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345', '127.0.0.1:23456' ],
+                           service => 'mymaster');
+
 The C<< server >> parameter specifies the Redis server we should connect to,
 via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
 will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
@@ -1010,6 +1055,10 @@ those options are present, it defaults to '127.0.0.1:6379'.
 
 Alternatively you can use the C<< sock >> parameter to specify the path of the
 UNIX domain socket where the Redis server is listening.
+
+Alternatively you can use the C<< sentinels >> parameter and the C<< service >>
+parameter to specify a list of sentinels to contact and try to get the address
+of the given service name.
 
 The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
 formats are supported:
@@ -1705,6 +1754,10 @@ Ulrich Habel
 =item *
 
 Ivan Kruglov
+
+=item *
+
+Steffen Mueller <smueller@cpan.org>
 
 =back
 
