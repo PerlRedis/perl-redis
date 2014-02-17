@@ -33,7 +33,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && !$args{sock} && ! exists $args{server}) {
+  if ($ENV{REDIS_SERVER} && ! exists $args{sock} && ! exists $args{server}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
       $args{sock} = $ENV{REDIS_SERVER};
     }
