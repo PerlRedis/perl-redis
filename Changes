@@ -2,6 +2,10 @@ Revision history for Redis
 
 {{$NEXT}}
 
+   * use new network code from Ivan Kruglov
+   * fix sentinel tests
+   * fix #81: doc for 'every' option
+
 1.972     2014-02-18 00:54:01 Europe/Amsterdam
    * Sentinel features (connections, timeouts, etc) support
    * various bugfixes and testfixes
