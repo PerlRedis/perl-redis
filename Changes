@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.973_01  2014-04-26 18:00:31 Europe/Amsterdam
+
    * use new network code from Ivan Kruglov
    * fix sentinel tests
    * fix #81: doc for 'every' option
