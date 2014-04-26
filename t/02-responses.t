@@ -18,6 +18,7 @@ ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
 
 sub r {
   $r->{sock} = IO::String->new(join('', map {"$_\r\n"} @_));
+  $r->{__buf} = '';
 }
 
 ## -ERR responses
