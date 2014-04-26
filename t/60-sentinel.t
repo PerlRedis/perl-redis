@@ -4,6 +4,7 @@ use warnings;
 use strict;
 use Test::More;
 use Test::Fatal;
+use Test::Deep;
 use Redis;
 use Redis::Sentinel;
 use lib 't/tlib';
@@ -37,9 +38,7 @@ sleep 3;
     my $sentinel = Redis::Sentinel->new(server => $sentinel_addr);
     my $got = ($sentinel->get_masters())[0];
 
-    delete @{$got}{qw(last-ok-ping-reply last-ping-reply runid role-reported-time info-refresh pending-commands)};
-
-    is_deeply($got, { name => 'mymaster',
+    cmp_deeply($got, superhashof({ name => 'mymaster',
                       ip => '127.0.0.1',
                       port => $redis_port,
                       flags => 'master',
@@ -48,7 +47,7 @@ sleep 3;
                       'num-slaves' => 0,
                       'num-other-sentinels' => 1,
                       quorum => 2,
-                    },
+                    }),
               "sentinel has proper config of its master"
              );
 }
