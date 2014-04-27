@@ -808,8 +808,19 @@ sub __try_read_sock {
   my $data = '';
 
   while (1) {
-      my $res = recv($sock, $data, 1, MSG_PEEK | MSG_DONTWAIT);
-      my $err = 0 + $!;
+      # WIN32 doesn't support MSG_DONTWAIT,
+      # need to swith fh to nonblockng mode manually.
+      # For Unix still use MSG_DONTWAIT because of fewer syscalls
+      my ($res, $err);
+      if (WIN32) {
+          __fh_nonblocking_win32($sock, 1);
+          $res = recv($sock, $data, 1, MSG_PEEK);
+          $err = 0 + $!;
+          __fh_nonblocking_win32($sock, 0);
+      } else {
+          $res = recv($sock, $data, 1, MSG_PEEK | MSG_DONTWAIT);
+          $err = 0 + $!;
+      }
 
       if (defined $res) {
         ## have data
@@ -830,6 +841,11 @@ sub __try_read_sock {
       ## For everything else, there is Mastercard...
       croak("Unexpected error condition $err/$^O, please report this as a bug");
   }
+}
+
+## Copied from AnyEvent::Util
+sub __fh_nonblocking_win32 {
+    ioctl $_[0], 0x8004667e, pack "L", $_[1];
 }
 
 ##########################
