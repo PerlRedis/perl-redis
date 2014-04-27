@@ -373,8 +373,8 @@ sub wait_for_messages {
           or $self->__throw_reconnect('EOF from server');
 
         do {
-          my ($reply, $error) = $self->__read_response('wait_for_messages');
-          confess "[wait_for_messages] $error, " if defined $error;
+          my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
+          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
           $self->__process_pubsub_msg($reply);
           $count++;
 
