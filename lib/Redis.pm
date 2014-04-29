@@ -422,7 +422,7 @@ sub wait_for_messages {
 
         do {
           my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
-          confess "[WAIT_FOR_MESSAGES] $error, " if defined $error;
+          croak "[WAIT_FOR_MESSAGES] $error, " if defined $error;
           $self->__process_pubsub_msg($reply);
           $count++;
 
