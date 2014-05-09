@@ -247,7 +247,7 @@ sub __with_reconnect {
         or die $_;
 
       $self->{__inside_transaction} || $self->{__inside_watch}
-        and die "reconnect disabled inside transaction or watch";
+        and croak("reconnect disabled inside transaction or watch");
 
       $self->connect;
       $cb->();
