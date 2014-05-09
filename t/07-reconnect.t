@@ -8,6 +8,7 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
+use Net::EmptyPort qw(empty_port);
 
 my ($c, $srv) = redis(timeout => 1);
 END { $c->() if $c }
@@ -99,6 +100,26 @@ subtest "Reconnect gives up after timeout" => sub {
   ok(tv_interval($t0) > 3, '... minimum value for the reconnect reached');
 };
 
+subtest "Reconnect during transaction" => sub {
+  $c->();    ## Make previous server is dead
+
+  my $port = empty_port();
+  ok(($c, $srv) = redis(port => $port, timeout => 1), "spawn redis on port $port");
+  ok(my $r = Redis->new(reconnect => 3, server => $srv), 'connected to our test redis-server');
+
+  ok($r->flushdb, 'delete all keys');
+  ok($r->multi(), 'start transacion');
+  ok($r->set('reconnect_1' => 1), 'set first key');
+
+  $c->();
+  ok(($c, $srv) = redis(port => $port, timeout => 1), "respawn redis on port $port");
+
+  ok($r->set('reconnect_2' => 2), 'set second key');
+  like(exception { $r->exec() }, qr{EXEC without MULTI}, 'execute transaction');
+
+  is($r->exists('reconnect_1'), 0, 'key "reconnect_1" should not exist');
+  is($r->exists('reconnect_2'), 0, 'key "reconnect_2" should not exist');
+};
 
 done_testing();
 
