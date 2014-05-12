@@ -207,7 +207,19 @@ sub __std_cmd {
   # If this is an EXEC command, in pipelined mode, and one of the commands
   # executed in the transaction yields an error, we must collect all errors
   # from that command, rather than throwing an exception immediately.
-  my $collect_errors = $cb && uc($command) eq 'EXEC';
+  my $uc_command = uc($command);
+  my $collect_errors = $cb && $uc_command eq 'EXEC';
+
+  if ($uc_command eq 'MULTI') {
+      $self->{__inside_transaction} = 1;
+  } elsif ($uc_command eq 'EXEC' || $uc_command eq 'DISCARD') {
+      delete $self->{__inside_transaction};
+      delete $self->{__inside_watch};
+  } elsif ($uc_command eq 'WATCH') {
+      $self->{__inside_watch} = 1;
+  } elsif ($uc_command eq 'UNWATCH') {
+      delete $self->{__inside_watch};
+  }
 
   ## Fast path, no reconnect;
   $self->{reconnect}
@@ -233,6 +245,9 @@ sub __with_reconnect {
     catch {
       ref($_) eq 'Redis::X::Reconnect'
         or die $_;
+
+      $self->{__inside_transaction} || $self->{__inside_watch}
+        and croak("reconnect disabled inside transaction or watch");
 
       $self->connect;
       $cb->();
@@ -554,6 +569,8 @@ sub __is_valid_command {
 sub connect {
   my ($self) = @_;
   delete $self->{sock};
+  delete $self->{__inside_watch};
+  delete $self->{__inside_transaction};
 
   # Suppose we have at least one command response pending, but we're about
   # to reconnect.  The new connection will never get a response to any of
@@ -604,6 +621,8 @@ sub __build_sock {
 sub __close_sock {
   my ($self) = @_;
   $self->{__buf} = '';
+  delete $self->{__inside_watch};
+  delete $self->{__inside_transaction};
   return close(delete $self->{sock});
 }
 
