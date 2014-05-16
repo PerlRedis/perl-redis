@@ -4,6 +4,8 @@ Revision history for Redis
 
 1.974     2014-05-16 21:42:48 Europe/Amsterdam
 
+   * released as stable version, no change
+
 1.973_04  2014-05-12 22:53:06 Europe/Amsterdam
 
    * release again, last one was screwed up.
