@@ -55,7 +55,7 @@ and C<service>, which are silently ignored.
 
 =head1 METHODS
 
-All the methods of the C<Redis> package are supported, plus the aditional following methods:
+All the methods of the C<Redis> package are supported, plus the additional following methods:
 
 =head2 get_service_address
 
