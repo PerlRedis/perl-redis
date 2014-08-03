@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+   * Clarification about reconnect and read_timeout (#89)
+   * Test::CPAN::Meta (et al.) are required even if unused (#92)
+
 1.974     2014-05-16 21:42:48 Europe/Amsterdam
 
    * released as stable version, no change
