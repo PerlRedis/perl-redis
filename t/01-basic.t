@@ -47,7 +47,7 @@ cmp_ok($o->get('foo'), 'eq', 'baz', 'get foo = baz');
 my $euro = "\x{20ac}";
 ok ord($euro) > 255, "assume \$eur is wide character";
 ok ! eval { $o->set(utf8 => $euro); 1 }, "accepts only binary data, thus crashes on strings with characters > 255";
-like "$@", qr/Wide.*syswrite/i, ".. and crashes on syswrite call";
+like "$@", qr/command sent is not an octet sequence in the native encoding/i, ".. and crashes on syswrite call";
 
 ok ! defined $o->get('utf8'), ".. and does not write actual data";
 

@@ -685,6 +685,8 @@ sub __send_command {
   my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
   for my $bin (@cmd, @_) {
+    utf8::downgrade($bin, 1)
+      or croak "command sent is not an octet sequence in the native encoding (Latin-1). Consider using debug mode to see the command itself.";
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
