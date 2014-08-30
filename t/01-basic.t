@@ -45,9 +45,11 @@ ok($o->set(foo => 'baz'), 'set foo => baz');
 cmp_ok($o->get('foo'), 'eq', 'baz', 'get foo = baz');
 
 my $euro = "\x{20ac}";
-ok($o->set(utf8 => $euro), 'set utf8');
-use Encode;
-cmp_ok(Encode::decode_utf8($o->get('utf8')), 'eq', $euro, 'get utf8');
+ok ord($euro) > 255, "assume \$eur is wide character";
+ok ! eval { $o->set(utf8 => $euro); 1 }, "accepts only binary data, thus crashes on strings with characters > 255";
+like "$@", qr/Wide.*syswrite/i, ".. and crashes on syswrite call";
+
+ok ! defined $o->get('utf8'), ".. and does not write actual data";
 
 ok($o->set('test-undef' => 42), 'set test-undef');
 ok($o->exists('test-undef'), 'exists undef');
