@@ -16,7 +16,6 @@ use Fcntl qw( O_NONBLOCK F_SETFL );
 use Errno ();
 use Data::Dumper;
 use Carp;
-use Encode;
 use Try::Tiny;
 use Scalar::Util ();
 
@@ -686,8 +685,6 @@ sub __send_command {
   my $n_elems = scalar(@_) + scalar(@cmd);
   my $buf     = "\*$n_elems\r\n";
   for my $bin (@cmd, @_) {
-    # force to consider inputs as bytes strings.
-    Encode::_utf8_off($bin);
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
@@ -1043,11 +1040,10 @@ useful for Redis transactions; see L</exec>.
 =head1 ENCODING
 
 There is no encoding feature anymore, it has been deprecated and finally
-removed. This module consider that any data sent to the Redis server is a raw
-octets string, even if it has utf8 flag set. And it doesn't do anything when
-getting data from the Redis server.
+removed. This module consider that any data sent to the Redis server is a binary data.
+And it doesn't do anything when getting data from the Redis server.
 
-So, do you pre-encoding or post-decoding operation yourself if needed !
+So, if you are working with character strings, you should pre-encode or post-decode it if needed !
 
 =head1 METHODS
 
