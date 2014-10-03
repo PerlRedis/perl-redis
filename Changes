@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.976     2014-10-03 15:05:58 Europe/Amsterdam
+
 1.975     2014-08-03 20:50:25 Europe/Amsterdam
 
    * Clarification about reconnect and read_timeout (#89)
