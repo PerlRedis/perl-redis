@@ -64,7 +64,7 @@ sub new {
     and $self->{$_} = $args{$_} for 
       qw(password on_connect name no_auto_connect_on_new cnx_timeout
          write_timeout read_timeout sentinels_cnx_timeout sentinels_write_timeout
-         sentinels_read_timeout no_sentinels_list_update);
+         sentinels_read_timeout no_sentinels_list_update wait_until_loaded);
 
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
@@ -610,6 +610,15 @@ sub __build_sock {
       $self->{reconnect} = 0;
       croak("Redis server refused password");
     };
+  }
+
+  ## WIP: not sure if we need to do this before AUTH above...
+  ## It all depends if AUTH also returns LOADING (theoretically, there
+  ## is no need, password is configuration, not DB)
+  if ($self->{wait_until_loaded}) {
+    local $@;
+    require Time::HiRes;
+    while ( !eval{ $self->exists("42"); 1 } && $@ =~ m/LOADING/ ) { Time::HiRes::usleep(100_000); }
   }
 
   $self->__on_connection;
@@ -1160,6 +1169,16 @@ You can also provide a code reference that will be immediately after each
 successful connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
+
+If the Redis server has just started, it will not be available to
+execute your commands until it ends loading the database snapshot from
+disk into memory. On those situations, most commands will return an error.
+You can use the option C<< wait_until_loaded >> to force Redis.pm to not
+return from connect until the server has finished loading.
+
+Note: for now, due to the lack of support form the redis-server to wait
+until the DB is loaded, this command is implemented using a test-sleep-loop,
+wasting your CPU.
 
 You can also provide C<< no_auto_connect_on_new >> in which case C<<
 new >> won't call C<< $obj->connect >> for you implicitly, you'll have
