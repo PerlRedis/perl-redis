@@ -246,7 +246,10 @@ sub __with_reconnect {
         or die $_;
 
       $self->{__inside_transaction} || $self->{__inside_watch}
-        and croak("reconnect disabled inside transaction or watch");
+        and croak("failed to reconnect inside a transaction or watch");
+
+      scalar @{$self->{queue} || []}
+        and croak("failed to reconnect while responses are pending");
 
       $self->connect;
       $cb->();

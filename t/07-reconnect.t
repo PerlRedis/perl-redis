@@ -38,9 +38,11 @@ subtest 'Reconnection discards pending commands' => sub {
   $r->dbsize(sub { $processed_pending++ });
 
   ok(close(delete $r->{sock}), 'evilly close connection to the server');
-  ok($r->set(foo => 'bar'), 'send command with reconnect');
+  like(exception { $r->set(foo => 'bar') }, qr{failed to reconnect while responses are pending},
+       'send command with reconnect should raise an exception',);
 
-  is($processed_pending, 0, 'pending command discarded on reconnect');
+  is($processed_pending, 0, 'pending command never arrived');
+
 };
 
 
@@ -113,7 +115,7 @@ subtest "Reconnect during transaction" => sub {
   $c->();
   ok(($c, $srv) = redis(port => $port, timeout => 1), "respawn redis on port $port");
 
-  like(exception { $r->set('reconnect_2' => 2) }, qr{reconnect disabled inside transaction}, 'set second key');
+  like(exception { $r->set('reconnect_2' => 2) }, qr{failed to reconnect inside a transaction}, 'set second key');
 
   $r->connect(); #reconnect
   is($r->exists('reconnect_1'), 0, 'key "reconnect_1" should not exist');
