@@ -129,6 +129,24 @@ subtest 'basics' => sub {
   is(exception { $sub->info }, undef, 'Other commands ok after we leave subscriber_mode');
 };
 
+subtest 'zero_topic' => sub {
+  my %got;
+  my $pub = Redis->new(server => $srv);
+  my $sub = Redis->new(server => $srv);
+
+  my $db_size = -1;
+  $sub->dbsize(sub { $db_size = $_[0] });
+
+  my $bad_topic = '0';
+
+  my $sub_cb = sub { my ($v, $t, $s) = @_; $got{$s} = "$v:$t" };
+  $sub->psubscribe("$bad_topic*", 'xx', $sub_cb);
+  is($pub->publish($bad_topic, 'vBAD'), 1, "Delivered to 1 subscriber of topic '$bad_topic'");
+
+  is($sub->wait_for_messages(1), 1, '... yep, got the expected 1 message');
+  cmp_deeply(\%got, { "$bad_topic*" => "vBAD:$bad_topic" }, "... for the expected topic, '$bad_topic'");
+};
+
 
 subtest 'server is killed while waiting for subscribe' => sub {
   my ($another_kill_switch, $another_server) = redis();

@@ -541,7 +541,7 @@ sub __process_pubsub_msg {
   my $sub   = $m->[1];
   my $cbid  = "$m->[0]:$sub";
   my $data  = pop @$m;
-  my $topic = $m->[2] || $sub;
+  my $topic = defined $m->[2] ? $m->[2] : $sub;
 
   if (!exists $subs->{$cbid}) {
     warn "Message for topic '$topic' ($cbid) without expected callback, ";
