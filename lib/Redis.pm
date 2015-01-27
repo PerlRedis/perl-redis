@@ -1051,11 +1051,9 @@ And it doesn't do anything when getting data from the Redis server.
 
 So, if you are working with character strings, you should pre-encode or post-decode it if needed !
 
-=head1 METHODS
+=head1 CONSTRUCTOR
 
-=head2 Constructors
-
-=head3 new
+=head2 new
 
     my $r = Redis->new; # $ENV{REDIS_SERVER} or 127.0.0.1:6379
 
@@ -1080,6 +1078,8 @@ So, if you are working with character strings, you should pre-encode or post-dec
                             sentinels_read_timeout => 1,
                             sentinels_write_timeout => 1,
                           );
+
+=head3 C<< server >>
 
 The C<< server >> parameter specifies the Redis server we should connect to,
 via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
@@ -1117,6 +1117,8 @@ tcp:127.0.0.1:11011
 
 =back
 
+=head3 C<< reconnect >>, C<< every >>
+
 The C<< reconnect >> option enables auto-reconnection mode. If we cannot
 connect to the Redis server, or if a network write fails, we enter retry mode.
 We will try a new connection every C<< every >> microseconds (1 ms by
@@ -1128,7 +1130,8 @@ a retry until the new command is sent.
 If we cannot re-establish a connection after C<< reconnect >> seconds, an
 exception will be thrown.
 
-The C<< safe_reconnect >> option makes sure that reconnection is only attempted
+=head3 C<< safe_reconnect >>
+C<< safe_reconnect >> option makes sure that reconnection is only attempted
 when no pending command is ongoing. For instance, if you're doing
 C<$redis->incr('key')>, and if the server properly understood and processed the
 command, but the network connection is dropped just before the server replies :
@@ -1140,42 +1143,60 @@ option to a true value. In this case, the client will reconnect only if no
 request is pending. Otherwise it will die with the message: C<reconnect
 disabled while responses are pending and safe reconnect mode enabled>.
 
+=head3 C<< cnx_timeout >>
+
 The C<< cnx_timeout >> option enables connection timeout. The Redis client will
 wait at most that number of seconds (can be fractional) before giving up
 connecting to a server.
+
+=head3 C<< sentinels_cnx_timeout >>
 
 The C<< sentinels_cnx_timeout >> option enables sentinel connection timeout.
 When using the sentinels feature, Redis client will wait at most that number of
 seconds (can be fractional) before giving up connecting to a sentinel.
 B<Default>: 0.1
 
+=head3 C<< read_timeout >>
+
 The C<< read_timeout >> option enables read timeout. The Redis client will wait
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
+
+=head3 C<< sentinels_read_timeout >>
 
 The C<< sentinels_read_timeout >> option enables sentinel read timeout. When
 using the sentinels feature, the Redis client will wait at most that number of
 seconds (can be fractional) before giving up when reading from a sentinel
 server. B<Default>: 1
 
+=head3 C<< write_timeout >>
+
 The C<< write_timeout >> option enables write timeout. The Redis client will wait
 at most that number of seconds (can be fractional) before giving up when
 reading from the server.
+
+=head3 C<< sentinels_write_timeout >>
 
 The C<< sentinels_write_timeout >> option enables sentinel write timeout. When
 using the sentinels feature, the Redis client will wait at most that number of
 seconds (can be fractional) before giving up when reading from a sentinel
 server. B<Default>: 1
 
+=head3 C<< password >>
+
 If your Redis server requires authentication, you can use the C<< password >>
 attribute. After each established connection (at the start or when
 reconnecting), the Redis C<< AUTH >> command will be send to the server. If the
 password is wrong, an exception will be thrown and reconnect will be disabled.
 
+=head3 C<< on_connect >>
+
 You can also provide a code reference that will be immediately after each
 successful connection. The C<< on_connect >> attribute is used to provide the
 code reference, and it will be called with the first parameter being the Redis
 object.
+
+=head3 C<< no_auto_connect_on_new >>
 
 You can also provide C<< no_auto_connect_on_new >> in which case C<<
 new >> won't call C<< $obj->connect >> for you implicitly, you'll have
@@ -1183,12 +1204,16 @@ to do that yourself. This is useful for figuring out how long
 connection setup takes so you can configure the C<< cnx_timeout >>
 appropriately.
 
+=head3 C<< no_sentinels_list_update >>
+
 You can also provide C<< no_sentinels_list_update >>. By default (that is,
 without this option), when successfully contacting a sentinel server, the Redis
 client will ask it for the list of sentinels known for the given service, and
 merge it with its list of sentinels (in the C<< sentinels >> attribute). You
 can disable this behavior by setting C<< no_sentinels_list_update >> to a true
 value.
+
+=head3 C<< name >>
 
 You can also set a name for each connection. This can be very useful for
 debugging purposes, using the C<< CLIENT LIST >> command. To set a connection
@@ -1204,35 +1229,37 @@ details. This feature is safe to use with all versions of Redis servers. If C<<
 CLIENT SETNAME >> support is not available (Redis servers 2.6.9 and above
 only), the name parameter is ignored.
 
+=head3 C<< debug >>
+
 The C<< debug >> parameter enables debug information to STDERR, including all
 interactions with the server. You can also enable debug with the C<REDIS_DEBUG>
 environment variable.
 
 
-=head2 Connection Handling
+=head1 CONNECTION HANDLING
 
-=head3 connect
+=head2 connect
 
-  $r->connect();
+  $r->connect;
 
 Connects to the Redis server. This is done by default when the obect is
 constructed using C<new()>, unless C<no_auto_connect_on_new> has been set. See
 this option in the C<new()> constructor.
 
-=head3 quit
+=head2 quit
 
   $r->quit;
 
 Closes the connection to the server. The C<quit> method does not support
 pipelined operation.
 
-=head3 ping
+=head2 ping
 
   $r->ping || die "no server?";
 
 The C<ping> method does not support pipelined operation.
 
-=head3 client_list
+=head2 client_list
 
   @clients = $r->client_list;
 
@@ -1240,14 +1267,14 @@ Returns list of clients connected to the server. See L<< CLIENT LIST
 documentation|http://redis.io/commands/client-list >> for a description of the
 fields and their meaning.
 
-=head3 client_getname
+=head2 client_getname
 
   my $connection_name = $r->client_getname;
 
 Returns the name associated with this connection. See L</client_setname> or the
 C<< name >> parameter to L</new> for ways to set this name.
 
-=head3 client_setname
+=head2 client_setname
 
   $r->client_setname('my_connection_name');
 
@@ -1255,14 +1282,14 @@ Sets this connection name. See the L<CLIENT SETNAME
 documentation|http://redis.io/commands/client-setname> for restrictions on the
 connection name string. The most important one: no spaces.
 
-=head2 Pipeline management
+=head1 PIPELINE MANAGEMENT
 
-=head3 wait_all_responses
+=head2 wait_all_responses
 
 Waits until all pending pipelined responses have been received, and invokes the
 pipeline callback for each one.  See L</PIPELINING>.
 
-=head3 wait_one_response
+=head2 wait_one_response
 
 Waits until the first pending pipelined response has been received, and invokes
 its callback.  See L</PIPELINING>.
@@ -1277,15 +1304,15 @@ now.
 You can L<follow the discussion to see the open issues with
 this|https://github.com/melo/perl-redis/issues/17>.
 
-=head3 multi
+=head2 multi
 
   $r->multi;
 
-=head3 discard
+=head2 discard
 
   $r->discard;
 
-=head3 exec
+=head2 exec
 
   my @individual_replies = $r->exec;
 
@@ -1295,50 +1322,50 @@ $error]> pairs.  This means that you can accurately detect errors yielded by
 any command in the transaction, and without any exceptions being thrown.
 
 
-=head2 Commands operating on string values
+=head1 COMMANDS OPERATING ON STRING VALUES
 
-=head3 set
+=head2 set
 
   $r->set( foo => 'bar' );
 
   $r->setnx( foo => 42 );
 
-=head3 get
+=head2 get
 
   my $value = $r->get( 'foo' );
 
-=head3 mget
+=head2 mget
 
   my @values = $r->mget( 'foo', 'bar', 'baz' );
 
-=head3 incr
+=head2 incr
 
   $r->incr('counter');
 
   $r->incrby('tripplets', 3);
 
-=head3 decr
+=head2 decr
 
   $r->decr('counter');
 
   $r->decrby('tripplets', 3);
 
-=head3 exists
+=head2 exists
 
   $r->exists( 'key' ) && print "got key!";
 
-=head3 del
+=head2 del
 
   $r->del( 'key' ) || warn "key doesn't exist";
 
-=head3 type
+=head2 type
 
   $r->type( 'key' ); # = string
 
 
-=head2 Commands operating on the key space
+=head1 COMMANDS OPERATING ON THE KEY SPACE
 
-=head3 keys
+=head2 keys
 
   my @keys = $r->keys( '*glob_pattern*' );
   my $keys = $r->keys( '*glob_pattern*' ); # count of matching keys
@@ -1348,146 +1375,146 @@ matching keys (not an array ref of matching keys as you might expect).  This
 does not apply in pipelined mode: assuming the server returns a list of keys,
 as expected, it is always passed to the pipeline callback as an array ref.
 
-=head3 randomkey
+=head2 randomkey
 
   my $key = $r->randomkey;
 
-=head3 rename
+=head2 rename
 
   my $ok = $r->rename( 'old-key', 'new-key', $new );
 
-=head3 dbsize
+=head2 dbsize
 
   my $nr_keys = $r->dbsize;
 
 
-=head2 Commands operating on lists
+=head1 COMMANDS OPERATING ON LISTS
 
 See also L<Redis::List> for tie interface.
 
-=head3 rpush
+=head2 rpush
 
   $r->rpush( $key, $value );
 
-=head3 lpush
+=head2 lpush
 
   $r->lpush( $key, $value );
 
-=head3 llen
+=head2 llen
 
   $r->llen( $key );
 
-=head3 lrange
+=head2 lrange
 
   my @list = $r->lrange( $key, $start, $end );
 
-=head3 ltrim
+=head2 ltrim
 
   my $ok = $r->ltrim( $key, $start, $end );
 
-=head3 lindex
+=head2 lindex
 
   $r->lindex( $key, $index );
 
-=head3 lset
+=head2 lset
 
   $r->lset( $key, $index, $value );
 
-=head3 lrem
+=head2 lrem
 
   my $modified_count = $r->lrem( $key, $count, $value );
 
-=head3 lpop
+=head2 lpop
 
   my $value = $r->lpop( $key );
 
-=head3 rpop
+=head2 rpop
 
   my $value = $r->rpop( $key );
 
 
-=head2 Commands operating on sets
+=head1 COMMANDS OPERATING ON SETS
 
-=head3 sadd
+=head2 sadd
 
   my $ok = $r->sadd( $key, $member );
 
-=head3 scard
+=head2 scard
 
   my $n_elements = $r->scard( $key );
 
-=head3 sdiff
+=head2 sdiff
 
   my @elements = $r->sdiff( $key1, $key2, ... );
   my $elements = $r->sdiff( $key1, $key2, ... ); # ARRAY ref
 
-=head3 sdiffstore
+=head2 sdiffstore
 
   my $ok = $r->sdiffstore( $dstkey, $key1, $key2, ... );
 
-=head3 sinter
+=head2 sinter
 
   my @elements = $r->sinter( $key1, $key2, ... );
   my $elements = $r->sinter( $key1, $key2, ... ); # ARRAY ref
 
-=head3 sinterstore
+=head2 sinterstore
 
   my $ok = $r->sinterstore( $dstkey, $key1, $key2, ... );
 
-=head3 sismember
+=head2 sismember
 
   my $bool = $r->sismember( $key, $member );
 
-=head3 smembers
+=head2 smembers
 
   my @elements = $r->smembers( $key );
   my $elements = $r->smembers( $key ); # ARRAY ref
 
-=head3 smove
+=head2 smove
 
   my $ok = $r->smove( $srckey, $dstkey, $element );
 
-=head3 spop
+=head2 spop
 
   my $element = $r->spop( $key );
 
-=head3 srandmemeber
+=head2 srandmemeber
 
   my $element = $r->srandmember( $key );
 
-=head3 srem
+=head2 srem
 
   $r->srem( $key, $member );
 
-=head3 sunion
+=head2 sunion
 
   my @elements = $r->sunion( $key1, $key2, ... );
   my $elements = $r->sunion( $key1, $key2, ... ); # ARRAY ref
 
-=head3 sunionstore
+=head2 sunionstore
 
   my $ok = $r->sunionstore( $dstkey, $key1, $key2, ... );
 
-=head2 Commands operating on hashes
+=head1 COMMANDS OPERATING ON HASHES
 
 Hashes in Redis cannot be nested as in perl, if you want to store a nested
 hash, you need to serialize the hash first. If you want to have a named
 hash, you can use Redis-hashes. You will find an example in the tests
 of this module t/01-basic.t
 
-=head3 hset
+=head2 hset
 
 Sets the value to a key in a hash.
 
   $r->hset('hashname', $key => $value); ## returns true on success
 
-=head3 hget
+=head2 hget
   
 Gets the value to a key in a hash.
 
   my $value = $r->hget('hashname', $key);
 
-=head3 hexists
+=head2 hexists
   
   if($r->hexists('hashname', $key) {
     ## do something, the key exists
@@ -1496,7 +1523,7 @@ Gets the value to a key in a hash.
     ## the key does not exist
   }
 
-=head3 hdel
+=head2 hdel
 
 Deletes a key from a hash
 
@@ -1507,7 +1534,7 @@ Deletes a key from a hash
     ## oops
   }
 
-=head3 hincrby
+=head2 hincrby
 
 Adds an integer to a value. The integer is signed, so a negative integer decrements.
   
@@ -1520,7 +1547,7 @@ Adds an integer to a value. The integer is signed, so a negative integer decreme
   $increment = -1;
   $r->hincrby('hashname', $key => $increment); ## value -> 6
 
-=head3 hsetnx
+=head2 hsetnx
 
 Adds a key to a hash unless it is not already set.
 
@@ -1528,38 +1555,38 @@ Adds a key to a hash unless it is not already set.
   $r->hsetnx('hashname', $key => 1); ## returns true
   $r->hsetnx('hashname', $key => 2); ## returns false because key already exists
 
-=head3 hmset
+=head2 hmset
 
 Adds multiple keys to a hash.
 
   $r->hmset('hashname', 'key1' => 'value1', 'key2' => 'value2'); ## returns true on success
 
 
-=head3 hmget
+=head2 hmget
 
 Returns multiple keys of a hash.
 
   my @values = $r->hmget('hashname', 'key1', 'key2');
 
-=head3 hgetall
+=head2 hgetall
 
 Returns the whole hash.
 
   my %hash = $r->hgetall('hashname');
 
-=head3 hkeys
+=head2 hkeys
 
 Returns the keys of a hash.
 
   my @keys = $r->hkeys('hashname');
 
-=head3 hvals
+=head2 hvals
 
 Returns the values of a hash.
 
   my @values = $r->hvals('hashname');
 
-=head3 hlen
+=head2 hlen
 
 Returns the count of keys in a hash.
 
@@ -1567,18 +1594,18 @@ Returns the count of keys in a hash.
 
 
 
-=head2 Sorting
+=head1 SORTING
 
-=head3 sort
+=head2 sort
 
   $r->sort("key BY pattern LIMIT start end GET pattern ASC|DESC ALPHA');
 
 
-=head2 Publish/Subscribe commands
+=head1 PUBLISH/SUBSCRIBE COMMANDS
 
 When one of L</subscribe> or L</psubscribe> is used, the Redis object will
 enter I<PubSub> mode. When in I<PubSub> mode only commands in this section,
-plus L</quit>, will be accepted.
+plus L<quit>, will be accepted.
 
 If you plan on using PubSub and other Redis functions, you should use two Redis
 objects, one dedicated to PubSub and the other for regular commands.
@@ -1608,13 +1635,13 @@ See the L<Pub-Sub notes|http://redis.io/topics/pubsub> for more information
 about the messages you will receive on your callbacks after each L</subscribe>,
 L</unsubscribe>, L</psubscribe> and L</punsubscribe>.
 
-=head3 publish
+=head2 publish
 
   $r->publish($topic, $message);
 
 Publishes the C<< $message >> to the C<< $topic >>.
 
-=head3 subscribe
+=head2 subscribe
 
   $r->subscribe(
       @topics_to_subscribe_to,
@@ -1627,7 +1654,7 @@ Publishes the C<< $message >> to the C<< $topic >>.
 Subscribe one or more topics. Messages published into one of them will be
 received by Redis, and the specified callback will be executed.
 
-=head3 unsubscribe
+=head2 unsubscribe
 
   $r->unsubscribe(@topic_list, $savecallback);
 
@@ -1636,7 +1663,7 @@ C<@topic_list>. B<WARNING:> it is important that you give the same calleback
 that you used for subscribtion. The value of the CodeRef must be the same, as
 this is how internally the code identifies it.
 
-=head3 psubscribe
+=head2 psubscribe
 
   my @topic_matches = ('prefix1.*', 'prefix2.*');
   $r->psubscribe(@topic_matches, my $savecallback = sub { my ($m, $t, $s) = @_; ... });
@@ -1644,7 +1671,7 @@ this is how internally the code identifies it.
 Subscribes a pattern of topics. All messages to topics that match the pattern
 will be delivered to the callback.
 
-=head3 punsubscribe
+=head2 punsubscribe
 
   my @topic_matches = ('prefix1.*', 'prefix2.*');
   $r->punsubscribe(@topic_matches, $savecallback);
@@ -1654,13 +1681,13 @@ matches in C<@topic_list>. B<WARNING:> it is important that you give the same
 calleback that you used for subscribtion. The value of the CodeRef must be the
 same, as this is how internally the code identifies it.
 
-=head3 is_subscriber
+=head2 is_subscriber
 
   if ($r->is_subscriber) { say "We are in Pub/Sub mode!" }
 
 Returns true if we are in I<Pub/Sub> mode.
 
-=head3 wait_for_messages
+=head2 wait_for_messages
 
   my $keep_going = 1; ## Set to false somewhere to leave the loop
   my $timeout = 5;
@@ -1682,24 +1709,24 @@ The L</wait_for_messages> call returns the number of messages processed during
 the run.
 
 
-=head2 Persistence control commands
+=head1 PERSISTENCE CONTROL COMMANDS
 
-=head3 save
+=head2 save
 
   $r->save;
 
-=head3 bgsave
+=head2 bgsave
 
   $r->bgsave;
 
-=head3 lastsave
+=head2 lastsave
 
   $r->lastsave;
 
 
-=head2 Scripting commands
+=head1 SCRIPTING COMMANDS
 
-=head3 eval
+=head2 eval
 
   $r->eval($lua_script, $num_keys, $key1, ..., $arg1, $arg2);
 
@@ -1708,7 +1735,7 @@ Executes a Lua script server side.
 Note that this commands sends the Lua script every time you call it. See
 L</evalsha> and L</script_load> for an alternative.
 
-=head3 evalsha
+=head2 evalsha
 
   $r->eval($lua_script_sha1, $num_keys, $key1, ..., $arg1, $arg2);
 
@@ -1716,35 +1743,35 @@ Executes a Lua script cached on the server side by its SHA1 digest.
 
 See L</script_load>.
 
-=head3 script_load
+=head2 script_load
 
   my ($sha1) = $r->script_load($lua_script);
 
 Cache Lua script, returns SHA1 digest that can be used with L</evalsha>.
 
-=head3 script_exists
+=head2 script_exists
 
   my ($exists1, $exists2, ...) = $r->script_exists($scrip1_sha, $script2_sha, ...);
 
 Given a list of SHA1 digests, returns a list of booleans, one for each SHA1,
 that report the existence of each script in the server cache.
 
-=head3 script_kill
+=head2 script_kill
 
   $r->script_kill;
 
 Kills the currently running script.
 
-=head3 script_flush
+=head2 script_flush
 
   $r->script_flush;
 
 Flush the Lua scripts cache.
 
 
-=head2 Remote server control commands
+=head1 REMOTE SERVER CONTROL COMMANDS
 
-=head3 info
+=head2 info
 
   my $info_hash = $r->info;
 
@@ -1752,13 +1779,13 @@ The C<info> method is unique in that it decodes the server's response into a
 hashref, if possible. This decoding happens in both synchronous and pipelined
 modes.
 
-=head3 shutdown
+=head2 shutdown
 
   $r->shutdown;
 
 The C<shutdown> method does not support pipelined operation.
 
-=head3 slowlog
+=head2 slowlog
 
   my $nr_items = $r->slowlog("len");
   my @last_ten_items = $r->slowlog("get", 10);
@@ -1766,21 +1793,21 @@ The C<shutdown> method does not support pipelined operation.
 The C<slowlog> command gives access to the server's slow log.
 
 
-=head2 Multiple databases handling commands
+=head1 MULTIPLE DATABASES HANDLING COMMANDS
 
-=head3 select
+=head2 select
 
   $r->select( $dbindex ); # 0 for new clients
 
-=head3 move
+=head2 move
 
   $r->move( $key, $dbindex );
 
-=head3 flushdb
+=head2 flushdb
 
   $r->flushdb;
 
-=head3 flushall
+=head2 flushall
 
   $r->flushall;
 
