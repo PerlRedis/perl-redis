@@ -250,7 +250,7 @@ sub __with_reconnect {
         and croak("reconnect disabled inside transaction or watch");
 
       scalar @{$self->{queue} || []} && $self->{conservative_reconnect}
-        and croak("reconnect disabled while responses are pending and safe reconnect mode enabled");
+        and croak("reconnect disabled while responses are pending and conservative reconnect mode enabled");
 
       $self->connect;
       $cb->();
