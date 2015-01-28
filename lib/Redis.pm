@@ -67,7 +67,7 @@ sub new {
          sentinels_read_timeout no_sentinels_list_update);
 
   $self->{reconnect}     = $args{reconnect} || 0;
-  $self->{safe_reconnect} = $args{safe_reconnect} || 0;
+  $self->{conservative_reconnect} = $args{conservative_reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
 
   if (exists $args{sock}) {
@@ -249,7 +249,7 @@ sub __with_reconnect {
       $self->{__inside_transaction} || $self->{__inside_watch}
         and croak("reconnect disabled inside transaction or watch");
 
-      scalar @{$self->{queue} || []} && $self->{safe_reconnect}
+      scalar @{$self->{queue} || []} && $self->{conservative_reconnect}
         and croak("reconnect disabled while responses are pending and safe reconnect mode enabled");
 
       $self->connect;
@@ -1130,16 +1130,16 @@ a retry until the new command is sent.
 If we cannot re-establish a connection after C<< reconnect >> seconds, an
 exception will be thrown.
 
-=head3 C<< safe_reconnect >>
+=head3 C<< conservative_reconnect >>
 
-C<< safe_reconnect >> option makes sure that reconnection is only attempted
+C<< conservative_reconnect >> option makes sure that reconnection is only attempted
 when no pending command is ongoing. For instance, if you're doing
 C<$redis->incr('key')>, and if the server properly understood and processed the
 command, but the network connection is dropped just before the server replies :
 the command has been processed but the client doesn't know it. In this
 situation, if reconnect is enabled, the Redis client will reconnect and send
 the C<incr> command *again*. If it succeeds, at the end the key as been
-incremented *two* times. To avoid this issue, you can set the C<safe_reconnect>
+incremented *two* times. To avoid this issue, you can set the C<conservative_reconnect>
 option to a true value. In this case, the client will reconnect only if no
 request is pending. Otherwise it will die with the message: C<reconnect
 disabled while responses are pending and safe reconnect mode enabled>.

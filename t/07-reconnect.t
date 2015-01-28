@@ -43,8 +43,8 @@ subtest 'Reconnection discards pending commands' => sub {
 
 };
 
-subtest 'Safe Reconnection dies on pending commands' => sub {
-  ok(my $r = Redis->new(reconnect => 2, safe_reconnect => 1, server => $srv),
+subtest 'Conservative Reconnection dies on pending commands' => sub {
+  ok(my $r = Redis->new(reconnect => 2, conservative_reconnect => 1, server => $srv),
      'connected to our test redis-server');
 
   my $processed_pending = 0;
@@ -52,8 +52,8 @@ subtest 'Safe Reconnection dies on pending commands' => sub {
 
   ok(close(delete $r->{sock}), 'evilly close connection to the server');
   like(exception { $r->set(foo => 'bar') },
-       qr{while responses are pending and safe reconnect mode enabled},
-       'send command with reconnect and safe_reconnect should raise an exception');
+       qr{while responses are pending and conservative reconnect mode enabled},
+       'send command with reconnect and conservative_reconnect should raise an exception');
 
   is($processed_pending, 0, 'pending command never arrived');
 
