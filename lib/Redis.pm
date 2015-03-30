@@ -7,6 +7,9 @@ package Redis;
 use warnings;
 use strict;
 
+sub EX_RECONNECT_DISABLED_TRANSACTION { "reconnect disabled inside transaction or watch" }
+sub EX_RECONNECT_DISABLED_WAITING_REPLY { "reconnect disabled while responses are pending and conservative reconnect mode enabled" }
+
 use IO::Socket::INET;
 use IO::Socket::UNIX;
 use IO::Socket::Timeout;
@@ -247,10 +250,10 @@ sub __with_reconnect {
         or die $_;
 
       $self->{__inside_transaction} || $self->{__inside_watch}
-        and croak("reconnect disabled inside transaction or watch");
+        and croak( EX_RECONNECT_DISABLED_TRANSACTION() );
 
       scalar @{$self->{queue} || []} && $self->{conservative_reconnect}
-        and croak("reconnect disabled while responses are pending and conservative reconnect mode enabled");
+        and croak( EX_RECONNECT_DISABLED_WAITING_REPLY() );
 
       $self->connect;
       $cb->();
