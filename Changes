@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+   * depends on IO::Socket::Timeout 0.29 that fixes an important bug on
+     Windows, Solaris, when mixing sockets with and without timeouts.
+
 1.978     2015-01-28 09:52:27 Europe/Amsterdam
 
    * reshape the documentation
