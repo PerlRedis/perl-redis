@@ -25,13 +25,12 @@ subtest "server doesn't replies quickly enough" => sub {
     my $server = Test::SpawnRedisTimeoutServer::create_server_with_timeout(10);
     my $redis = Redis->new(server => '127.0.0.1:' . $server->port, read_timeout => 1);
     ok($redis);
-    my $msg1 = "Error while reading from Redis server: " . strerror(ETIMEDOUT);
-    my $msg2 = "Error while reading from Redis server: " . strerror(EWOULDBLOCK);
     like(
          exception { $redis->get('foo'); },
-         qr/$msg1|$msg2/,
+         qr/Error while reading from Redis server: /,
          "the code died as expected",
         );
+    ok($! == ETIMEDOUT || $! == EWOULDBLOCK);
 };
 
 subtest "server doesn't respond at connection (cnx_timeout)" => sub {
