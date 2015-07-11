@@ -1079,6 +1079,33 @@ So, if you are working with character strings, you should pre-encode or post-dec
                             sentinels_write_timeout => 1,
                           );
 
+Creates a L<< Redis >> instance and connects to a Redis server.
+
+The constructor will try to find the server to connect to using multiple methods, in the sequence below. The first found is used.
+
+=over
+
+=item *
+
+the C<< sock >> parameter;
+
+=item *
+
+the C<< sentinels >> parameter;
+
+=item *
+
+the C<< server >> parameter;
+
+=item *
+
+the C<< REDIS_SERVER >> environment variable.
+
+=back
+
+A detailed explanation of each of these parameters and environment
+variable is found below.
+
 =head3 C<< server >>
 
 The C<< server >> parameter specifies the Redis server we should connect to,
@@ -1086,26 +1113,26 @@ via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
 will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
 those options are present, it defaults to '127.0.0.1:6379'.
 
-Alternatively you can use the C<< sock >> parameter to specify the path of the
-UNIX domain socket where the Redis server is listening.
+=head3 C<< sock >>
 
-Alternatively you can use the C<< sentinels >> parameter and the C<< service >>
-parameter to specify a list of sentinels to contact and try to get the address
-of the given service name. C<< sentinels >> must be an ArrayRef and C<< service
->> an Str.
+The C<< sock >> parameter specifies the path of the UNIX domain socket
+where the Redis server is listening.
 
-The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
-formats are supported:
+=head3 C<< sentinels >> and C<< service >>
+
+The C<< sentinels >> and the C<< service >> parameters specify a list of sentinels to contact and try to get the
+address of the servers supporting the given service name.
+
+The C<< sentinels >> parameter must be an ArrayRef
+and C<< service >> an Str.
+
+=head3 C<< REDIS_SERVER ENV >>
+
+The C<< REDIS_SERVER >> environment variable can be used to specify the
+address or UNIX domain socket to use. The following formats are
+supported:
 
 =over
-
-=item *
-
-/path/to/sock
-
-=item *
-
-unix:/path/to/sock
 
 =item *
 
@@ -1114,6 +1141,14 @@ unix:/path/to/sock
 =item *
 
 tcp:127.0.0.1:11011
+
+=item *
+
+/path/to/sock
+
+=item *
+
+unix:/path/to/sock
 
 =back
 
