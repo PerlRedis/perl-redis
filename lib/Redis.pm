@@ -83,6 +83,7 @@ sub new {
     };
   } elsif ($args{sentinels}) {
       $self->{sentinels} = $args{sentinels};
+      $self->{role} = $args{role} || 'master';
 
       ref $self->{sentinels} eq 'ARRAY'
         or croak("'sentinels' param must be an ArrayRef");
@@ -106,7 +107,16 @@ sub new {
                                          ? $self->{sentinels_write_timeout} : 1  ),
                   )
               } or next;
-              my $server_address = $sentinel->get_service_address($self->{service});
+              my $server_address;
+              if ($self->{role} eq 'slave') {
+                my $slaves = $sentinel->get_slaves($self->{service});
+                $status = "no slaves found for service '$self->{service}'", next unless @$slaves;
+                my $pick = $slaves->[int(rand(scalar(@$slaves)))];
+                $server_address = "$pick->{ip}:$pick->{port}";
+              }
+              else {
+                $server_address = $sentinel->get_service_address($self->{service});
+              }
               defined $server_address
                 or $status ||= "Sentinels don't know this service",
                    next;
@@ -633,6 +643,15 @@ sub __on_connection {
 
     my ($self) = @_;
 
+    if ($self->{role}) {
+      my $role = $self->__get_server_role();
+      if ($role ne $self->{role}) {
+        ## FIXME: how to force the process to retry? If we are in
+        ## reconnect mode, it's easy, just abuse it... if not, then
+        ## maybe we should just reuse it?
+      }
+    }
+
     # If we are in PubSub mode we shouldn't perform any command besides
     # (p)(un)subscribe
     if (! $self->{is_subscriber}) {
@@ -666,7 +685,20 @@ sub __on_connection {
 
     defined $self->{on_connect}
       and $self->{on_connect}->($self);
+}
 
+
+sub __get_server_role {
+  my ($self) = @_;
+
+  my $role;
+  eval { ($role) = $self->role(); 1 } or do {
+    my $info = $self->info('replication');
+    $role = $info->{role};
+  };
+  die "Could not determine role" unless $role;
+
+  return $role;
 }
 
 
