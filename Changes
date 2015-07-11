@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+   * add supporte for new()'s "role" parameter: connect to slaves using
+     Sentinel for discovery
 
 1.979     2015-05-14 14:28:35CEST+0200 Europe/Amsterdam
 
