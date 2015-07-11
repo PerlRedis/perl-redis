@@ -61,7 +61,7 @@ sub new {
   }
 
   defined $args{$_}
-    and $self->{$_} = $args{$_} for 
+    and $self->{$_} = $args{$_} for
       qw(password on_connect name no_auto_connect_on_new cnx_timeout
          write_timeout read_timeout sentinels_cnx_timeout sentinels_write_timeout
          sentinels_read_timeout no_sentinels_list_update);
@@ -139,12 +139,12 @@ sub new {
                       ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
                       grep { ! $h{$_}; }                      # list of unknown
                       map { +{ @$_ }->{name}; }               # names of
-                      $sentinel->sentinel(                    # sentinels 
+                      $sentinel->sentinel(                    # sentinels
                         sentinels => $self->{service}         # for this service
                       )
                   ];
               }
-              
+
               return $self->_maybe_enable_timeouts(
                   IO::Socket::INET->new(
                       PeerAddr => $server_address,
@@ -442,7 +442,7 @@ sub wait_for_messages {
       $s->remove($s->handles);
       $s->add($sock);
 
-      while ($s->can_read($timeout)) {      
+      while ($s->can_read($timeout)) {
         my $has_stuff = $self->__try_read_sock($sock);
         # If the socket is ready to read but there is nothing to read, ( so
         # it's an EOF ), try to reconnect.
@@ -459,7 +459,7 @@ sub wait_for_messages {
           # or undef ( socket became EOF), back to select until timeout
         } while ($self->{__buf} || $self->__try_read_sock($sock));
       }
-    
+
     });
 
   } catch {
@@ -634,14 +634,15 @@ sub __build_sock {
 
 sub __close_sock {
   my ($self) = @_;
+
   $self->{__buf} = '';
   delete $self->{__inside_watch};
   delete $self->{__inside_transaction};
+
   return close(delete $self->{sock});
 }
 
 sub __on_connection {
-
     my ($self) = @_;
 
     if ($self->{role}) {
@@ -662,7 +663,7 @@ sub __on_connection {
             $n = $n->($self) if ref($n) eq 'CODE';
             $self->client_setname($n) if defined $n;
         };
-  
+
       defined $self->{current_database}
         and $self->select($self->{current_database});
     }
