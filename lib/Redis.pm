@@ -924,10 +924,14 @@ __END__
     my $redis = Redis->new(write_timeout => 1.2);
 
     ## Connect via a list of Sentinels to a given service
-    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster');
+
+    ## Connect to a random slave of a Sentinel monitored service
+    ## it will reconnect to a random different slave on disconnect
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster', role => 'slave');
 
     ## Same, but with connection, read and write timeout on the sentinel hosts
-    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'mymaster',
+    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster',
                             sentinels_cnx_timeout => 0.1,
                             sentinels_read_timeout => 1,
                             sentinels_write_timeout => 1,
@@ -1125,6 +1129,11 @@ address of the servers supporting the given service name.
 
 The C<< sentinels >> parameter must be an ArrayRef
 and C<< service >> an Str.
+
+By default this will connect you to the
+master instance of the service, but you can use the C<< role >> set as
+"slave" to randomly connect to one of the slaves. If no slaves are
+found, the connect call will die. Please note that this means that you can also die on reconnects.
 
 =head3 C<< REDIS_SERVER ENV >>
 
