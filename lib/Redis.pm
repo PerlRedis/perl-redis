@@ -69,6 +69,7 @@ sub new {
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{conservative_reconnect} = $args{conservative_reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
+  $self->{role}          = $args{role}
 
   if (exists $args{sock}) {
     $self->{server} = $args{sock};
@@ -83,7 +84,7 @@ sub new {
     };
   } elsif ($args{sentinels}) {
       $self->{sentinels} = $args{sentinels};
-      $self->{role} = $args{role} || 'master';
+      $self->{role} ||= 'master';
 
       ref $self->{sentinels} eq 'ARRAY'
         or croak("'sentinels' param must be an ArrayRef");
@@ -1168,6 +1169,15 @@ but you can use the C<< role >> set as "slave" to randomly connect to
 one of the slaves. If no slaves are found, the connect call will die.
 
 Please note that this means that you can also die on reconnects.
+
+=over
+
+=item
+
+Tip: you can actually use C<< role >> to make sure you are connected to
+the correct type of server, even if you don't use Sentinel.
+
+=back
 
 =head3 C<< REDIS_SERVER ENV >>
 
