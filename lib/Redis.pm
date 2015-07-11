@@ -1156,16 +1156,18 @@ where the Redis server is listening.
 
 =head3 C<< sentinels >> and C<< service >>
 
-The C<< sentinels >> and the C<< service >> parameters specify a list of sentinels to contact and try to get the
-address of the servers supporting the given service name.
+The C<< sentinels >> and the C<< service >> parameters specify a list of
+sentinels to contact and try to get the address of the servers
+supporting the given service name.
 
 The C<< sentinels >> parameter must be an ArrayRef
 and C<< service >> an Str.
 
-By default this will connect you to the
-master instance of the service, but you can use the C<< role >> set as
-"slave" to randomly connect to one of the slaves. If no slaves are
-found, the connect call will die. Please note that this means that you can also die on reconnects.
+By default this will connect you to the master instance of the service,
+but you can use the C<< role >> set as "slave" to randomly connect to
+one of the slaves. If no slaves are found, the connect call will die.
+
+Please note that this means that you can also die on reconnects.
 
 =head3 C<< REDIS_SERVER ENV >>
 
