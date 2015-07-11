@@ -35,7 +35,7 @@ sub get_slaves {
     my @slaves;
 
     eval {@slaves = map { +{@$_}; } @{ shift->sentinel('slaves', shift) || [] }; 1 } or do {
-      die unless $@ =~ m/ERR No such master with that name/;
+      die $@ unless $@ =~ m/ERR No such master with that name/;
       return;
     };
 
