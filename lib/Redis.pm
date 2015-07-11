@@ -69,7 +69,7 @@ sub new {
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{conservative_reconnect} = $args{conservative_reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
-  $self->{role}          = $args{role}
+  $self->{role}          = $args{role};
 
   if (exists $args{sock}) {
     $self->{server} = $args{sock};
