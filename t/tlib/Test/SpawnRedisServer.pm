@@ -107,7 +107,7 @@ sub sentinel {
     sentinel down-after-milliseconds mymaster 2000
     sentinel failover-timeout mymaster 4000
 
-    logfile sentinel-$addr.log
+    logfile redis-sentinel-$addr.log
 
   ");
   $fh->flush;
