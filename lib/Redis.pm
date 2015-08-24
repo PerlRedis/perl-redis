@@ -1685,9 +1685,11 @@ Set the value and expiration in milliseconds of a key (see L<http://redis.io/com
 
 =head2 set
 
-  $r->set(key, value, [EX seconds], [PX milliseconds], [NX|XX])
+  $r->set(key, value, ['EX',  seconds], ['PX', milliseconds], ['NX'|'XX'])
 
-Set the string value of a key (see L<http://redis.io/commands/set>)
+Set the string value of a key (see L<http://redis.io/commands/set>). Example:
+
+  $r->set('key', 'test', 'EX', 60, 'NX')
 
 =head2 setbit
 
