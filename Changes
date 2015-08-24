@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+   * fix "set" documentation as per Emanuele Tomasi <et@libersoft.it> suggestion
 
 1.979     2015-05-14 14:28:35CEST+0200 Europe/Amsterdam
 
