@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+   * fix a bug where when not yet connected, pid is undef, leading to warnings
 
 1.980     2015-08-24 09:48:08CEST+0200 Europe/Paris
    * fix "set" documentation as per Emanuele Tomasi <et@libersoft.it> suggestion
