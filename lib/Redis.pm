@@ -676,7 +676,7 @@ sub __send_command {
   my $deb  = $self->{debug};
 
   # if already connected but after a fork, reconnect
-  if ($self->{sock} && ($self->{pid} // 0) != $$) {
+  if ($self->{sock} && ($self->{pid} || 0) != $$) {
     $self->connect;
   }
 
