@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.982     2016-02-11 09:02:40CET+0100 Europe/Paris
    * fix issue #117: fix backward compatibility with 5.8
 
 1.981     2015-09-29 12:31:57CEST+0200 Europe/Paris
