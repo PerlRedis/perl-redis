@@ -611,8 +611,9 @@ sub __build_sock {
   if (exists $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
+      my $error = $_;
       $self->{reconnect} = 0;
-      croak("Redis server refused password");
+      croak('Redis server authentication error: ' . $error);
     };
   }
 
