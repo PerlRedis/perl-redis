@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+   * add supporte for new()'s "role" parameter: connect to slaves using
+     Sentinel for discovery
 
 1.982     2016-02-11 09:02:40CET+0100 Europe/Paris
    * fix issue #117: fix backward compatibility with 5.8

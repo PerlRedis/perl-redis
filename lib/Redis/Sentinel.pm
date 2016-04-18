@@ -31,6 +31,17 @@ sub get_masters {
     map { +{ @$_ }; } @{ shift->sentinel('masters') || [] };
 }
 
+sub get_slaves {
+    my @slaves;
+
+    eval {@slaves = map { +{@$_}; } @{ shift->sentinel('slaves', shift) || [] }; 1 } or do {
+      die $@ unless $@ =~ m/ERR No such master with that name/;
+      return;
+    };
+
+    return \@slaves;
+}
+
 1;
 
 __END__
@@ -68,5 +79,13 @@ service were found.
 
 Returns a list of HashRefs representing all the master redis instances that
 this sentinel monitors.
+
+=head2 get_slaves
+
+Takes the name of a service as parameter.
+
+If the service is not known to the sentinels server, returns undef. If
+the service is known, retuns an arrayRef of hashRef's, one for each
+slave available on the service.
 
 =cut

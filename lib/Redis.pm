@@ -61,7 +61,7 @@ sub new {
   }
 
   defined $args{$_}
-    and $self->{$_} = $args{$_} for 
+    and $self->{$_} = $args{$_} for
       qw(password on_connect name no_auto_connect_on_new cnx_timeout
          write_timeout read_timeout sentinels_cnx_timeout sentinels_write_timeout
          sentinels_read_timeout no_sentinels_list_update);
@@ -69,6 +69,7 @@ sub new {
   $self->{reconnect}     = $args{reconnect} || 0;
   $self->{conservative_reconnect} = $args{conservative_reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
+  $self->{role}          = $args{role};
 
   if (exists $args{sock}) {
     $self->{server} = $args{sock};
@@ -83,6 +84,7 @@ sub new {
     };
   } elsif ($args{sentinels}) {
       $self->{sentinels} = $args{sentinels};
+      $self->{role} ||= 'master';
 
       ref $self->{sentinels} eq 'ARRAY'
         or croak("'sentinels' param must be an ArrayRef");
@@ -106,7 +108,16 @@ sub new {
                                          ? $self->{sentinels_write_timeout} : 1  ),
                   )
               } or next;
-              my $server_address = $sentinel->get_service_address($self->{service});
+              my $server_address;
+              if ($self->{role} eq 'slave') {
+                my $slaves = $sentinel->get_slaves($self->{service});
+                $status = "no slaves found for service '$self->{service}'", next unless @$slaves;
+                my $pick = $slaves->[int(rand(scalar(@$slaves)))];
+                $server_address = "$pick->{ip}:$pick->{port}";
+              }
+              else {
+                $server_address = $sentinel->get_service_address($self->{service});
+              }
               defined $server_address
                 or $status ||= "Sentinels don't know this service",
                    next;
@@ -128,12 +139,12 @@ sub new {
                       ( sort { $h{$a} <=> $h{$b} } keys %h ), # sorted existing sentinels,
                       grep { ! $h{$_}; }                      # list of unknown
                       map { +{ @$_ }->{name}; }               # names of
-                      $sentinel->sentinel(                    # sentinels 
+                      $sentinel->sentinel(                    # sentinels
                         sentinels => $self->{service}         # for this service
                       )
                   ];
               }
-              
+
               return $self->_maybe_enable_timeouts(
                   IO::Socket::INET->new(
                       PeerAddr => $server_address,
@@ -431,7 +442,7 @@ sub wait_for_messages {
       $s->remove($s->handles);
       $s->add($sock);
 
-      while ($s->can_read($timeout)) {      
+      while ($s->can_read($timeout)) {
         my $has_stuff = $self->__try_read_sock($sock);
         # If the socket is ready to read but there is nothing to read, ( so
         # it's an EOF ), try to reconnect.
@@ -448,7 +459,7 @@ sub wait_for_messages {
           # or undef ( socket became EOF), back to select until timeout
         } while ($self->{__buf} || $self->__try_read_sock($sock));
       }
-    
+
     });
 
   } catch {
@@ -624,15 +635,25 @@ sub __build_sock {
 
 sub __close_sock {
   my ($self) = @_;
+
   $self->{__buf} = '';
   delete $self->{__inside_watch};
   delete $self->{__inside_transaction};
+
   return close(delete $self->{sock});
 }
 
 sub __on_connection {
-
     my ($self) = @_;
+
+    if ($self->{role}) {
+      my $role = $self->__get_server_role();
+      if ($role ne $self->{role}) {
+        ## FIXME: how to force the process to retry? If we are in
+        ## reconnect mode, it's easy, just abuse it... if not, then
+        ## maybe we should just reuse it?
+      }
+    }
 
     # If we are in PubSub mode we shouldn't perform any command besides
     # (p)(un)subscribe
@@ -643,7 +664,7 @@ sub __on_connection {
             $n = $n->($self) if ref($n) eq 'CODE';
             $self->client_setname($n) if defined $n;
         };
-  
+
       defined $self->{current_database}
         and $self->select($self->{current_database});
     }
@@ -667,7 +688,20 @@ sub __on_connection {
 
     defined $self->{on_connect}
       and $self->{on_connect}->($self);
+}
 
+
+sub __get_server_role {
+  my ($self) = @_;
+
+  my $role;
+  eval { ($role) = $self->role(); 1 } or do {
+    my $info = $self->info('replication');
+    $role = $info->{role};
+  };
+  die "Could not determine role" unless $role;
+
+  return $role;
 }
 
 
@@ -926,10 +960,14 @@ __END__
     my $redis = Redis->new(write_timeout => 1.2);
 
     ## Connect via a list of Sentinels to a given service
-    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'mymaster');
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster');
+
+    ## Connect to a random slave of a Sentinel monitored service
+    ## it will reconnect to a random different slave on disconnect
+    my $redis = Redis->new(sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster', role => 'slave');
 
     ## Same, but with connection, read and write timeout on the sentinel hosts
-    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'mymaster',
+    my $redis = Redis->new( sentinels => [ '127.0.0.1:12345' ], service => 'my_cluster',
                             sentinels_cnx_timeout => 0.1,
                             sentinels_read_timeout => 1,
                             sentinels_write_timeout => 1,
@@ -1081,6 +1119,33 @@ So, if you are working with character strings, you should pre-encode or post-dec
                             sentinels_write_timeout => 1,
                           );
 
+Creates a L<< Redis >> instance and connects to a Redis server.
+
+The constructor will try to find the server to connect to using multiple methods, in the sequence below. The first found is used.
+
+=over
+
+=item *
+
+the C<< sock >> parameter;
+
+=item *
+
+the C<< sentinels >> parameter;
+
+=item *
+
+the C<< server >> parameter;
+
+=item *
+
+the C<< REDIS_SERVER >> environment variable.
+
+=back
+
+A detailed explanation of each of these parameters and environment
+variable is found below.
+
 =head3 C<< server >>
 
 The C<< server >> parameter specifies the Redis server we should connect to,
@@ -1088,26 +1153,42 @@ via TCP. Use the 'IP:PORT' format. If no C<< server >> option is present, we
 will attempt to use the C<< REDIS_SERVER >> environment variable. If neither of
 those options are present, it defaults to '127.0.0.1:6379'.
 
-Alternatively you can use the C<< sock >> parameter to specify the path of the
-UNIX domain socket where the Redis server is listening.
+=head3 C<< sock >>
 
-Alternatively you can use the C<< sentinels >> parameter and the C<< service >>
-parameter to specify a list of sentinels to contact and try to get the address
-of the given service name. C<< sentinels >> must be an ArrayRef and C<< service
->> an Str.
+The C<< sock >> parameter specifies the path of the UNIX domain socket
+where the Redis server is listening.
 
-The C<< REDIS_SERVER >> can be used for UNIX domain sockets too. The following
-formats are supported:
+=head3 C<< sentinels >> and C<< service >>
+
+The C<< sentinels >> and the C<< service >> parameters specify a list of
+sentinels to contact and try to get the address of the servers
+supporting the given service name.
+
+The C<< sentinels >> parameter must be an ArrayRef
+and C<< service >> an Str.
+
+By default this will connect you to the master instance of the service,
+but you can use the C<< role >> set as "slave" to randomly connect to
+one of the slaves. If no slaves are found, the connect call will die.
+
+Please note that this means that you can also die on reconnects.
 
 =over
 
-=item *
+=item
 
-/path/to/sock
+Tip: you can actually use C<< role >> to make sure you are connected to
+the correct type of server, even if you don't use Sentinel.
 
-=item *
+=back
 
-unix:/path/to/sock
+=head3 C<< REDIS_SERVER ENV >>
+
+The C<< REDIS_SERVER >> environment variable can be used to specify the
+address or UNIX domain socket to use. The following formats are
+supported:
+
+=over
 
 =item *
 
@@ -1116,6 +1197,14 @@ unix:/path/to/sock
 =item *
 
 tcp:127.0.0.1:11011
+
+=item *
+
+/path/to/sock
+
+=item *
+
+unix:/path/to/sock
 
 =back
 
