@@ -914,7 +914,7 @@ __END__
     ## Die if you can't after that
     my $redis = Redis->new(reconnect => 60, every => 1_000_000);
 
-    ## Try each 100ms upto 2 seconds (every is in microseconds)
+    ## Try each 100ms up to 2 seconds (every is in microseconds)
     my $redis = Redis->new(reconnect => 2, every => 100_000);
 
     ## Enable connection timeout (in seconds)

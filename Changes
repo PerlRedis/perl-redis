@@ -3,6 +3,7 @@ Revision history for Redis
 {{$NEXT}}
    * fix issue #122: don't attempt to close an already closed or undefined socket
    * fix issue #120: don't depend on locales for matching error messages
+   * fix issue #118: spelling mistake
 
 1.982     2016-02-11 09:02:40CET+0100 Europe/Paris
    * fix issue #117: fix backward compatibility with 5.8
