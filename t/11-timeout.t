@@ -18,18 +18,16 @@ subtest 'server replies quickly enough' => sub {
     my $redis = Redis->new(server => '127.0.0.1:' . $server->port, read_timeout => 1);
     ok($redis);
     my $res = $redis->get('foo');;
-    is $res, 42;
+    is $res, 42, "the code didn't died, as expected";
 };
 
 subtest "server doesn't replies quickly enough" => sub {
     my $server = Test::SpawnRedisTimeoutServer::create_server_with_timeout(10);
     my $redis = Redis->new(server => '127.0.0.1:' . $server->port, read_timeout => 1);
     ok($redis);
-    my $msg1 = "Error while reading from Redis server: " . strerror(ETIMEDOUT);
-    my $msg2 = "Error while reading from Redis server: " . strerror(EWOULDBLOCK);
     like(
          exception { $redis->get('foo'); },
-         qr/$msg1|$msg2/,
+         qr/Error while reading from Redis server:/,
          "the code died as expected",
         );
 };
