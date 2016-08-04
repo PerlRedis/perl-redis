@@ -320,7 +320,7 @@ sub quit {
     $self->__send_command('QUIT');
   };
 
-  $self->__close_sock() if $self->{sock};
+  $self->__close_sock();
 
   return 1;
 }
@@ -627,6 +627,7 @@ sub __close_sock {
   $self->{__buf} = '';
   delete $self->{__inside_watch};
   delete $self->{__inside_transaction};
+  defined $self->{sock} or return 1;
   return close(delete $self->{sock});
 }
 
