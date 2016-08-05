@@ -25,6 +25,7 @@ use constant WIN32       => $^O =~ /mswin32/i;
 use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
+use constant ECONNRESET  => eval {Errno::ECONNRESET} || -1E9;
 use constant BUFSIZE     => 4096;
 
 sub _maybe_enable_timeouts {
@@ -864,6 +865,9 @@ sub __try_read_sock {
 
       ## Keep going if nothing there, but socket is alive
       return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN);
+
+      ## on freebsd, if we got ECONNRESET, it's a timeout from the other side
+      return 0 if ($err && $err == ECONNRESET && $^O eq 'freebsd');
 
       ## result is undef but err is 0? should never happen
       return if $err == 0;

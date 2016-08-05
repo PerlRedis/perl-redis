@@ -5,6 +5,7 @@ Revision history for Redis
    * fix issue #120: don't depend on locales for matching error messages
    * fix issue #118: spelling mistake
    * fix issue #116: forbid continuing using socket after a read timeout
+   * fix issue #115: Unexpected error condition 54/freebsd
 
 1.982     2016-02-11 09:02:40CET+0100 Europe/Paris
    * fix issue #117: fix backward compatibility with 5.8
