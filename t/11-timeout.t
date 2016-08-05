@@ -66,7 +66,6 @@ subtest 'Reconnection by read timeout discards pending commands' => sub {
   ok($r->set(foo => 'bar'), 'set foo bar');
 
   eval { $r->debug(sleep => 4) };
-  print STDERR Dumper($@); use Data::Dumper;
   ok $@, 'sleep command is timeout';
 
   diag 'waiting for sleep command';
