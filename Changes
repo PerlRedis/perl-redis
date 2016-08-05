@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.990_01  2016-08-05 17:17:28CEST+0200 Europe/Paris
    * fix issue #122: don't attempt to close an already closed or undefined socket
    * fix issue #120 and #111: don't depend on locales for matching error messages
    * fix issue #118: spelling mistake
