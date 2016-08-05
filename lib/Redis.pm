@@ -770,8 +770,12 @@ sub __read_line {
   my $sock = $self->{sock};
 
   my $data = $self->__read_line_raw;
-  croak("Error while reading from Redis server: $!")
-    unless defined $data;
+  if (! defined $data) {
+      # In case the caller catches the exception and wants to persist on using
+      # the redis connection, let's forbid that.
+      $self->__close_sock();
+      croak("Error while reading from Redis server: $!")
+  }
 
   chomp $data;
   warn "[RECV RAW] '$data'" if $self->{debug};
