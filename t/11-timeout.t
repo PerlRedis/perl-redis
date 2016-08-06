@@ -57,22 +57,5 @@ subtest "server doesn't respond at connection (cnx_timeout)" => sub {
   }
 };
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
-
-subtest 'Reconnection by read timeout discards pending commands' => sub {
-  ok(my $r = Redis->new(server => $srv, read_timeout => 1, reconnect => 1), 'connected to our test redis-server');
-
-  ok($r->set(foo => 'bar'), 'set foo bar');
-
-  eval { $r->debug(sleep => 4) };
-  ok $@, 'sleep command is timeout';
-
-  diag 'waiting for sleep command';
-  sleep 4;
-  is($r->get('foo'), 'bar', 'the value of key foo is bar');
-};
-
-
 done_testing;
 

@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+   * move reconnection test in reconnect test file to avoid test issues
+     (skip_all but still run some tests)
 
 1.990_01  2016-08-05 17:17:28CEST+0200 Europe/Paris
    * fix issue #122: don't attempt to close an already closed or undefined socket
