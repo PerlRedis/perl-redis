@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.990_02  2016-08-06 20:30:30CEST+0200 Europe/Paris
    * move reconnection test in reconnect test file to avoid test issues
      (skip_all but still run some tests)
 
