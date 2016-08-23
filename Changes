@@ -1,6 +1,8 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.991     2016-08-23 16:04:29CEST+0200 Europe/Paris
   * release as a normal release after successful testing of the dev releases
 
 1.990_02  2016-08-06 20:30:30CEST+0200 Europe/Paris
