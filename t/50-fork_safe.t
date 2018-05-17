@@ -6,9 +6,20 @@ use lib 't/tlib';
 use Test::SpawnRedisServer;
 use Test::SharedFork;
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
-my $o = Redis->new(server => $srv, name => 'my_name_is_glorious');
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
+
+my $o = Redis->new(server => $srv,
+                   name => 'my_name_is_glorious',
+                   ssl => $use_ssl,
+                   SSL_verify_mode => 0);
 is $o->info->{connected_clients}, 1;
 my $localport = $o->{sock}->sockport;
 

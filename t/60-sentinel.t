@@ -10,10 +10,19 @@ use Redis::Sentinel;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my @ret = redis();
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
+# Sentinel mode does not support SSL/TLS yet.
+my @ret = redis(no_ssl => 1);
 my $redis_port = pop @ret;
-my ($c, $redis_addr) = @ret;
-END { diag 'shutting down redis'; $c->() if $c }
+my ($c, $t, $redis_addr) = @ret;
+END {
+  diag 'shutting down redis';
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
 
 diag "redis address : $redis_addr\n";
 
@@ -67,7 +76,7 @@ sleep 3;
 {
    # connect to the master via the sentinel
    my $redis = Redis->new(sentinels => [ $sentinel_addr ], service => 'mymaster');
-   is_deeply({ map { $_ => 1} @{$redis->{sentinels} || []} },
+   is_deeply({ map { $_ => 1 } @{$redis->{sentinels} || []} },
              { $sentinel_addr => 1, $sentinel2_addr => 1},
              "Redis client has connected and updated its sentinels");
 

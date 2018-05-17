@@ -10,4 +10,6 @@ before_install:
   - "git config --global user.name TravisCI"
   - "git config --global github.user dams"
 install: "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
-script: "dzil test --release"
+script:
+  - "dzil test --release"
+  - "USE_SSL=1 dzil test --release"

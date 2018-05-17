@@ -14,9 +14,14 @@ use Carp;
 use IO::Socket::INET;
 use Test::TCP;
 
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
 subtest 'server replies quickly enough' => sub {
     my $server = Test::SpawnRedisTimeoutServer::create_server_with_timeout(0);
-    my $redis = Redis->new(server => '127.0.0.1:' . $server->port, read_timeout => 1);
+    my $redis = Redis->new(server => '127.0.0.1:' . $server->port,
+                           read_timeout => 1,
+                           ssl => SSL_AVAILABLE,
+                           SSL_verify_mode => 0);
     ok($redis);
     my $res = $redis->get('foo');;
     is $res, 42, "the code didn't died, as expected";
@@ -24,7 +29,10 @@ subtest 'server replies quickly enough' => sub {
 
 subtest "server doesn't replies quickly enough" => sub {
     my $server = Test::SpawnRedisTimeoutServer::create_server_with_timeout(10);
-    my $redis = Redis->new(server => '127.0.0.1:' . $server->port, read_timeout => 1);
+    my $redis = Redis->new(server => '127.0.0.1:' . $server->port,
+                           read_timeout => 1,
+                           ssl => SSL_AVAILABLE,
+                           SSL_verify_mode => 0);
     ok($redis);
     like(
          exception { $redis->get('foo'); },
@@ -37,8 +45,24 @@ subtest "server doesn't respond at connection (cnx_timeout)" => sub {
   SKIP: {
     skip "This subtest is failing on some platforms", 4;
 	my $server = Test::TCP->new(code => sub {
-			my $port = shift;
-			my $sock = IO::Socket::INET->new(Listen => 1, LocalPort => $port, Proto => 'tcp', LocalAddr => '127.0.0.1') or croak "fail to listen on port $port";
+            my $port = shift;
+
+            my %args = (
+                Listen    => 1,
+                LocalPort => $port,
+                LocalAddr => '127.0.0.1',
+            );
+
+            my $socket_class = 'IO::Socket::INET';
+
+            if ( SSL_AVAILABLE ) {
+                $socket_class = 'IO::Socket::SSL';
+
+                $args{SSL_cert_file} = 't/stunnel/cert.pem';
+                $args{SSL_key_file}  = 't/stunnel/key.pem';
+            }
+
+			my $sock = $socket_class->new(%args) or croak "fail to listen on port $port";
 			while(1) {
 				sleep(1);
 			};
@@ -47,7 +71,9 @@ subtest "server doesn't respond at connection (cnx_timeout)" => sub {
     my $redis;
     my $start_time = time;
     isnt(
-         exception { $redis = Redis->new(server => '127.0.0.1:' . $server->port, cnx_timeout => 1); },
+         exception { $redis = Redis->new(server => '127.0.0.1:' . $server->port,
+                                         cnx_timeout => 1,
+                                         ssl => SSL_AVAILABLE, SSL_verify_mode => 0); },
          undef,
          "the code died",
         );
