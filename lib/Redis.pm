@@ -172,9 +172,16 @@ sub is_subscriber { $_[0]{is_subscriber} }
 sub select {
   my $self = shift;
   my $database = shift;
-  my $ret = $self->__std_cmd('select', $database, @_);
-  $self->{current_database} = $database;
-  $ret;
+
+  croak( "Cannot select an undefined redis database" )
+    unless defined $database;
+  # don't want to send multiple select() back and forth
+  if (!defined $self->{current_database} or $self->{current_database} ne $database) {
+    my $ret = $self->__std_cmd('select', $database, @_);
+    $self->{current_database} = $database;
+    return $ret;
+  };
+  return "OK"; # emulate redis response as of 3.0.6 just in case anybody cares
 }
 
 ### we don't want DESTROY to fallback into AUTOLOAD
@@ -645,9 +652,11 @@ sub __on_connection {
             $n = $n->($self) if ref($n) eq 'CODE';
             $self->client_setname($n) if defined $n;
         };
-  
+
+      # don't use select() function as it's caching database name,
+      # rather call select directly
       defined $self->{current_database}
-        and $self->select($self->{current_database});
+        and $self->__std_cmd('select', $self->{current_database});
     }
 
     foreach my $topic (CORE::keys(%{$self->{subscribers}})) {
