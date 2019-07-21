@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+  * relax the check in 04-pipeline.t about unknown command output (#130)
 
 1.991     2016-08-23 16:04:29CEST+0200 Europe/Paris
   * release as a normal release after successful testing of the dev releases
