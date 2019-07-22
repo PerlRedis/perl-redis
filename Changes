@@ -1,6 +1,7 @@
 Revision history for Redis
 
 {{$NEXT}}
+  * Don't send SELECT if current database equals the one being selected (@dallaylaen, #132)
 
 1.993     2019-07-22 07:01:30+02:00 Europe/Paris
   * fix missing deps (@manwar, #136 )
