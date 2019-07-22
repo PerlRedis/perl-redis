@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.995     2019-07-22 11:20:07+02:00 Europe/Paris
+  * revert #136, remove deps that are in core, as it breaks builds in some setup
+
 1.994     2019-07-22 07:51:57+02:00 Europe/Paris
   * Don't send SELECT if current database equals the one being selected (@dallaylaen, #132)
 
