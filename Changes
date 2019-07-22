@@ -1,6 +1,11 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.993     2019-07-22 07:01:30+02:00 Europe/Paris
+  * fix missing deps (@manwar, #136 )
+
+1.992     2019-07-21 18:27:23+02:00 Europe/Paris
   * relax the check in 04-pipeline.t about unknown command output (#130)
 
 1.991     2016-08-23 16:04:29CEST+0200 Europe/Paris
