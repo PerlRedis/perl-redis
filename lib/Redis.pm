@@ -1154,7 +1154,7 @@ exception will be thrown.
 
 C<< conservative_reconnect >> option makes sure that reconnection is only attempted
 when no pending command is ongoing. For instance, if you're doing
-C<$redis->incr('key')>, and if the server properly understood and processed the
+C<<$redis->incr('key')>>, and if the server properly understood and processed the
 command, but the network connection is dropped just before the server replies :
 the command has been processed but the client doesn't know it. In this
 situation, if reconnect is enabled, the Redis client will reconnect and send
