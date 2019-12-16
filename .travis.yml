@@ -2,17 +2,14 @@ language: perl
 services:
   - redis-server
 perl:
-  - "5.16"
-  - "5.14"
-  - "5.12"
-  - "5.10"
-sudo: required
+  - "5.22"
+  - "5.26"
+  - "5.28"
+  - "5.30"
 before_install:
-  - "sudo apt-get update -q"
-  - "sudo apt-get install libdist-zilla-perl"
   - "git config --global user.name TravisCI"
   - "git config --global github.user dams"
 install:
+ - "cpanm --quiet --notest Dist::Zilla"
  - "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
- - "dzil authordeps --missing | cpanm"
 script: "dzil test --release"
