@@ -14,4 +14,5 @@ before_install:
   - "git config --global github.user dams"
 install:
  - "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
+ - "dzil authordeps --missing | cpanm"
 script: "dzil test --release"
