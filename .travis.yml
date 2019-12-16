@@ -2,14 +2,16 @@ language: perl
 services:
   - redis-server
 perl:
-  - "5.16"
-  - "5.14"
-  - "5.12"
-  - "5.10"
+  - "5.22"
+  - "5.26"
+  - "5.28"
+  - "5.30"
 before_install:
   - "git config --global user.name TravisCI"
   - "git config --global github.user dams"
-install: "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
+install:
+ - "cpanm --quiet --notest Dist::Zilla"
+ - "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
 script:
   - "dzil test --release"
   - "USE_SSL=1 dzil test --release"
