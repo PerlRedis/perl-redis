@@ -875,7 +875,7 @@ sub __try_read_sock {
       ## Keep going if nothing there, but socket is alive
       return 0 if $err and ($err == EWOULDBLOCK or $err == EAGAIN);
 
-      ## if we got ECONNRESET, it's might be due a timeout from the other side (on freebsd)
+      ## if we got ECONNRESET, it might be due a timeout from the other side (on freebsd)
       ## or because an intermediate proxy shut down our connection using its internal timeout counter
       return 0 if ($err && $err == ECONNRESET);
 
