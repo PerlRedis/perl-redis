@@ -6,10 +6,12 @@ perl:
   - "5.14"
   - "5.12"
   - "5.10"
+sudo: required
 before_install:
+  - "sudo apt-get update -q"
+  - "sudo apt-get install libdist-zilla-perl"
   - "git config --global user.name TravisCI"
   - "git config --global github.user dams"
 install:
- - "cpanm  --quiet  --notest --skip-installed Dist::Zilla"
  - "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
 script: "dzil test --release"
