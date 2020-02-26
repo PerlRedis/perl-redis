@@ -248,22 +248,22 @@ sub __with_reconnect {
   $self->{reconnect}
     or return $cb->();
 
-  return &try(
-    $cb,
-    catch {
-      ref($_) eq 'Redis::X::Reconnect'
-        or die $_;
+  return try {
+    $cb->();
+  }
+  catch {
+    ref($_) eq 'Redis::X::Reconnect'
+      or die $_;
 
-      $self->{__inside_transaction} || $self->{__inside_watch}
-        and croak("reconnect disabled inside transaction or watch");
+    $self->{__inside_transaction} || $self->{__inside_watch}
+      and croak("reconnect disabled inside transaction or watch");
 
-      scalar @{$self->{queue} || []} && $self->{conservative_reconnect}
-        and croak("reconnect disabled while responses are pending and conservative reconnect mode enabled");
+    scalar @{$self->{queue} || []} && $self->{conservative_reconnect}
+      and croak("reconnect disabled while responses are pending and conservative reconnect mode enabled");
 
-      $self->connect;
-      $cb->();
-    }
-  );
+    $self->connect;
+    $cb->();
+  }
 }
 
 sub __run_cmd {
