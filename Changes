@@ -2,6 +2,8 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.996     2020-03-05 16:17:21+01:00 Europe/Paris
+
 1.996     2020-03-05 11:56:11+01:00 Europe/Paris
   * #139: Fix for "Unexpected error condition 104/linux"
 
