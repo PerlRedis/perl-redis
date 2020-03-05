@@ -2,6 +2,9 @@ Revision history for Redis
 
 {{$NEXT}}
 
+1.996     2020-03-05 11:56:11+01:00 Europe/Paris
+  * #139: Fix for "Unexpected error condition 104/linux"
+
 1.995     2019-07-22 11:20:07+02:00 Europe/Paris
   * revert #136, remove deps that are in core, as it breaks builds in some setup
 
