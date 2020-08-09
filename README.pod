@@ -6,6 +6,13 @@
 
 Redis - Perl binding for Redis database
 
+
+=for html
+
+https://travis-ci.org/PerlRedis/perl-redis.svg?branch=master
+
+=end
+
 =head1 VERSION
 
 version 1.995
