@@ -31,6 +31,7 @@ subtest "server doesn't replies quickly enough" => sub {
          qr/Error while reading from Redis server:/,
          "the code died as expected",
         );
+    ok($! == ETIMEDOUT || $! == EWOULDBLOCK);
 };
 
 subtest "server doesn't respond at connection (cnx_timeout)" => sub {
