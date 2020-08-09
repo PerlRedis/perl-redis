@@ -7,11 +7,7 @@
 Redis - Perl binding for Redis database
 
 
-=for html
-
-https://travis-ci.org/PerlRedis/perl-redis.svg?branch=master
-
-=end
+=for html <a href="https://travis-ci.org/PerlRedis/perl-redis"><img src="https://travis-ci.org/PerlRedis/perl-redis.svg?branch=master"></a>
 
 =head1 VERSION
 
