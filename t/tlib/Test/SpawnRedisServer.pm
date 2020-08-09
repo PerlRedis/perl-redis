@@ -33,14 +33,18 @@ sub redis {
   unlink("redis-server-$addr.log");
   unlink('dump.rdb');
 
+  my (undef, $sock_temp_file) = File::Temp::tempfile();
+
   $fh->print("
     timeout $params{timeout}
     appendonly no
     daemonize no
     port $local_port
     bind 127.0.0.1
+    unixsocket $sock_temp_file
+    unixsocketperm 700
     loglevel debug
-    logfile redis-server-$addr.log
+    logfile FOOredis-server-$addr.log
   ");
   $fh->flush;
 
@@ -76,7 +80,7 @@ sub redis {
     }
   }
 
-  return ($c, $addr, $ver, split(/[.]/, $ver), $local_port);
+  return ($c, $addr, $ver, split(/[.]/, $ver), $local_port, $sock_temp_file);
 }
 
 sub sentinel {

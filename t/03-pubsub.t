@@ -196,6 +196,7 @@ subtest 'server is killed while waiting for subscribe' => sub {
 subtest 'server is restarted while waiting for subscribe' => sub {
   my @ret = redis();
   my ($another_kill_switch, $another_server) = @ret;
+  pop @ret;
   my $port = pop @ret;
 
   my $pid = fork();
