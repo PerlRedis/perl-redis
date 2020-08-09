@@ -9,7 +9,7 @@ use Test::SpawnRedisServer;
 
 use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
 
-my ($c, $t, $srv) = redis();
+my ($c, $t, $srv, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
 END {
   $c->() if $c;
   $t->() if $t;
@@ -32,10 +32,7 @@ subtest 'non-block TCP' => sub {
 
 
 subtest 'non-block UNIX' => sub {
-  plan skip_all => 'Define ENV TEST_REDIS_SERVER_SOCK_PATH to test UNIX socket support'
-    unless $ENV{TEST_REDIS_SERVER_SOCK_PATH};
-
-  ok(my $r = Redis->new(sock => $ENV{TEST_REDIS_SERVER_SOCK_PATH}), 'connected to our test redis-server via UNIX');
+  ok(my $r = Redis->new(sock => $sock_temp_file), 'connected to our test redis-server via UNIX');
 
   ## Try to read from server (nothing sent, so nothing to read)
   ## But kill if we block
