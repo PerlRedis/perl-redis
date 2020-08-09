@@ -31,7 +31,7 @@ use constant BUFSIZE     => 4096;
 sub _maybe_enable_timeouts {
     my ($self, $socket) = @_;
     $socket or return;
-    exists $self->{read_timeout} || exists $self->{write_timeout}
+    defined $self->{read_timeout} || defined $self->{write_timeout}
       or return $socket;
     IO::Socket::Timeout->enable_timeouts_on($socket);
     defined $self->{read_timeout}
@@ -49,7 +49,7 @@ sub new {
   $self->{debug} = $args{debug} || $ENV{REDIS_DEBUG};
 
   ## Deal with REDIS_SERVER ENV
-  if ($ENV{REDIS_SERVER} && ! exists $args{sock} && ! exists $args{server} && ! exists $args{sentinels}) {
+  if ($ENV{REDIS_SERVER} && ! defined $args{sock} && ! defined $args{server} && ! defined $args{sentinels}) {
     if ($ENV{REDIS_SERVER} =~ m!^/!) {
       $args{sock} = $ENV{REDIS_SERVER};
     }
@@ -71,7 +71,7 @@ sub new {
   $self->{conservative_reconnect} = $args{conservative_reconnect} || 0;
   $self->{every}         = $args{every} || 1000;
 
-  if (exists $args{sock}) {
+  if (defined $args{sock}) {
     $self->{server} = $args{sock};
     $self->{builder} = sub {
         my ($self) = @_;
@@ -99,11 +99,11 @@ sub new {
               my $sentinel = eval {
                   Redis::Sentinel->new(
                       server => $sentinel_address,
-                      cnx_timeout   => (   exists $self->{sentinels_cnx_timeout}
+                      cnx_timeout   => (   defined $self->{sentinels_cnx_timeout}
                                          ? $self->{sentinels_cnx_timeout}   : 0.1),
-                      read_timeout  => (   exists $self->{sentinels_read_timeout}
+                      read_timeout  => (   defined $self->{sentinels_read_timeout}
                                          ? $self->{sentinels_read_timeout}  : 1  ),
-                      write_timeout => (   exists $self->{sentinels_write_timeout}
+                      write_timeout => (   defined $self->{sentinels_write_timeout}
                                          ? $self->{sentinels_write_timeout} : 1  ),
                   )
               } or next;
@@ -146,7 +146,7 @@ sub new {
           croak($status || "failed to connect to any of the sentinels");
       };
   } else {
-    $self->{server} = exists $args{server} ? $args{server} : '127.0.0.1:6379';
+    $self->{server} = defined $args{server} ? $args{server} : '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
         $self->_maybe_enable_timeouts(
@@ -356,7 +356,7 @@ sub ping {
   croak "[ping] only works in synchronous mode, "
     if @_ && ref $_[-1] eq 'CODE';
 
-  return unless exists $self->{sock};
+  return unless defined $self->{sock};
 
   $self->wait_all_responses;
   return scalar try {
@@ -555,7 +555,7 @@ sub __process_pubsub_msg {
   my $data  = pop @$m;
   my $topic = defined $m->[2] ? $m->[2] : $sub;
 
-  if (!exists $subs->{$cbid}) {
+  if (!defined $subs->{$cbid}) {
     warn "Message for topic '$topic' ($cbid) without expected callback, ";
     return;
   }
@@ -616,7 +616,7 @@ sub __build_sock {
 
   $self->{__buf} = '';
 
-  if (exists $self->{password}) {
+  if (defined $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
       my $error = $_;
