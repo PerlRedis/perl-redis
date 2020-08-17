@@ -1,6 +1,11 @@
 Revision history for Redis
 
 {{$NEXT}}
+  * various travis fixes
+  * #112 applied
+  * enable unix socket tests by enabling them in the local test server
+  * #144: change exists into defined
+  * #146: Fix sentinel option typo
 
 1.996     2020-03-05 16:17:21+01:00 Europe/Paris
 
