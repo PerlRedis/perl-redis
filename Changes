@@ -1,6 +1,9 @@
 Revision history for Redis
 
 {{$NEXT}}
+
+1.997     2020-80-17 10:03:00+01:00 Europe/Paris
+
   * various travis fixes
   * #112 applied
   * enable unix socket tests by enabling them in the local test server
