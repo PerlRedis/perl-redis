@@ -5,9 +5,11 @@ use strict;
 use Test::More;
 use Test::Fatal;
 use Redis;
+use lib 't/tlib';
+use Test::SpawnRedisServer;
 
-plan skip_all => 'Define ENV TEST_REDIS_SERVER_SOCK_PATH to test UNIX socket support'
-  unless $ENV{TEST_REDIS_SERVER_SOCK_PATH};
+my ($c, undef, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
+END { $c->() if $c }
 
 my $conn = sub {
   my @args = @_;
@@ -15,7 +17,7 @@ my $conn = sub {
   my $r;
   is(
     exception {
-      $r = Redis->new(sock => $ENV{TEST_REDIS_SERVER_SOCK_PATH}, @args);
+      $r = Redis->new(sock => $sock_temp_file, @args);
     },
     undef,
     'Connected to the Redis server ok',

@@ -96,14 +96,18 @@ key = t/stunnel/key.pem
 
   my ($fh, $fn) = File::Temp::tempfile();
 
+  my (undef, $sock_temp_file) = File::Temp::tempfile();
+
   $fh->print("
     timeout $params{timeout}
     appendonly no
     daemonize no
     port $local_port
     bind 127.0.0.1
+    unixsocket $sock_temp_file
+    unixsocketperm 700
     loglevel debug
-    logfile redis-server-$addr.log
+    logfile FOOredis-server-$addr.log
   ");
   $fh->flush;
 
@@ -140,10 +144,10 @@ key = t/stunnel/key.pem
 
   if ( $use_ssl ) {
     # Connect to Redis through stunnel
-    return ($c, $t, $stunnel_addr, $ver, split(/[.]/, $ver), $stunnel_port);
+    return ($c, $t, $stunnel_addr, $ver, split(/[.]/, $ver), $stunnel_port, $sock_temp_file);
   } else {
     # Connect to Redis directly
-    return ($c, undef, $addr, $ver, split(/[.]/, $ver), $local_port);
+    return ($c, $addr, $ver, split(/[.]/, $ver), $local_port, $sock_temp_file);
   }
 }
 

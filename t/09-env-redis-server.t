@@ -10,7 +10,8 @@ use Test::SpawnRedisServer;
 
 use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
 
-my ($c, $t, $srv) = redis();
+my ($c, $t, $srv, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
+
 END {
   $c->() if $c;
   $t->() if $t;
@@ -31,6 +32,20 @@ subtest 'REDIS_SERVER TCP' => sub {
   $ENV{REDIS_SERVER} = "tcp:$srv";
   is(exception { $r = Redis->new(ssl => $use_ssl, SSL_verify_mode => 0) },
      undef, 'Direct IP/Port address (with tcp prefix) on REDIS_SERVER works',);
+  is($r->get($$), $n, '... connected to the expected server');
+};
+
+subtest 'REDIS_SERVER TCP with undef sock' => sub {
+  my $n = time();
+  my $r = Redis->new(server => $srv, sock => undef);
+  $r->set($$ => $n);
+
+  local $ENV{REDIS_SERVER} = $srv;
+  is(exception { $r = Redis->new }, undef, "Direct IP/Port address on REDIS_SERVER works ($srv)",);
+  is($r->get($$), $n, '... connected to the expected server');
+
+  $ENV{REDIS_SERVER} = "tcp:$srv";
+  is(exception { $r = Redis->new }, undef, 'Direct IP/Port address (with tcp prefix) on REDIS_SERVER works',);
   is($r->get($$), $n, '... connected to the expected server');
 };
 

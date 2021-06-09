@@ -2,6 +2,21 @@ Revision history for Redis
 
 {{$NEXT}}
 
+  * remove test expression that is problematic on OpenBSD and NetBSD
+
+1.997     2020-80-17 10:03:00+01:00 Europe/Paris
+
+  * various travis fixes
+  * #112 applied
+  * enable unix socket tests by enabling them in the local test server
+  * #144: change exists into defined
+  * #146: Fix sentinel option typo
+
+1.996     2020-03-05 16:17:21+01:00 Europe/Paris
+
+1.996     2020-03-05 11:56:11+01:00 Europe/Paris
+  * #139: Fix for "Unexpected error condition 104/linux"
+
 1.995     2019-07-22 11:20:07+02:00 Europe/Paris
   * revert #136, remove deps that are in core, as it breaks builds in some setup
 
