@@ -49,6 +49,20 @@ subtest 'REDIS_SERVER TCP with undef sock' => sub {
   is($r->get($$), $n, '... connected to the expected server');
 };
 
+subtest 'REDIS_SERVER TCP with undef sock' => sub {
+  my $n = time();
+  my $r = Redis->new(server => $srv, sock => undef);
+  $r->set($$ => $n);
+
+  local $ENV{REDIS_SERVER} = $srv;
+  is(exception { $r = Redis->new }, undef, "Direct IP/Port address on REDIS_SERVER works ($srv)",);
+  is($r->get($$), $n, '... connected to the expected server');
+
+  $ENV{REDIS_SERVER} = "tcp:$srv";
+  is(exception { $r = Redis->new }, undef, 'Direct IP/Port address (with tcp prefix) on REDIS_SERVER works',);
+  is($r->get($$), $n, '... connected to the expected server');
+};
+
 
 subtest 'REDIS_SERVER UNIX' => sub {
   my $srv = $ENV{TEST_REDIS_SERVER_SOCK_PATH};
