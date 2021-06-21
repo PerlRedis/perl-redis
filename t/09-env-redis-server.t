@@ -11,6 +11,7 @@ use Test::SpawnRedisServer;
 use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
 
 my ($c, $t, $srv, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
+
 END {
   $c->() if $c;
   $t->() if $t;
