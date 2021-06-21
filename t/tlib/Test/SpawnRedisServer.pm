@@ -147,7 +147,7 @@ key = t/stunnel/key.pem
     return ($c, $t, $stunnel_addr, $ver, split(/[.]/, $ver), $stunnel_port, $sock_temp_file);
   } else {
     # Connect to Redis directly
-    return ($c, $addr, $ver, split(/[.]/, $ver), $local_port, $sock_temp_file);
+    return ($c, undef, $addr, $ver, split(/[.]/, $ver), $local_port, $sock_temp_file);
   }
 }
 
