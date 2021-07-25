@@ -956,7 +956,7 @@ __END__
 
     ## Use all the regular Redis commands, they all accept a list of
     ## arguments
-    ## See http://redis.io/commands for full list
+    ## See https://redis.io/commands for full list
     $redis->get('key');
     $redis->set('key' => 'value');
     $redis->sort('list', 'DESC');
@@ -1005,7 +1005,7 @@ __END__
 
 =head1 DESCRIPTION
 
-Pure perl bindings for L<http://redis.io/>
+Pure perl bindings for L<https://redis.io/>
 
 This version supports protocol 2.x (multi-bulk) or later of Redis available at
 L<https://github.com/antirez/redis/>.
@@ -1246,7 +1246,7 @@ undefined value, Redis will not set the connection name.
 
 Please note that there are restrictions on the name you can set, the most
 important of which is, no spaces. See the L<CLIENT SETNAME
-documentation|http://redis.io/commands/client-setname> for all the juicy
+documentation|https://redis.io/commands/client-setname> for all the juicy
 details. This feature is safe to use with all versions of Redis servers. If C<<
 CLIENT SETNAME >> support is not available (Redis servers 2.6.9 and above
 only), the name parameter is ignored.
@@ -1322,7 +1322,7 @@ tells you the pattern that matched.
 
 =back
 
-See the L<Pub-Sub notes|http://redis.io/topics/pubsub> for more information
+See the L<Pub-Sub notes|https://redis.io/topics/pubsub> for more information
 about the messages you will receive on your callbacks after each L</subscribe>,
 L</unsubscribe>, L</psubscribe> and L</punsubscribe>.
 
@@ -1460,127 +1460,127 @@ modes.
 
   $r->del(key [key ...])
 
-Delete a key (see L<http://redis.io/commands/del>)
+Delete a key (see L<https://redis.io/commands/del>)
 
 =head2 dump
 
   $r->dump(key)
 
-Return a serialized version of the value stored at the specified key. (see L<http://redis.io/commands/dump>)
+Return a serialized version of the value stored at the specified key. (see L<https://redis.io/commands/dump>)
 
 =head2 exists
 
   $r->exists(key)
 
-Determine if a key exists (see L<http://redis.io/commands/exists>)
+Determine if a key exists (see L<https://redis.io/commands/exists>)
 
 =head2 expire
 
   $r->expire(key, seconds)
 
-Set a key's time to live in seconds (see L<http://redis.io/commands/expire>)
+Set a key's time to live in seconds (see L<https://redis.io/commands/expire>)
 
 =head2 expireat
 
   $r->expireat(key, timestamp)
 
-Set the expiration for a key as a UNIX timestamp (see L<http://redis.io/commands/expireat>)
+Set the expiration for a key as a UNIX timestamp (see L<https://redis.io/commands/expireat>)
 
 =head2 keys
 
   $r->keys(pattern)
 
-Find all keys matching the given pattern (see L<http://redis.io/commands/keys>)
+Find all keys matching the given pattern (see L<https://redis.io/commands/keys>)
 
 =head2 migrate
 
   $r->migrate(host, port, key, destination-db, timeout, [COPY], [REPLACE])
 
-Atomically transfer a key from a Redis instance to another one. (see L<http://redis.io/commands/migrate>)
+Atomically transfer a key from a Redis instance to another one. (see L<https://redis.io/commands/migrate>)
 
 =head2 move
 
   $r->move(key, db)
 
-Move a key to another database (see L<http://redis.io/commands/move>)
+Move a key to another database (see L<https://redis.io/commands/move>)
 
 =head2 object
 
   $r->object(subcommand, [arguments [arguments ...]])
 
-Inspect the internals of Redis objects (see L<http://redis.io/commands/object>)
+Inspect the internals of Redis objects (see L<https://redis.io/commands/object>)
 
 =head2 persist
 
   $r->persist(key)
 
-Remove the expiration from a key (see L<http://redis.io/commands/persist>)
+Remove the expiration from a key (see L<https://redis.io/commands/persist>)
 
 =head2 pexpire
 
   $r->pexpire(key, milliseconds)
 
-Set a key's time to live in milliseconds (see L<http://redis.io/commands/pexpire>)
+Set a key's time to live in milliseconds (see L<https://redis.io/commands/pexpire>)
 
 =head2 pexpireat
 
   $r->pexpireat(key, milliseconds-timestamp)
 
-Set the expiration for a key as a UNIX timestamp specified in milliseconds (see L<http://redis.io/commands/pexpireat>)
+Set the expiration for a key as a UNIX timestamp specified in milliseconds (see L<https://redis.io/commands/pexpireat>)
 
 =head2 pttl
 
   $r->pttl(key)
 
-Get the time to live for a key in milliseconds (see L<http://redis.io/commands/pttl>)
+Get the time to live for a key in milliseconds (see L<https://redis.io/commands/pttl>)
 
 =head2 randomkey
 
   $r->randomkey()
 
-Return a random key from the keyspace (see L<http://redis.io/commands/randomkey>)
+Return a random key from the keyspace (see L<https://redis.io/commands/randomkey>)
 
 =head2 rename
 
   $r->rename(key, newkey)
 
-Rename a key (see L<http://redis.io/commands/rename>)
+Rename a key (see L<https://redis.io/commands/rename>)
 
 =head2 renamenx
 
   $r->renamenx(key, newkey)
 
-Rename a key, only if the new key does not exist (see L<http://redis.io/commands/renamenx>)
+Rename a key, only if the new key does not exist (see L<https://redis.io/commands/renamenx>)
 
 =head2 restore
 
   $r->restore(key, ttl, serialized-value)
 
-Create a key using the provided serialized value, previously obtained using DUMP. (see L<http://redis.io/commands/restore>)
+Create a key using the provided serialized value, previously obtained using DUMP. (see L<https://redis.io/commands/restore>)
 
 =head2 scan
 
   $r->scan(cursor, [MATCH pattern], [COUNT count])
 
-Incrementally iterate the keys space (see L<http://redis.io/commands/scan>)
+Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
 
 =head2 sort
 
   $r->sort(key, [BY pattern], [LIMIT offset count], [GET pattern [GET pattern ...]], [ASC|DESC], [ALPHA], [STORE destination])
 
-Sort the elements in a list, set or sorted set (see L<http://redis.io/commands/sort>)
+Sort the elements in a list, set or sorted set (see L<https://redis.io/commands/sort>)
 
 =head2 ttl
 
   $r->ttl(key)
 
-Get the time to live for a key (see L<http://redis.io/commands/ttl>)
+Get the time to live for a key (see L<https://redis.io/commands/ttl>)
 
 =head2 type
 
   $r->type(key)
 
-Determine the type stored at key (see L<http://redis.io/commands/type>)
+Determine the type stored at key (see L<https://redis.io/commands/type>)
 
 =head1 STRINGS
 
@@ -1588,127 +1588,127 @@ Determine the type stored at key (see L<http://redis.io/commands/type>)
 
   $r->append(key, value)
 
-Append a value to a key (see L<http://redis.io/commands/append>)
+Append a value to a key (see L<https://redis.io/commands/append>)
 
 =head2 bitcount
 
   $r->bitcount(key, [start end])
 
-Count set bits in a string (see L<http://redis.io/commands/bitcount>)
+Count set bits in a string (see L<https://redis.io/commands/bitcount>)
 
 =head2 bitop
 
   $r->bitop(operation, destkey, key [key ...])
 
-Perform bitwise operations between strings (see L<http://redis.io/commands/bitop>)
+Perform bitwise operations between strings (see L<https://redis.io/commands/bitop>)
 
 =head2 bitpos
 
   $r->bitpos(key, bit, [start], [end])
 
-Find first bit set or clear in a string (see L<http://redis.io/commands/bitpos>)
+Find first bit set or clear in a string (see L<https://redis.io/commands/bitpos>)
 
 =head2 blpop
 
   $r->blpop(key [key ...], timeout)
 
-Remove and get the first element in a list, or block until one is available (see L<http://redis.io/commands/blpop>)
+Remove and get the first element in a list, or block until one is available (see L<https://redis.io/commands/blpop>)
 
 =head2 brpop
 
   $r->brpop(key [key ...], timeout)
 
-Remove and get the last element in a list, or block until one is available (see L<http://redis.io/commands/brpop>)
+Remove and get the last element in a list, or block until one is available (see L<https://redis.io/commands/brpop>)
 
 =head2 brpoplpush
 
   $r->brpoplpush(source, destination, timeout)
 
-Pop a value from a list, push it to another list and return it; or block until one is available (see L<http://redis.io/commands/brpoplpush>)
+Pop a value from a list, push it to another list and return it; or block until one is available (see L<https://redis.io/commands/brpoplpush>)
 
 =head2 decr
 
   $r->decr(key)
 
-Decrement the integer value of a key by one (see L<http://redis.io/commands/decr>)
+Decrement the integer value of a key by one (see L<https://redis.io/commands/decr>)
 
 =head2 decrby
 
   $r->decrby(key, decrement)
 
-Decrement the integer value of a key by the given number (see L<http://redis.io/commands/decrby>)
+Decrement the integer value of a key by the given number (see L<https://redis.io/commands/decrby>)
 
 =head2 get
 
   $r->get(key)
 
-Get the value of a key (see L<http://redis.io/commands/get>)
+Get the value of a key (see L<https://redis.io/commands/get>)
 
 =head2 getbit
 
   $r->getbit(key, offset)
 
-Returns the bit value at offset in the string value stored at key (see L<http://redis.io/commands/getbit>)
+Returns the bit value at offset in the string value stored at key (see L<https://redis.io/commands/getbit>)
 
 =head2 getrange
 
   $r->getrange(key, start, end)
 
-Get a substring of the string stored at a key (see L<http://redis.io/commands/getrange>)
+Get a substring of the string stored at a key (see L<https://redis.io/commands/getrange>)
 
 =head2 getset
 
   $r->getset(key, value)
 
-Set the string value of a key and return its old value (see L<http://redis.io/commands/getset>)
+Set the string value of a key and return its old value (see L<https://redis.io/commands/getset>)
 
 =head2 incr
 
   $r->incr(key)
 
-Increment the integer value of a key by one (see L<http://redis.io/commands/incr>)
+Increment the integer value of a key by one (see L<https://redis.io/commands/incr>)
 
 =head2 incrby
 
   $r->incrby(key, increment)
 
-Increment the integer value of a key by the given amount (see L<http://redis.io/commands/incrby>)
+Increment the integer value of a key by the given amount (see L<https://redis.io/commands/incrby>)
 
 =head2 incrbyfloat
 
   $r->incrbyfloat(key, increment)
 
-Increment the float value of a key by the given amount (see L<http://redis.io/commands/incrbyfloat>)
+Increment the float value of a key by the given amount (see L<https://redis.io/commands/incrbyfloat>)
 
 =head2 mget
 
   $r->mget(key [key ...])
 
-Get the values of all the given keys (see L<http://redis.io/commands/mget>)
+Get the values of all the given keys (see L<https://redis.io/commands/mget>)
 
 =head2 mset
 
   $r->mset(key value [key value ...])
 
-Set multiple keys to multiple values (see L<http://redis.io/commands/mset>)
+Set multiple keys to multiple values (see L<https://redis.io/commands/mset>)
 
 =head2 msetnx
 
   $r->msetnx(key value [key value ...])
 
-Set multiple keys to multiple values, only if none of the keys exist (see L<http://redis.io/commands/msetnx>)
+Set multiple keys to multiple values, only if none of the keys exist (see L<https://redis.io/commands/msetnx>)
 
 =head2 psetex
 
   $r->psetex(key, milliseconds, value)
 
-Set the value and expiration in milliseconds of a key (see L<http://redis.io/commands/psetex>)
+Set the value and expiration in milliseconds of a key (see L<https://redis.io/commands/psetex>)
 
 =head2 set
 
   $r->set(key, value, ['EX',  seconds], ['PX', milliseconds], ['NX'|'XX'])
 
-Set the string value of a key (see L<http://redis.io/commands/set>). Example:
+Set the string value of a key (see L<https://redis.io/commands/set>). Example:
 
   $r->set('key', 'test', 'EX', 60, 'NX')
 
@@ -1716,31 +1716,31 @@ Set the string value of a key (see L<http://redis.io/commands/set>). Example:
 
   $r->setbit(key, offset, value)
 
-Sets or clears the bit at offset in the string value stored at key (see L<http://redis.io/commands/setbit>)
+Sets or clears the bit at offset in the string value stored at key (see L<https://redis.io/commands/setbit>)
 
 =head2 setex
 
   $r->setex(key, seconds, value)
 
-Set the value and expiration of a key (see L<http://redis.io/commands/setex>)
+Set the value and expiration of a key (see L<https://redis.io/commands/setex>)
 
 =head2 setnx
 
   $r->setnx(key, value)
 
-Set the value of a key, only if the key does not exist (see L<http://redis.io/commands/setnx>)
+Set the value of a key, only if the key does not exist (see L<https://redis.io/commands/setnx>)
 
 =head2 setrange
 
   $r->setrange(key, offset, value)
 
-Overwrite part of a string at key starting at the specified offset (see L<http://redis.io/commands/setrange>)
+Overwrite part of a string at key starting at the specified offset (see L<https://redis.io/commands/setrange>)
 
 =head2 strlen
 
   $r->strlen(key)
 
-Get the length of the value stored in a key (see L<http://redis.io/commands/strlen>)
+Get the length of the value stored in a key (see L<https://redis.io/commands/strlen>)
 
 =head1 HASHES
 
@@ -1748,85 +1748,85 @@ Get the length of the value stored in a key (see L<http://redis.io/commands/strl
 
   $r->hdel(key, field [field ...])
 
-Delete one or more hash fields (see L<http://redis.io/commands/hdel>)
+Delete one or more hash fields (see L<https://redis.io/commands/hdel>)
 
 =head2 hexists
 
   $r->hexists(key, field)
 
-Determine if a hash field exists (see L<http://redis.io/commands/hexists>)
+Determine if a hash field exists (see L<https://redis.io/commands/hexists>)
 
 =head2 hget
 
   $r->hget(key, field)
 
-Get the value of a hash field (see L<http://redis.io/commands/hget>)
+Get the value of a hash field (see L<https://redis.io/commands/hget>)
 
 =head2 hgetall
 
   $r->hgetall(key)
 
-Get all the fields and values in a hash (see L<http://redis.io/commands/hgetall>)
+Get all the fields and values in a hash (see L<https://redis.io/commands/hgetall>)
 
 =head2 hincrby
 
   $r->hincrby(key, field, increment)
 
-Increment the integer value of a hash field by the given number (see L<http://redis.io/commands/hincrby>)
+Increment the integer value of a hash field by the given number (see L<https://redis.io/commands/hincrby>)
 
 =head2 hincrbyfloat
 
   $r->hincrbyfloat(key, field, increment)
 
-Increment the float value of a hash field by the given amount (see L<http://redis.io/commands/hincrbyfloat>)
+Increment the float value of a hash field by the given amount (see L<https://redis.io/commands/hincrbyfloat>)
 
 =head2 hkeys
 
   $r->hkeys(key)
 
-Get all the fields in a hash (see L<http://redis.io/commands/hkeys>)
+Get all the fields in a hash (see L<https://redis.io/commands/hkeys>)
 
 =head2 hlen
 
   $r->hlen(key)
 
-Get the number of fields in a hash (see L<http://redis.io/commands/hlen>)
+Get the number of fields in a hash (see L<https://redis.io/commands/hlen>)
 
 =head2 hmget
 
   $r->hmget(key, field [field ...])
 
-Get the values of all the given hash fields (see L<http://redis.io/commands/hmget>)
+Get the values of all the given hash fields (see L<https://redis.io/commands/hmget>)
 
 =head2 hmset
 
   $r->hmset(key, field value [field value ...])
 
-Set multiple hash fields to multiple values (see L<http://redis.io/commands/hmset>)
+Set multiple hash fields to multiple values (see L<https://redis.io/commands/hmset>)
 
 =head2 hscan
 
   $r->hscan(key, cursor, [MATCH pattern], [COUNT count])
 
-Incrementally iterate hash fields and associated values (see L<http://redis.io/commands/hscan>)
+Incrementally iterate hash fields and associated values (see L<https://redis.io/commands/hscan>)
 
 =head2 hset
 
   $r->hset(key, field, value)
 
-Set the string value of a hash field (see L<http://redis.io/commands/hset>)
+Set the string value of a hash field (see L<https://redis.io/commands/hset>)
 
 =head2 hsetnx
 
   $r->hsetnx(key, field, value)
 
-Set the value of a hash field, only if the field does not exist (see L<http://redis.io/commands/hsetnx>)
+Set the value of a hash field, only if the field does not exist (see L<https://redis.io/commands/hsetnx>)
 
 =head2 hvals
 
   $r->hvals(key)
 
-Get all the values in a hash (see L<http://redis.io/commands/hvals>)
+Get all the values in a hash (see L<https://redis.io/commands/hvals>)
 
 =head1 SETS
 
@@ -1834,91 +1834,91 @@ Get all the values in a hash (see L<http://redis.io/commands/hvals>)
 
   $r->sadd(key, member [member ...])
 
-Add one or more members to a set (see L<http://redis.io/commands/sadd>)
+Add one or more members to a set (see L<https://redis.io/commands/sadd>)
 
 =head2 scard
 
   $r->scard(key)
 
-Get the number of members in a set (see L<http://redis.io/commands/scard>)
+Get the number of members in a set (see L<https://redis.io/commands/scard>)
 
 =head2 sdiff
 
   $r->sdiff(key [key ...])
 
-Subtract multiple sets (see L<http://redis.io/commands/sdiff>)
+Subtract multiple sets (see L<https://redis.io/commands/sdiff>)
 
 =head2 sdiffstore
 
   $r->sdiffstore(destination, key [key ...])
 
-Subtract multiple sets and store the resulting set in a key (see L<http://redis.io/commands/sdiffstore>)
+Subtract multiple sets and store the resulting set in a key (see L<https://redis.io/commands/sdiffstore>)
 
 =head2 sinter
 
   $r->sinter(key [key ...])
 
-Intersect multiple sets (see L<http://redis.io/commands/sinter>)
+Intersect multiple sets (see L<https://redis.io/commands/sinter>)
 
 =head2 sinterstore
 
   $r->sinterstore(destination, key [key ...])
 
-Intersect multiple sets and store the resulting set in a key (see L<http://redis.io/commands/sinterstore>)
+Intersect multiple sets and store the resulting set in a key (see L<https://redis.io/commands/sinterstore>)
 
 =head2 sismember
 
   $r->sismember(key, member)
 
-Determine if a given value is a member of a set (see L<http://redis.io/commands/sismember>)
+Determine if a given value is a member of a set (see L<https://redis.io/commands/sismember>)
 
 =head2 smembers
 
   $r->smembers(key)
 
-Get all the members in a set (see L<http://redis.io/commands/smembers>)
+Get all the members in a set (see L<https://redis.io/commands/smembers>)
 
 =head2 smove
 
   $r->smove(source, destination, member)
 
-Move a member from one set to another (see L<http://redis.io/commands/smove>)
+Move a member from one set to another (see L<https://redis.io/commands/smove>)
 
 =head2 spop
 
   $r->spop(key)
 
-Remove and return a random member from a set (see L<http://redis.io/commands/spop>)
+Remove and return a random member from a set (see L<https://redis.io/commands/spop>)
 
 =head2 srandmember
 
   $r->srandmember(key, [count])
 
-Get one or multiple random members from a set (see L<http://redis.io/commands/srandmember>)
+Get one or multiple random members from a set (see L<https://redis.io/commands/srandmember>)
 
 =head2 srem
 
   $r->srem(key, member [member ...])
 
-Remove one or more members from a set (see L<http://redis.io/commands/srem>)
+Remove one or more members from a set (see L<https://redis.io/commands/srem>)
 
 =head2 sscan
 
   $r->sscan(key, cursor, [MATCH pattern], [COUNT count])
 
-Incrementally iterate Set elements (see L<http://redis.io/commands/sscan>)
+Incrementally iterate Set elements (see L<https://redis.io/commands/sscan>)
 
 =head2 sunion
 
   $r->sunion(key [key ...])
 
-Add multiple sets (see L<http://redis.io/commands/sunion>)
+Add multiple sets (see L<https://redis.io/commands/sunion>)
 
 =head2 sunionstore
 
   $r->sunionstore(destination, key [key ...])
 
-Add multiple sets and store the resulting set in a key (see L<http://redis.io/commands/sunionstore>)
+Add multiple sets and store the resulting set in a key (see L<https://redis.io/commands/sunionstore>)
 
 =head1 SORTED SETS
 
@@ -1926,127 +1926,127 @@ Add multiple sets and store the resulting set in a key (see L<http://redis.io/co
 
   $r->zadd(key, score member [score member ...])
 
-Add one or more members to a sorted set, or update its score if it already exists (see L<http://redis.io/commands/zadd>)
+Add one or more members to a sorted set, or update its score if it already exists (see L<https://redis.io/commands/zadd>)
 
 =head2 zcard
 
   $r->zcard(key)
 
-Get the number of members in a sorted set (see L<http://redis.io/commands/zcard>)
+Get the number of members in a sorted set (see L<https://redis.io/commands/zcard>)
 
 =head2 zcount
 
   $r->zcount(key, min, max)
 
-Count the members in a sorted set with scores within the given values (see L<http://redis.io/commands/zcount>)
+Count the members in a sorted set with scores within the given values (see L<https://redis.io/commands/zcount>)
 
 =head2 zincrby
 
   $r->zincrby(key, increment, member)
 
-Increment the score of a member in a sorted set (see L<http://redis.io/commands/zincrby>)
+Increment the score of a member in a sorted set (see L<https://redis.io/commands/zincrby>)
 
 =head2 zinterstore
 
   $r->zinterstore(destination, numkeys, key [key ...], [WEIGHTS weight [weight ...]], [AGGREGATE SUM|MIN|MAX])
 
-Intersect multiple sorted sets and store the resulting sorted set in a new key (see L<http://redis.io/commands/zinterstore>)
+Intersect multiple sorted sets and store the resulting sorted set in a new key (see L<https://redis.io/commands/zinterstore>)
 
 =head2 zlexcount
 
   $r->zlexcount(key, min, max)
 
-Count the number of members in a sorted set between a given lexicographical range (see L<http://redis.io/commands/zlexcount>)
+Count the number of members in a sorted set between a given lexicographical range (see L<https://redis.io/commands/zlexcount>)
 
 =head2 zrange
 
   $r->zrange(key, start, stop, [WITHSCORES])
 
-Return a range of members in a sorted set, by index (see L<http://redis.io/commands/zrange>)
+Return a range of members in a sorted set, by index (see L<https://redis.io/commands/zrange>)
 
 =head2 zrangebylex
 
   $r->zrangebylex(key, min, max, [LIMIT offset count])
 
-Return a range of members in a sorted set, by lexicographical range (see L<http://redis.io/commands/zrangebylex>)
+Return a range of members in a sorted set, by lexicographical range (see L<https://redis.io/commands/zrangebylex>)
 
 =head2 zrangebyscore
 
   $r->zrangebyscore(key, min, max, [WITHSCORES], [LIMIT offset count])
 
-Return a range of members in a sorted set, by score (see L<http://redis.io/commands/zrangebyscore>)
+Return a range of members in a sorted set, by score (see L<https://redis.io/commands/zrangebyscore>)
 
 =head2 zrank
 
   $r->zrank(key, member)
 
-Determine the index of a member in a sorted set (see L<http://redis.io/commands/zrank>)
+Determine the index of a member in a sorted set (see L<https://redis.io/commands/zrank>)
 
 =head2 zrem
 
   $r->zrem(key, member [member ...])
 
-Remove one or more members from a sorted set (see L<http://redis.io/commands/zrem>)
+Remove one or more members from a sorted set (see L<https://redis.io/commands/zrem>)
 
 =head2 zremrangebylex
 
   $r->zremrangebylex(key, min, max)
 
-Remove all members in a sorted set between the given lexicographical range (see L<http://redis.io/commands/zremrangebylex>)
+Remove all members in a sorted set between the given lexicographical range (see L<https://redis.io/commands/zremrangebylex>)
 
 =head2 zremrangebyrank
 
   $r->zremrangebyrank(key, start, stop)
 
-Remove all members in a sorted set within the given indexes (see L<http://redis.io/commands/zremrangebyrank>)
+Remove all members in a sorted set within the given indexes (see L<https://redis.io/commands/zremrangebyrank>)
 
 =head2 zremrangebyscore
 
   $r->zremrangebyscore(key, min, max)
 
-Remove all members in a sorted set within the given scores (see L<http://redis.io/commands/zremrangebyscore>)
+Remove all members in a sorted set within the given scores (see L<https://redis.io/commands/zremrangebyscore>)
 
 =head2 zrevrange
 
   $r->zrevrange(key, start, stop, [WITHSCORES])
 
-Return a range of members in a sorted set, by index, with scores ordered from high to low (see L<http://redis.io/commands/zrevrange>)
+Return a range of members in a sorted set, by index, with scores ordered from high to low (see L<https://redis.io/commands/zrevrange>)
 
 =head2 zrevrangebylex
 
   $r->zrevrangebylex(key, max, min, [LIMIT offset count])
 
-Return a range of members in a sorted set, by lexicographical range, ordered from higher to lower strings. (see L<http://redis.io/commands/zrevrangebylex>)
+Return a range of members in a sorted set, by lexicographical range, ordered from higher to lower strings. (see L<https://redis.io/commands/zrevrangebylex>)
 
 =head2 zrevrangebyscore
 
   $r->zrevrangebyscore(key, max, min, [WITHSCORES], [LIMIT offset count])
 
-Return a range of members in a sorted set, by score, with scores ordered from high to low (see L<http://redis.io/commands/zrevrangebyscore>)
+Return a range of members in a sorted set, by score, with scores ordered from high to low (see L<https://redis.io/commands/zrevrangebyscore>)
 
 =head2 zrevrank
 
   $r->zrevrank(key, member)
 
-Determine the index of a member in a sorted set, with scores ordered from high to low (see L<http://redis.io/commands/zrevrank>)
+Determine the index of a member in a sorted set, with scores ordered from high to low (see L<https://redis.io/commands/zrevrank>)
 
 =head2 zscan
 
   $r->zscan(key, cursor, [MATCH pattern], [COUNT count])
 
-Incrementally iterate sorted sets elements and associated scores (see L<http://redis.io/commands/zscan>)
+Incrementally iterate sorted sets elements and associated scores (see L<https://redis.io/commands/zscan>)
 
 =head2 zscore
 
   $r->zscore(key, member)
 
-Get the score associated with the given member in a sorted set (see L<http://redis.io/commands/zscore>)
+Get the score associated with the given member in a sorted set (see L<https://redis.io/commands/zscore>)
 
 =head2 zunionstore
 
   $r->zunionstore(destination, numkeys, key [key ...], [WEIGHTS weight [weight ...]], [AGGREGATE SUM|MIN|MAX])
 
-Add multiple sorted sets and store the resulting sorted set in a new key (see L<http://redis.io/commands/zunionstore>)
+Add multiple sorted sets and store the resulting sorted set in a new key (see L<https://redis.io/commands/zunionstore>)
 
 =head1 HYPERLOGLOG
 
@@ -2054,19 +2054,19 @@ Add multiple sorted sets and store the resulting sorted set in a new key (see L<
 
   $r->pfadd(key, element [element ...])
 
-Adds the specified elements to the specified HyperLogLog. (see L<http://redis.io/commands/pfadd>)
+Adds the specified elements to the specified HyperLogLog. (see L<https://redis.io/commands/pfadd>)
 
 =head2 pfcount
 
   $r->pfcount(key [key ...])
 
-Return the approximated cardinality of the set(s) observed by the HyperLogLog at key(s). (see L<http://redis.io/commands/pfcount>)
+Return the approximated cardinality of the set(s) observed by the HyperLogLog at key(s). (see L<https://redis.io/commands/pfcount>)
 
 =head2 pfmerge
 
   $r->pfmerge(destkey, sourcekey [sourcekey ...])
 
-Merge N different HyperLogLogs into a single one. (see L<http://redis.io/commands/pfmerge>)
+Merge N different HyperLogLogs into a single one. (see L<https://redis.io/commands/pfmerge>)
 
 =head1 PUB/SUB
 
@@ -2074,7 +2074,7 @@ Merge N different HyperLogLogs into a single one. (see L<http://redis.io/command
 
   $r->pubsub(subcommand, [argument [argument ...]])
 
-Inspect the state of the Pub/Sub subsystem (see L<http://redis.io/commands/pubsub>)
+Inspect the state of the Pub/Sub subsystem (see L<https://redis.io/commands/pubsub>)
 
 =head1 TRANSACTIONS
 
@@ -2082,31 +2082,31 @@ Inspect the state of the Pub/Sub subsystem (see L<http://redis.io/commands/pubsu
 
   $r->discard()
 
-Discard all commands issued after MULTI (see L<http://redis.io/commands/discard>)
+Discard all commands issued after MULTI (see L<https://redis.io/commands/discard>)
 
 =head2 exec
 
   $r->exec()
 
-Execute all commands issued after MULTI (see L<http://redis.io/commands/exec>)
+Execute all commands issued after MULTI (see L<https://redis.io/commands/exec>)
 
 =head2 multi
 
   $r->multi()
 
-Mark the start of a transaction block (see L<http://redis.io/commands/multi>)
+Mark the start of a transaction block (see L<https://redis.io/commands/multi>)
 
 =head2 unwatch
 
   $r->unwatch()
 
-Forget about all watched keys (see L<http://redis.io/commands/unwatch>)
+Forget about all watched keys (see L<https://redis.io/commands/unwatch>)
 
 =head2 watch
 
   $r->watch(key [key ...])
 
-Watch the given keys to determine execution of the MULTI/EXEC block (see L<http://redis.io/commands/watch>)
+Watch the given keys to determine execution of the MULTI/EXEC block (see L<https://redis.io/commands/watch>)
 
 =head1 SCRIPTING
 
@@ -2114,37 +2114,37 @@ Watch the given keys to determine execution of the MULTI/EXEC block (see L<http:
 
   $r->eval(script, numkeys, key [key ...], arg [arg ...])
 
-Execute a Lua script server side (see L<http://redis.io/commands/eval>)
+Execute a Lua script server side (see L<https://redis.io/commands/eval>)
 
 =head2 evalsha
 
   $r->evalsha(sha1, numkeys, key [key ...], arg [arg ...])
 
-Execute a Lua script server side (see L<http://redis.io/commands/evalsha>)
+Execute a Lua script server side (see L<https://redis.io/commands/evalsha>)
 
 =head2 script_exists
 
   $r->script_exists(script [script ...])
 
-Check existence of scripts in the script cache. (see L<http://redis.io/commands/script-exists>)
+Check existence of scripts in the script cache. (see L<https://redis.io/commands/script-exists>)
 
 =head2 script_flush
 
   $r->script_flush()
 
-Remove all the scripts from the script cache. (see L<http://redis.io/commands/script-flush>)
+Remove all the scripts from the script cache. (see L<https://redis.io/commands/script-flush>)
 
 =head2 script_kill
 
   $r->script_kill()
 
-Kill the script currently in execution. (see L<http://redis.io/commands/script-kill>)
+Kill the script currently in execution. (see L<https://redis.io/commands/script-kill>)
 
 =head2 script_load
 
   $r->script_load(script)
 
-Load the specified Lua script into the script cache. (see L<http://redis.io/commands/script-load>)
+Load the specified Lua script into the script cache. (see L<https://redis.io/commands/script-load>)
 
 =head1 CONNECTION
 
@@ -2152,31 +2152,31 @@ Load the specified Lua script into the script cache. (see L<http://redis.io/comm
 
   $r->auth(password)
 
-Authenticate to the server (see L<http://redis.io/commands/auth>)
+Authenticate to the server (see L<https://redis.io/commands/auth>)
 
 =head2 echo
 
   $r->echo(message)
 
-Echo the given string (see L<http://redis.io/commands/echo>)
+Echo the given string (see L<https://redis.io/commands/echo>)
 
 =head2 ping
 
   $r->ping()
 
-Ping the server (see L<http://redis.io/commands/ping>)
+Ping the server (see L<https://redis.io/commands/ping>)
 
 =head2 quit
 
   $r->quit()
 
-Close the connection (see L<http://redis.io/commands/quit>)
+Close the connection (see L<https://redis.io/commands/quit>)
 
 =head2 select
 
   $r->select(index)
 
-Change the selected database for the current connection (see L<http://redis.io/commands/select>)
+Change the selected database for the current connection (see L<https://redis.io/commands/select>)
 
 =head1 SERVER
 
@@ -2184,271 +2184,271 @@ Change the selected database for the current connection (see L<http://redis.io/c
 
   $r->bgrewriteaof()
 
-Asynchronously rewrite the append-only file (see L<http://redis.io/commands/bgrewriteaof>)
+Asynchronously rewrite the append-only file (see L<https://redis.io/commands/bgrewriteaof>)
 
 =head2 bgsave
 
   $r->bgsave()
 
-Asynchronously save the dataset to disk (see L<http://redis.io/commands/bgsave>)
+Asynchronously save the dataset to disk (see L<https://redis.io/commands/bgsave>)
 
 =head2 client_getname
 
   $r->client_getname()
 
-Get the current connection name (see L<http://redis.io/commands/client-getname>)
+Get the current connection name (see L<https://redis.io/commands/client-getname>)
 
 =head2 client_kill
 
   $r->client_kill([ip:port], [ID client-id], [TYPE normal|slave|pubsub], [ADDR ip:port], [SKIPME yes/no])
 
-Kill the connection of a client (see L<http://redis.io/commands/client-kill>)
+Kill the connection of a client (see L<https://redis.io/commands/client-kill>)
 
 =head2 client_list
 
   $r->client_list()
 
-Get the list of client connections (see L<http://redis.io/commands/client-list>)
+Get the list of client connections (see L<https://redis.io/commands/client-list>)
 
 =head2 client_pause
 
   $r->client_pause(timeout)
 
-Stop processing commands from clients for some time (see L<http://redis.io/commands/client-pause>)
+Stop processing commands from clients for some time (see L<https://redis.io/commands/client-pause>)
 
 =head2 client_setname
 
   $r->client_setname(connection-name)
 
-Set the current connection name (see L<http://redis.io/commands/client-setname>)
+Set the current connection name (see L<https://redis.io/commands/client-setname>)
 
 =head2 cluster_slots
 
   $r->cluster_slots()
 
-Get array of Cluster slot to node mappings (see L<http://redis.io/commands/cluster-slots>)
+Get array of Cluster slot to node mappings (see L<https://redis.io/commands/cluster-slots>)
 
 =head2 command
 
   $r->command()
 
-Get array of Redis command details (see L<http://redis.io/commands/command>)
+Get array of Redis command details (see L<https://redis.io/commands/command>)
 
 =head2 command_count
 
   $r->command_count()
 
-Get total number of Redis commands (see L<http://redis.io/commands/command-count>)
+Get total number of Redis commands (see L<https://redis.io/commands/command-count>)
 
 =head2 command_getkeys
 
   $r->command_getkeys()
 
-Extract keys given a full Redis command (see L<http://redis.io/commands/command-getkeys>)
+Extract keys given a full Redis command (see L<https://redis.io/commands/command-getkeys>)
 
 =head2 command_info
 
   $r->command_info(command-name [command-name ...])
 
-Get array of specific Redis command details (see L<http://redis.io/commands/command-info>)
+Get array of specific Redis command details (see L<https://redis.io/commands/command-info>)
 
 =head2 config_get
 
   $r->config_get(parameter)
 
-Get the value of a configuration parameter (see L<http://redis.io/commands/config-get>)
+Get the value of a configuration parameter (see L<https://redis.io/commands/config-get>)
 
 =head2 config_resetstat
 
   $r->config_resetstat()
 
-Reset the stats returned by INFO (see L<http://redis.io/commands/config-resetstat>)
+Reset the stats returned by INFO (see L<https://redis.io/commands/config-resetstat>)
 
 =head2 config_rewrite
 
   $r->config_rewrite()
 
-Rewrite the configuration file with the in memory configuration (see L<http://redis.io/commands/config-rewrite>)
+Rewrite the configuration file with the in memory configuration (see L<https://redis.io/commands/config-rewrite>)
 
 =head2 config_set
 
   $r->config_set(parameter, value)
 
-Set a configuration parameter to the given value (see L<http://redis.io/commands/config-set>)
+Set a configuration parameter to the given value (see L<https://redis.io/commands/config-set>)
 
 =head2 dbsize
 
   $r->dbsize()
 
-Return the number of keys in the selected database (see L<http://redis.io/commands/dbsize>)
+Return the number of keys in the selected database (see L<https://redis.io/commands/dbsize>)
 
 =head2 debug_object
 
   $r->debug_object(key)
 
-Get debugging information about a key (see L<http://redis.io/commands/debug-object>)
+Get debugging information about a key (see L<https://redis.io/commands/debug-object>)
 
 =head2 debug_segfault
 
   $r->debug_segfault()
 
-Make the server crash (see L<http://redis.io/commands/debug-segfault>)
+Make the server crash (see L<https://redis.io/commands/debug-segfault>)
 
 =head2 flushall
 
   $r->flushall()
 
-Remove all keys from all databases (see L<http://redis.io/commands/flushall>)
+Remove all keys from all databases (see L<https://redis.io/commands/flushall>)
 
 =head2 flushdb
 
   $r->flushdb()
 
-Remove all keys from the current database (see L<http://redis.io/commands/flushdb>)
+Remove all keys from the current database (see L<https://redis.io/commands/flushdb>)
 
 =head2 info
 
   $r->info([section])
 
-Get information and statistics about the server (see L<http://redis.io/commands/info>)
+Get information and statistics about the server (see L<https://redis.io/commands/info>)
 
 =head2 lastsave
 
   $r->lastsave()
 
-Get the UNIX time stamp of the last successful save to disk (see L<http://redis.io/commands/lastsave>)
+Get the UNIX time stamp of the last successful save to disk (see L<https://redis.io/commands/lastsave>)
 
 =head2 lindex
 
   $r->lindex(key, index)
 
-Get an element from a list by its index (see L<http://redis.io/commands/lindex>)
+Get an element from a list by its index (see L<https://redis.io/commands/lindex>)
 
 =head2 linsert
 
   $r->linsert(key, BEFORE|AFTER, pivot, value)
 
-Insert an element before or after another element in a list (see L<http://redis.io/commands/linsert>)
+Insert an element before or after another element in a list (see L<https://redis.io/commands/linsert>)
 
 =head2 llen
 
   $r->llen(key)
 
-Get the length of a list (see L<http://redis.io/commands/llen>)
+Get the length of a list (see L<https://redis.io/commands/llen>)
 
 =head2 lpop
 
   $r->lpop(key)
 
-Remove and get the first element in a list (see L<http://redis.io/commands/lpop>)
+Remove and get the first element in a list (see L<https://redis.io/commands/lpop>)
 
 =head2 lpush
 
   $r->lpush(key, value [value ...])
 
-Prepend one or multiple values to a list (see L<http://redis.io/commands/lpush>)
+Prepend one or multiple values to a list (see L<https://redis.io/commands/lpush>)
 
 =head2 lpushx
 
   $r->lpushx(key, value)
 
-Prepend a value to a list, only if the list exists (see L<http://redis.io/commands/lpushx>)
+Prepend a value to a list, only if the list exists (see L<https://redis.io/commands/lpushx>)
 
 =head2 lrange
 
   $r->lrange(key, start, stop)
 
-Get a range of elements from a list (see L<http://redis.io/commands/lrange>)
+Get a range of elements from a list (see L<https://redis.io/commands/lrange>)
 
 =head2 lrem
 
   $r->lrem(key, count, value)
 
-Remove elements from a list (see L<http://redis.io/commands/lrem>)
+Remove elements from a list (see L<https://redis.io/commands/lrem>)
 
 =head2 lset
 
   $r->lset(key, index, value)
 
-Set the value of an element in a list by its index (see L<http://redis.io/commands/lset>)
+Set the value of an element in a list by its index (see L<https://redis.io/commands/lset>)
 
 =head2 ltrim
 
   $r->ltrim(key, start, stop)
 
-Trim a list to the specified range (see L<http://redis.io/commands/ltrim>)
+Trim a list to the specified range (see L<https://redis.io/commands/ltrim>)
 
 =head2 monitor
 
   $r->monitor()
 
-Listen for all requests received by the server in real time (see L<http://redis.io/commands/monitor>)
+Listen for all requests received by the server in real time (see L<https://redis.io/commands/monitor>)
 
 =head2 role
 
   $r->role()
 
-Return the role of the instance in the context of replication (see L<http://redis.io/commands/role>)
+Return the role of the instance in the context of replication (see L<https://redis.io/commands/role>)
 
 =head2 rpop
 
   $r->rpop(key)
 
-Remove and get the last element in a list (see L<http://redis.io/commands/rpop>)
+Remove and get the last element in a list (see L<https://redis.io/commands/rpop>)
 
 =head2 rpoplpush
 
   $r->rpoplpush(source, destination)
 
-Remove the last element in a list, append it to another list and return it (see L<http://redis.io/commands/rpoplpush>)
+Remove the last element in a list, append it to another list and return it (see L<https://redis.io/commands/rpoplpush>)
 
 =head2 rpush
 
   $r->rpush(key, value [value ...])
 
-Append one or multiple values to a list (see L<http://redis.io/commands/rpush>)
+Append one or multiple values to a list (see L<https://redis.io/commands/rpush>)
 
 =head2 rpushx
 
   $r->rpushx(key, value)
 
-Append a value to a list, only if the list exists (see L<http://redis.io/commands/rpushx>)
+Append a value to a list, only if the list exists (see L<https://redis.io/commands/rpushx>)
 
 =head2 save
 
   $r->save()
 
-Synchronously save the dataset to disk (see L<http://redis.io/commands/save>)
+Synchronously save the dataset to disk (see L<https://redis.io/commands/save>)
 
 =head2 shutdown
 
   $r->shutdown([NOSAVE], [SAVE])
 
-Synchronously save the dataset to disk and then shut down the server (see L<http://redis.io/commands/shutdown>)
+Synchronously save the dataset to disk and then shut down the server (see L<https://redis.io/commands/shutdown>)
 
 =head2 slaveof
 
   $r->slaveof(host, port)
 
-Make the server a slave of another instance, or promote it as master (see L<http://redis.io/commands/slaveof>)
+Make the server a slave of another instance, or promote it as master (see L<https://redis.io/commands/slaveof>)
 
 =head2 slowlog
 
   $r->slowlog(subcommand, [argument])
 
-Manages the Redis slow queries log (see L<http://redis.io/commands/slowlog>)
+Manages the Redis slow queries log (see L<https://redis.io/commands/slowlog>)
 
 =head2 sync
 
   $r->sync()
 
-Internal command used for replication (see L<http://redis.io/commands/sync>)
+Internal command used for replication (see L<https://redis.io/commands/sync>)
 
 =head2 time
 
   $r->time()
 
-Return the current server time (see L<http://redis.io/commands/time>)
+Return the current server time (see L<https://redis.io/commands/time>)
 
 =head1 ACKNOWLEDGEMENTS
 

@@ -53,7 +53,7 @@ foreach (@groups) {
         my %h = %{$hash{$group}{$command}};
         $pod .= "=head2 $command\n\n"
           . "  $h{synopsis}\n\n"
-          . $h{text} . " (see L<http://redis.io/commands/$h{ref}>)\n\n";
+          . $h{text} . " (see L<https://redis.io/commands/$h{ref}>)\n\n";
     }
 }
 say $pod;
