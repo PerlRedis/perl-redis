@@ -8,12 +8,23 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
 
 my $n;
 is(
-  exception { $n = Redis->new(server => $srv, name => 'no_auto_connect', no_auto_connect_on_new => 1) },
+  exception { $n = Redis->new(server => $srv,
+                              name => 'no_auto_connect',
+                              no_auto_connect_on_new => 1,
+                              ssl => $use_ssl,
+                              SSL_verify_mode => 0) },
   undef, 'Got an unconnected object',
 );
 ok(!$n->ping, "ping doesn't work yet");
@@ -22,7 +33,10 @@ ok($n->ping, "ping works after connection");
 
 my $o;
 is(
-  exception { $o = Redis->new(server => $srv, name => 'my_name_is_glorious') },
+  exception { $o = Redis->new(server => $srv,
+                              name => 'my_name_is_glorious',
+                              ssl => $use_ssl,
+                              SSL_verify_mode => 0) },
   undef, 'connected to our test redis-server',
 );
 ok($o->ping, 'ping');
@@ -369,14 +383,18 @@ ok($o->quit,  'quit');
 ok(!$o->quit, 'quit again, ok');
 ok(!$o->ping, '... but after quit() returns false');
 
-$o = Redis->new(server => $srv);
+$o = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
 ok($o->shutdown(),  'shutdown() once is ok');
 ok(!$o->shutdown(), '... twice also lives, but returns false');
 ok(!$o->ping(),     'ping() will be false after shutdown()');
 
+# Shutdown the SSL tunnel if it is used
+$t->() if $t;
+# and wait for the server to shutdown
 sleep(1);
+
 like(
-  exception { Redis->new(server => $srv) },
+  exception { Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0) },
   qr/Could not connect to Redis server at $srv/,
   'Failed connection throws exception'
 );

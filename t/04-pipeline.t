@@ -9,16 +9,26 @@ use lib 't/tlib';
 use Test::SpawnRedisServer;
 use Test::Deep;
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
+
 {
-my $r = Redis->new(server => $srv);
+my $r = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
 eval { $r->multi( ); };
 plan 'skip_all' => "multi without arguments not implemented on this redis server"  if $@ && $@ =~ /unknown command/;
 }
 
 
-ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
+ok(my $r = Redis->new(server => $srv,
+                      ssl => $use_ssl,
+                      SSL_verify_mode => 0), 'connected to our test redis-server');
 
 sub pipeline_ok {
   my ($desc, @commands) = @_;

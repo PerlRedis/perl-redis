@@ -21,12 +21,19 @@ use Scalar::Util ();
 
 use Redis::Sentinel;
 
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL };
+
 use constant WIN32       => $^O =~ /mswin32/i;
 use constant EWOULDBLOCK => eval {Errno::EWOULDBLOCK} || -1E9;
 use constant EAGAIN      => eval {Errno::EAGAIN} || -1E9;
 use constant EINTR       => eval {Errno::EINTR} || -1E9;
 use constant ECONNRESET  => eval {Errno::ECONNRESET} || -1E9;
-use constant BUFSIZE     => 4096;
+
+# According to IO::Socket::SSL documentation, 16k is the maximum
+# size of an SSL frame and because sysread returns data from only
+# a single SSL frame you guarantee this way, that there is no pending
+# data.
+use constant BUFSIZE     => 16_384;
 
 sub _maybe_enable_timeouts {
     my ($self, $socket) = @_;
@@ -134,13 +141,24 @@ sub new {
                       )
                   ];
               }
-              
+
+              my $socket_class;
+
+              my %socket_args = (
+                  PeerAddr => $server_address,
+                  ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
+              );
+
+              if (exists $args{ssl} and $args{ssl}) {
+                  croak("Redis client does not support SSL with Redis Sentinel yet");
+              }
+              else {
+                  $self->{ssl}  = 0;
+                  $socket_class = 'IO::Socket::INET';
+              }
+
               return $self->_maybe_enable_timeouts(
-                  IO::Socket::INET->new(
-                      PeerAddr => $server_address,
-                      Proto    => 'tcp',
-                      ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-                  )
+                  $socket_class->new(%socket_args)
               );
           }
           croak($status || "failed to connect to any of the sentinels");
@@ -149,12 +167,30 @@ sub new {
     $self->{server} = defined $args{server} ? $args{server} : '127.0.0.1:6379';
     $self->{builder} = sub {
         my ($self) = @_;
-        $self->_maybe_enable_timeouts(
-            IO::Socket::INET->new(
-                PeerAddr => $self->{server},
-                Proto    => 'tcp',
-                ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
-            )
+
+        my $socket_class;
+
+        my %socket_args = (
+            PeerAddr => $self->{server},
+            ( $self->{cnx_timeout} ? ( Timeout => $self->{cnx_timeout} ) : () ),
+        );
+
+        if (exists $args{ssl} and $args{ssl}) {
+            if ( ! SSL_AVAILABLE ) {
+                croak("IO::Socket::SSL is required for connecting to Redis using SSL");
+            }
+
+            $self->{ssl}  = 1;
+            $socket_class = 'IO::Socket::SSL';
+            $socket_args{SSL_verify_mode} = $args{SSL_verify_mode} // 1;
+        }
+        else {
+            $self->{ssl}  = 0;
+            $socket_class = 'IO::Socket::INET';
+        }
+
+        return $self->_maybe_enable_timeouts(
+            $socket_class->new(%socket_args)
         );
     };
   }
@@ -439,12 +475,28 @@ sub wait_for_messages {
       $s->remove($s->handles);
       $s->add($sock);
 
-      while ($s->can_read($timeout)) {      
+      while ($s->can_read($timeout)) {
         my $has_stuff = $self->__try_read_sock($sock);
         # If the socket is ready to read but there is nothing to read, ( so
         # it's an EOF ), try to reconnect.
         defined $has_stuff
           or $self->__throw_reconnect('EOF from server');
+
+        my $cond;
+
+        if ( ! $self->{ssl} ) {
+          $cond = sub {
+            # if __try_read_sock() return 0 (no data)
+            # or undef ( socket became EOF), back to select until timeout
+            return $self->{__buf} || $self->__try_read_sock($sock);
+          }
+        } else {
+          $cond = sub {
+            # continue if there is still some data left.  If the buffer is
+            # larger than 16K, there won't be any pending data left though
+            return $self->{__buf} || $sock->pending;
+          }
+        }
 
         do {
           my ($reply, $error) = $self->__read_response('WAIT_FOR_MESSAGES');
@@ -452,11 +504,9 @@ sub wait_for_messages {
           $self->__process_pubsub_msg($reply);
           $count++;
 
-          # if __try_read_sock() return 0 (no data)
-          # or undef ( socket became EOF), back to select until timeout
-        } while ($self->{__buf} || $self->__try_read_sock($sock));
+        } while ($cond->());
       }
-    
+
     });
 
   } catch {
@@ -707,7 +757,8 @@ sub __send_command {
     $buf .= defined($bin) ? '$' . length($bin) . "\r\n$bin\r\n" : "\$-1\r\n";
   }
 
-  ## Check to see if socket was closed: reconnect on EOF
+  # this function works differently with a SSL socket cause it's not
+  # possible to read just a few bytes from a TLS frame.
   my $status = $self->__try_read_sock($sock);
   $self->__throw_reconnect('Not connected to any server')
     unless defined $status;
@@ -855,14 +906,24 @@ sub __try_read_sock {
           $err = 0 + $!;
           __fh_nonblocking_win32($sock, 0);
       } else {
-          $res = recv($sock, $data, BUFSIZE, MSG_DONTWAIT);
+          if ($self->{ssl}) {
+              ## use peek to see if there is any data available instead of reading
+              ## it cause it's not possible to read only a few bytes from an SSL
+              ## frame.  This does not work in WIN32
+              $sock->blocking(0);
+              $res = $sock->peek($data, BUFSIZE);
+              $sock->blocking(1);
+          } else {
+              $res = recv($sock, $data, BUFSIZE, MSG_DONTWAIT);
+          }
+
           $err = 0 + $!;
       }
 
       if (defined $res) {
         ## have read some data
         if (length($data)) {
-            $self->{__buf} .= $data;
+            $self->{__buf} .= $data unless $self->{ssl};
             return 1;
         }
 
@@ -926,6 +987,15 @@ __END__
 
     ## Use UNIX domain socket
     my $redis = Redis->new(sock => '/path/to/socket');
+
+    ## Connect to Redis over a secure SSL/TLS channel.  See
+    ## IO::Socket::SSL documentation for more information
+    ## about SSL_verify_mode parameter.
+    my $redis = Redis->new(
+        server => 'redis.tls.example.com:8080',
+        ssl => 1,
+        SSL_verify_mode => SSL_VERIFY_PEER,
+    );
 
     ## Enable auto-reconnect
     ## Try to reconnect every 1s up to 60 seconds until success
@@ -1080,6 +1150,7 @@ So, if you are working with character strings, you should pre-encode or post-dec
 
     my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( server => '192.168.0.1:6379', ssl => 1, SSL_verify_mode => SSL_VERIFY_PEER );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
@@ -1250,6 +1321,18 @@ documentation|https://redis.io/commands/client-setname> for all the juicy
 details. This feature is safe to use with all versions of Redis servers. If C<<
 CLIENT SETNAME >> support is not available (Redis servers 2.6.9 and above
 only), the name parameter is ignored.
+
+=head3 C<< ssl >>
+
+You can connect to Redis over SSL/TLS by setting this flag if the target Redis
+server or cluster has been setup to support SSL/TLS.  This requires IO::Socket::SSL
+to be installed on the client.  It's off by default.
+
+=head3 C<< SSL_verify_mode >>
+
+This parameter will be applied when C<< ssl >> flag is set.  It sets the verification
+mode for the peer certificate.  It's compatible with the parameter with the same name
+in IO::Socket::SSL.
 
 =head3 C<< debug >>
 

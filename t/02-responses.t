@@ -10,11 +10,19 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
 
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
 
-ok(my $r = Redis->new(server => $srv), 'connected to our test redis-server');
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
+
+ok(my $r = Redis->new(server => $srv,
+                      ssl => $use_ssl,
+                      SSL_verify_mode => 0), 'connected to our test redis-server');
 
 sub r {
   $r->{sock} = IO::String->new(join('', map {"$_\r\n"} @_));

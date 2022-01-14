@@ -8,15 +8,23 @@ use lib 't/tlib';
 use Test::SpawnRedisServer;
 use Digest::SHA qw(sha1_hex);
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
 
-my $o = Redis->new(server => $srv);
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
+
+my $o = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
 
 ## Make sure SCRIPT commands are available
 eval { $o->script_flush };
 if ($@ && $@ =~ /ERR unknown command 'SCRIPT',/) {
   $c->();
+  $t->();
   plan skip_all => 'This redis-server lacks scripting support';
 }
 

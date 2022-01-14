@@ -11,4 +11,6 @@ before_install:
 install:
  - "cpanm --quiet --notest Dist::Zilla"
  - "dzil authordeps | xargs cpanm --quiet --notest && dzil listdeps --develop | xargs cpanm --quiet --notest"
-script: "dzil test --release"
+script:
+  - "dzil test --release"
+  - "USE_SSL=1 dzil test --release"

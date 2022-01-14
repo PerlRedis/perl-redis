@@ -9,21 +9,42 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer qw( redis reap );
 
-my ($c, $srv) = redis();
-END { $c->() if $c }
+use constant DEFAULT_DELAY => 5;
+use constant SSL_AVAILABLE => eval { require IO::Socket::SSL } || 0;
+
+my ($c, $t, $srv) = redis();
+END {
+  $c->() if $c;
+  $t->() if $t;
+}
+
+my $use_ssl = $t ? SSL_AVAILABLE : 0;
+
 {
-my $r = Redis->new(server => $srv);
+my $r = Redis->new(server => $srv,
+                   ssl => $use_ssl,
+                   SSL_verify_mode => 0);
 eval { $r->publish( 'aa', 'v1' ) };
 plan 'skip_all' => "pubsub not implemented on this redis server"  if $@ && $@ =~ /unknown command/;
 }
 
 my ($another_kill_switch, $yet_another_kill_switch);
-END { $_ and $_->() for($another_kill_switch, $yet_another_kill_switch) }
+my ($another_kill_switch_stunnel, $yet_another_kill_switch_stunnel);
+END {
+  $_ and $_->() for ($another_kill_switch,
+                     $yet_another_kill_switch,
+                     $another_kill_switch_stunnel,
+                     $yet_another_kill_switch_stunnel)
+}
 
 subtest 'basics' => sub {
   my %got;
-  ok(my $pub = Redis->new(server => $srv), 'connected to our test redis-server (pub)');
-  ok(my $sub = Redis->new(server => $srv), 'connected to our test redis-server (sub)');
+  ok(my $pub = Redis->new(server => $srv,
+                          ssl => $use_ssl,
+                          SSL_verify_mode => 0), 'connected to our test redis-server (pub)');
+  ok(my $sub = Redis->new(server => $srv,
+                          ssl => $use_ssl,
+                          SSL_verify_mode => 0), 'connected to our test redis-server (sub)');
 
   is($pub->publish('aa', 'v1'), 0, "No subscribers to 'aa' topic");
 
@@ -131,8 +152,8 @@ subtest 'basics' => sub {
 
 subtest 'zero_topic' => sub {
   my %got;
-  my $pub = Redis->new(server => $srv);
-  my $sub = Redis->new(server => $srv);
+  my $pub = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
+  my $sub = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
 
   my $db_size = -1;
   $sub->dbsize(sub { $db_size = $_[0] });
@@ -149,16 +170,23 @@ subtest 'zero_topic' => sub {
 
 
 subtest 'server is killed while waiting for subscribe' => sub {
-  my ($another_kill_switch, $another_server) = redis();
+  my ($another_kill_switch, $another_kill_switch_stunnel, $another_server) = redis();
 
   my $pid = fork();
   BAIL_OUT("Fork failed, aborting") unless defined $pid;
 
   if ($pid) {    ## parent, we'll wait for the child to die quickly
-    ok(my $sync = Redis->new(server => $srv), 'connected to our test redis-server (sync parent)');
+    ok(my $sync = Redis->new(server => $srv,
+                             ssl => $use_ssl,
+                             SSL_verify_mode => 0), 'connected to our test redis-server (sync parent)');
     BAIL_OUT('Missed sync while waiting for child') unless defined $sync->blpop('wake_up_parent', 4);
 
     ok($another_kill_switch->(), "pub/sub redis server killed");
+
+    if ($another_kill_switch_stunnel) {
+      ok($another_kill_switch_stunnel->(), "stunnel killed");
+    }
+
     note("parent killed pub/sub redis server, signal child to proceed");
     $sync->lpush('wake_up_child', 'the redis-server is dead, do your thing');
 
@@ -174,8 +202,8 @@ subtest 'server is killed while waiting for subscribe' => sub {
     }
   }
   else {    ## child
-    my $sync = Redis->new(server => $srv);
-    my $sub  = Redis->new(server => $another_server);
+    my $sync = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
+    my $sub  = Redis->new(server => $another_server, ssl => $use_ssl, SSL_verify_mode => 0);
     $sub->subscribe('chan', sub { });
 
     note("child is ready to test, signal parent to kill our server");
@@ -195,7 +223,7 @@ subtest 'server is killed while waiting for subscribe' => sub {
 
 subtest 'server is restarted while waiting for subscribe' => sub {
   my @ret = redis();
-  my ($another_kill_switch, $another_server) = @ret;
+  my ($another_kill_switch, $another_kill_switch_stunnel, $another_server) = @ret;
   pop @ret;
   my $port = pop @ret;
 
@@ -204,21 +232,28 @@ subtest 'server is restarted while waiting for subscribe' => sub {
 
   if ($pid) {    ## parent, we'll wait for the child to die quickly
 
-    ok(my $sync = Redis->new(server => $srv), 'PARENT: connected to our test redis-server (sync parent)');
+    ok(my $sync = Redis->new(server => $srv,
+                             ssl => $use_ssl,
+                             SSL_verify_mode => 0), 'PARENT: connected to our test redis-server (sync parent)');
     BAIL_OUT('Missed sync while waiting for child') unless defined $sync->blpop('wake_up_parent', 4);
 
     ok($another_kill_switch->(), "PARENT: pub/sub redis server killed");
+
+    if ($another_kill_switch_stunnel) {
+      ok($another_kill_switch_stunnel->(), "stunnel killed");
+    }
+
     note("PARENT: killed pub/sub redis server, signal child to proceed");
     $sync->lpush('wake_up_child', 'the redis-server is dead, waiting before respawning it');
 
-    sleep 5;
+    sleep DEFAULT_DELAY;
 
     # relaunch it on the same port
-    my ($yet_another_kill_switch) = redis(port => $port);
-    my $pub  = Redis->new(server => $another_server);
+    my ($yet_another_kill_switch, $yet_another_kill_switch_stunnel) = redis(port => $port);
+    my $pub = Redis->new(server => $another_server, ssl => $use_ssl, SSL_verify_mode => 0);
 
     note("PARENT: has relaunched the server...");
-    sleep 5;
+    sleep DEFAULT_DELAY;
 
     is($pub->publish('chan', 'v1'), 1, "PARENT: published and the child is subscribed");
 
@@ -233,10 +268,16 @@ subtest 'server is restarted while waiting for subscribe' => sub {
       pass("PARENT: child has properly quit after wait_for_messages()");
     }
     ok($yet_another_kill_switch->(), "PARENT: pub/sub redis server killed");
+
+    if ($yet_another_kill_switch_stunnel) {
+      ok($yet_another_kill_switch_stunnel->(), "stunnel killed");
+    }
   }
   else {    ## child
-    my $sync = Redis->new(server => $srv);
+    my $sync = Redis->new(server => $srv, ssl => $use_ssl, SSL_verify_mode => 0);
     my $sub  = Redis->new(server => $another_server,
+                          ssl => $use_ssl,
+                          SSL_verify_mode => 0,
                           reconnect => 10,
                           on_connect => sub { note "CHILD: reconnected (with a 10s timeout)"; }
                          );
