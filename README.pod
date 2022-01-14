@@ -6,8 +6,9 @@
 
 Redis - Perl binding for Redis database
 
+=head1 VERSION
 
-=for html <a href="https://travis-ci.org/PerlRedis/perl-redis"><img src="https://travis-ci.org/PerlRedis/perl-redis.svg?branch=master"></a>
+version 1.999
 
 =head1 SYNOPSIS
 
@@ -29,6 +30,15 @@ Redis - Perl binding for Redis database
 
     ## Use UNIX domain socket
     my $redis = Redis->new(sock => '/path/to/socket');
+
+    ## Connect to Redis over a secure SSL/TLS channel.  See
+    ## IO::Socket::SSL documentation for more information
+    ## about SSL_verify_mode parameter.
+    my $redis = Redis->new(
+        server => 'redis.tls.example.com:8080',
+        ssl => 1,
+        SSL_verify_mode => SSL_VERIFY_PEER,
+    );
 
     ## Enable auto-reconnect
     ## Try to reconnect every 1s up to 60 seconds until success
@@ -180,6 +190,7 @@ So, if you are working with character strings, you should pre-encode or post-dec
 
     my $r = Redis->new( server => '192.168.0.1:6379', debug => 0 );
     my $r = Redis->new( server => '192.168.0.1:6379', encoding => undef );
+    my $r = Redis->new( server => '192.168.0.1:6379', ssl => 1, SSL_verify_mode => SSL_VERIFY_PEER );
     my $r = Redis->new( sock => '/path/to/sock' );
     my $r = Redis->new( reconnect => 60, every => 5000 );
     my $r = Redis->new( password => 'boo' );
@@ -350,6 +361,18 @@ documentation|https://redis.io/commands/client-setname> for all the juicy
 details. This feature is safe to use with all versions of Redis servers. If C<<
 CLIENT SETNAME >> support is not available (Redis servers 2.6.9 and above
 only), the name parameter is ignored.
+
+=head3 C<< ssl >>
+
+You can connect to Redis over SSL/TLS by setting this flag if the target Redis
+server or cluster has been setup to support SSL/TLS.  This requires IO::Socket::SSL
+to be installed on the client.  It's off by default.
+
+=head3 C<< SSL_verify_mode >>
+
+This parameter will be applied when C<< ssl >> flag is set.  It sets the verification
+mode for the peer certificate.  It's compatible with the parameter with the same name
+in IO::Socket::SSL.
 
 =head3 C<< debug >>
 
