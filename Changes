@@ -2,6 +2,7 @@ Revision history for Redis
 
 {{$NEXT}}
 
+  * enable ssl support
   * remove test expression that is problematic on OpenBSD and NetBSD
 
 1.997     2020-80-17 10:03:00+01:00 Europe/Paris
