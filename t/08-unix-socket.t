@@ -8,7 +8,7 @@ use Redis;
 use lib 't/tlib';
 use Test::SpawnRedisServer;
 
-my ($c, undef, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
+my ($c, undef, undef, undef, undef, undef, undef, undef, $sock_temp_file) = redis();
 END { $c->() if $c }
 
 my $conn = sub {
