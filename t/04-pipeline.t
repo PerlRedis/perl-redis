@@ -54,7 +54,7 @@ pipeline_ok 'keys in pipelined mode',
 pipeline_ok 'info in pipelined mode',
   (
   [info => [], code(sub { ref $_[0] eq 'HASH' && keys %{ $_[0] } })],
-  $r->info->{redis_version} eq '7.0.0' ? (
+  $r->info->{redis_version} ge '7.0.0' ? (
     [ info => [qw<oops oops>],
       {},
     ],
