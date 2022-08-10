@@ -661,8 +661,13 @@ sub connect {
 sub __build_sock {
   my ($self) = @_;
 
-  $self->{sock} = $self->{builder}->($self)
-    || croak("Could not connect to Redis server at $self->{server}: $!");
+  do {
+    $self->{sock} = $self->{builder}->($self);
+  } while (!$self->{sock} && $! == Errno::EINTR);
+
+  unless ($self->{sock}) {
+    croak("Could not connect to Redis server at $self->{server}: $!");
+  }
 
   $self->{__buf} = '';
 
