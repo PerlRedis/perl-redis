@@ -70,7 +70,7 @@ sub new {
 
   defined $args{$_}
     and $self->{$_} = $args{$_} for 
-      qw(password on_connect name no_auto_connect_on_new cnx_timeout
+      qw(username password on_connect name no_auto_connect_on_new cnx_timeout
          write_timeout read_timeout sentinels_cnx_timeout sentinels_write_timeout
          sentinels_read_timeout no_sentinels_list_update);
 
@@ -666,7 +666,14 @@ sub __build_sock {
 
   $self->{__buf} = '';
 
-  if (defined $self->{password}) {
+  if (defined $self->{username} && defined $self->{password}) {
+    try { $self->auth($self->{username}, $self->{password}) }
+    catch {
+      my $error = $_;
+      $self->{reconnect} = 0;
+      croak('Redis server authentication error: ' . $error);
+    };
+  } elsif (defined $self->{password}) {
     try { $self->auth($self->{password}) }
     catch {
       my $error = $_;
@@ -2236,6 +2243,10 @@ Load the specified Lua script into the script cache. (see L<https://redis.io/com
   $r->auth(password)
 
 Authenticate to the server (see L<https://redis.io/commands/auth>)
+
+  $r->auth(username, password)
+
+Authenticate to the server using Redis 6.0+ ACL System (see L<https://redis.io/commands/auth>)
 
 =head2 echo
 
