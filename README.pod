@@ -8,7 +8,7 @@ Redis - Perl binding for Redis database
 
 =head1 VERSION
 
-version 1.999
+version 2.000
 
 =head1 SYNOPSIS
 
@@ -1276,6 +1276,10 @@ Load the specified Lua script into the script cache. (see L<https://redis.io/com
   $r->auth(password)
 
 Authenticate to the server (see L<https://redis.io/commands/auth>)
+
+  $r->auth(username, password)
+
+Authenticate to the server using Redis 6.0+ ACL System (see L<https://redis.io/commands/auth>)
 
 =head2 echo
 
