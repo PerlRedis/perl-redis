@@ -2,6 +2,14 @@ Revision history for Redis
 
 {{$NEXT}}
 
+2.000     2023-01-13 22:55:51+01:00 Europe/Paris
+
+  * #166: add ssl, username and password args to redis sentinel (Merwan Ouddane)
+  * #163: Add support for username/password AUTH (Joel Chornik)
+  * #162: Retry socket connect if errno is EINTR (Michael Schout)
+  * #158: Better fix of redis version in test (Michal Josef Špaček)
+  * #156: Fix of test for multiple arguments in info command (Michal Josef Špaček)
+  
 1.999     2022-01-14 21:42:33+01:00 Europe/Paris
 
   * enable ssl support
