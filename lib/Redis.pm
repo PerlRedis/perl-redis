@@ -1669,6 +1669,14 @@ Create a key using the provided serialized value, previously obtained using DUMP
 
 Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
 
+=head3 Note on cursor.
+
+ As documented as above, in perl this looks as follows:
+
+  my $cursor = 0;  my $result = [];
+  do { ($cursor, $result) = $r->scan($cursor, 'MATCH', '*'); ... }
+      while ( $cursor );
+
 =head2 sort
 
   $r->sort(key, [BY pattern], [LIMIT offset count], [GET pattern [GET pattern ...]], [ASC|DESC], [ALPHA], [STORE destination])
