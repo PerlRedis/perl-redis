@@ -465,6 +465,22 @@ sub keys {
   );
 }
 
+sub scan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my $pattern = shift || '*';
+
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
+    local $_;
+    for (@$list) {
+      $cb->($self, $_);
+    };
+  } while $cursor;
+
+  return $self; 
+}
 
 ### PubSub
 sub wait_for_messages {
@@ -1676,6 +1692,22 @@ Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
   my $cursor = 0;  my $result = [];
   do { ($cursor, $result) = $r->scan($cursor, 'MATCH', '*'); ... }
       while ( $cursor );
+
+=head2 scan_callback
+
+  $r->scan_callback( sub { print "$_\n" } );
+
+  $r->scan_callback( "prefix:*", sub {
+    my ($connection, $key) = @_;
+    ...
+  });
+
+Execute callback exactly once for every key matching a pattern
+(of "*" if none given). L</scan> is used internally.
+
+C<$_> is localized and set to the key so shorter callbacks can be used.
+
+Callback arguments are ($r, $key).
 
 =head2 sort
 
