@@ -469,17 +469,22 @@ sub scan_callback {
   my $self = shift;
   my $cb = pop;
   my $pattern = shift || '*';
+  # TODO how do we pass TYPE and COUNT arguments?
 
+  croak("Missing required callback in call to scan_callback(), ")
+    unless ref($cb) eq 'CODE';
+
+  # TODO how do we implement HSCAN/ZSCAN? Can't use $_ there
+  #      because they iterate over _pairs_, not just keys.
   my $cursor = 0;
   do {
     ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
-    local $_;
     for (@$list) {
       $cb->($self, $_);
     };
   } while $cursor;
 
-  return $self; 
+  return 1; 
 }
 
 ### PubSub
