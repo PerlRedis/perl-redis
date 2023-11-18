@@ -518,6 +518,30 @@ sub hscan_callback {
   return 1;
 }
 
+sub sscan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my ($key, $pattern) = @_;
+
+  croak("[sscan_callback] The last argument must be a function")
+    unless ref($cb) eq 'CODE';
+
+  croak("[sscan_callback] key is required")
+    unless defined $key;
+
+  $pattern = "*" unless defined $pattern;
+
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->sscan( $key, $cursor, MATCH => $pattern );
+    while (@$list) {
+      $cb->(shift @$list);
+    };
+  } while $cursor;
+
+  return 1;
+}
+
 ### PubSub
 sub wait_for_messages {
   my ($self, $timeout) = @_;
@@ -1989,6 +2013,20 @@ Set multiple hash fields to multiple values (see L<https://redis.io/commands/hms
 
 Incrementally iterate hash fields and associated values (see L<https://redis.io/commands/hscan>)
 
+=head2 hscan_callback
+
+  $r->hscan_callback( $hashkey, sub { print "$_[0]\n" } );
+
+  $r->hscan_callback( $hashkey, "prefix:*", sub {
+    my ($key, $value) = @_;
+    ...
+  });
+
+Execute callback exactly once for every key matching a pattern
+(of "*" if none given). L</hscan> is used internally.
+
+A (key, value) pair will be passed to the callback as arguments.
+
 =head2 hset
 
   $r->hset(key, field, value)
@@ -2089,17 +2127,17 @@ Incrementally iterate Set elements (see L<https://redis.io/commands/sscan>)
 
 =head2 sscan_callback
 
-  $r->sscan_callback( $hashkey, sub { print "$_[0]\n" } );
+  $r->sscan_callback( $key, sub { print "$_[0]\n" } );
 
-  $r->sscan_callback( $hashkey, "prefix:*", sub {
-    my ($key, $value) = @_;
+  $r->sscan_callback( $key, "prefix:*", sub {
+    my ($key) = @_;
     ...
   });
 
-Execute callback exactly once for every key matching a pattern
+Execute callback exactly once for every member of a set matching a pattern
 (of "*" if none given). L</sscan> is used internally.
 
-A (key, value) pair will be passed to the callback as arguments.
+The member in question will be the only argument of the callback.
 
 =head2 sunion
 

@@ -53,7 +53,7 @@ subtest 'scan with pattern' => sub {
 $o->hset( "hash", "foo", 42 );
 $o->hset( "hash", "bar", 137 );
 
-subtest 'shotgun sscan' => sub {
+subtest 'shotgun hscan' => sub {
   my %copy;
 
   $o->hscan_callback( "hash", sub {
@@ -64,7 +64,7 @@ subtest 'shotgun sscan' => sub {
   is_deeply \%copy, { foo => 42, bar => 137 }, 'each key processed exactly once';
 };
 
-subtest 'sscan with pattern' => sub {
+subtest 'hscan with pattern' => sub {
   my %copy;
 
   $o->hscan_callback( "hash", "ba*", sub {
@@ -75,5 +75,31 @@ subtest 'sscan with pattern' => sub {
   is_deeply \%copy, { bar => 137 }, 'only matching keys processed exactly once';
 };
 
+
+subtest 'sscan (iteration over set)' => sub {
+  my @keys = qw( foo bar quux x:1 x:2 x:3 );
+  my %set = map { $_ => 1 } @keys;
+  my %restricted = map { $_ => 1 } grep { /^x:/ } @keys;
+
+  $o->sadd( "zfc", @keys );
+
+  {
+    my %copy;
+    $o->sscan_callback( "zfc", sub {
+      my $entry = shift;
+      $copy{$entry}++;
+    });
+    is_deeply \%copy, \%set, 'all values in set listed exactly once';
+  };
+
+  {
+    my %copy;
+    $o->sscan_callback( "zfc", "x:*", sub {
+      my $entry = shift;
+      $copy{$entry}++;
+    });
+    is_deeply \%copy, \%restricted, 'only matching values in set listed exactly once';
+  };
+};
 
 done_testing;
