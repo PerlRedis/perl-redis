@@ -38,14 +38,14 @@ $o->set($_, $vals{$_}) for keys %vals;
 
 subtest 'shotgun scan' => sub {
   my @trace;
-  $o->scan_callback(sub { push @trace, $_ });
+  $o->scan_callback(sub { push @trace, $_[0] });
 
   is_deeply( [sort @trace], [sort keys %vals], 'all keys scanned once' );
 };
 
 subtest 'scan with pattern' => sub {
   my @trace;
-  $o->scan_callback('ba*', sub { push @trace, $_ });
+  $o->scan_callback('ba*', sub { push @trace, $_[0] });
 
   is_deeply( [sort @trace], [sort qw[bar baz]], 'only selected keys scanned once' );
 };

@@ -471,7 +471,7 @@ sub scan_callback {
   my $pattern = shift || '*';
   # TODO how do we pass TYPE and COUNT arguments?
 
-  croak("Missing required callback in call to scan_callback(), ")
+  croak("[scan_callback] The last argument must be a function")
     unless ref($cb) eq 'CODE';
 
   # TODO how do we implement HSCAN/ZSCAN? Can't use $_ there
@@ -479,12 +479,12 @@ sub scan_callback {
   my $cursor = 0;
   do {
     ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
-    for (@$list) {
-      $cb->($self, $_);
+    foreach my $key (@$list) {
+      $cb->($key);
     };
   } while $cursor;
 
-  return 1; 
+  return 1;
 }
 
 ### PubSub
@@ -1700,19 +1700,17 @@ Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
 
 =head2 scan_callback
 
-  $r->scan_callback( sub { print "$_\n" } );
+  $r->scan_callback( sub { print "$_[0]\n" } );
 
   $r->scan_callback( "prefix:*", sub {
-    my ($connection, $key) = @_;
+    my ($key) = @_;
     ...
   });
 
 Execute callback exactly once for every key matching a pattern
 (of "*" if none given). L</scan> is used internally.
 
-C<$_> is localized and set to the key so shorter callbacks can be used.
-
-Callback arguments are ($r, $key).
+The key in question will be the only argument of the callback.
 
 =head2 sort
 
