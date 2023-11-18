@@ -2087,6 +2087,20 @@ Remove one or more members from a set (see L<https://redis.io/commands/srem>)
 
 Incrementally iterate Set elements (see L<https://redis.io/commands/sscan>)
 
+=head2 sscan_callback
+
+  $r->sscan_callback( $hashkey, sub { print "$_[0]\n" } );
+
+  $r->sscan_callback( $hashkey, "prefix:*", sub {
+    my ($key, $value) = @_;
+    ...
+  });
+
+Execute callback exactly once for every key matching a pattern
+(of "*" if none given). L</sscan> is used internally.
+
+A (key, value) pair will be passed to the callback as arguments.
+
 =head2 sunion
 
   $r->sunion(key [key ...])
