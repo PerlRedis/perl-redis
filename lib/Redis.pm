@@ -465,14 +465,19 @@ sub keys {
   );
 }
 
+### Methods that accept callbacks.
+### Callback should always be the last argument.
 sub scan_callback {
   my $self = shift;
   my $cb = pop;
-  my $pattern = shift || '*';
+  my ($pattern) = @_;
   # TODO how do we pass TYPE and COUNT arguments?
 
   croak("[scan_callback] The last argument must be a function")
     unless ref($cb) eq 'CODE';
+
+  $pattern = "*"
+    unless defined $pattern;
 
   # TODO how do we implement HSCAN/ZSCAN? Can't use $_ there
   #      because they iterate over _pairs_, not just keys.
@@ -481,6 +486,32 @@ sub scan_callback {
     ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
     foreach my $key (@$list) {
       $cb->($key);
+    };
+  } while $cursor;
+
+  return 1;
+}
+
+sub hscan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my ($key, $pattern) = @_;
+
+  croak("[hscan_callback] The last argument must be a function")
+    unless ref($cb) eq 'CODE';
+
+  croak("[hscan_callback] key is required")
+    unless defined $key;
+
+  $pattern = "*" unless defined $pattern;
+
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->hscan( $key, $cursor, MATCH => $pattern );
+    while (@$list) {
+      my $k = shift @$list;
+      my $v = shift @$list;
+      $cb->($k, $v);
     };
   } while $cursor;
 

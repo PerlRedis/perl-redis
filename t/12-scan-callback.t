@@ -50,5 +50,30 @@ subtest 'scan with pattern' => sub {
   is_deeply( [sort @trace], [sort qw[bar baz]], 'only selected keys scanned once' );
 };
 
+$o->hset( "hash", "foo", 42 );
+$o->hset( "hash", "bar", 137 );
+
+subtest 'shotgun sscan' => sub {
+  my %copy;
+
+  $o->hscan_callback( "hash", sub {
+    my ($key, $value) = @_;
+    $copy{$key} += $value;
+  });
+
+  is_deeply \%copy, { foo => 42, bar => 137 }, 'each key processed exactly once';
+};
+
+subtest 'sscan with pattern' => sub {
+  my %copy;
+
+  $o->hscan_callback( "hash", "ba*", sub {
+    my ($key, $value) = @_;
+    $copy{$key} += $value;
+  });
+
+  is_deeply \%copy, { bar => 137 }, 'only matching keys processed exactly once';
+};
+
 
 done_testing;
