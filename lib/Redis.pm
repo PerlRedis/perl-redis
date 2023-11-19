@@ -465,6 +465,82 @@ sub keys {
   );
 }
 
+### Methods that accept callbacks.
+### Callback should always be the last argument.
+sub scan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my ($pattern) = @_;
+  # TODO how do we pass TYPE and COUNT arguments?
+
+  croak("[scan_callback] The last argument must be a function")
+    unless ref($cb) eq 'CODE';
+
+  $pattern = "*"
+    unless defined $pattern;
+
+  # TODO how do we implement HSCAN/ZSCAN? Can't use $_ there
+  #      because they iterate over _pairs_, not just keys.
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
+    foreach my $key (@$list) {
+      $cb->($key);
+    };
+  } while $cursor;
+
+  return 1;
+}
+
+sub hscan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my ($key, $pattern) = @_;
+
+  croak("[hscan_callback] The last argument must be a function")
+    unless ref($cb) eq 'CODE';
+
+  croak("[hscan_callback] key is required")
+    unless defined $key;
+
+  $pattern = "*" unless defined $pattern;
+
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->hscan( $key, $cursor, MATCH => $pattern );
+    while (@$list) {
+      my $k = shift @$list;
+      my $v = shift @$list;
+      $cb->($k, $v);
+    };
+  } while $cursor;
+
+  return 1;
+}
+
+sub sscan_callback {
+  my $self = shift;
+  my $cb = pop;
+  my ($key, $pattern) = @_;
+
+  croak("[sscan_callback] The last argument must be a function")
+    unless ref($cb) eq 'CODE';
+
+  croak("[sscan_callback] key is required")
+    unless defined $key;
+
+  $pattern = "*" unless defined $pattern;
+
+  my $cursor = 0;
+  do {
+    ($cursor, my $list) = $self->sscan( $key, $cursor, MATCH => $pattern );
+    while (@$list) {
+      $cb->(shift @$list);
+    };
+  } while $cursor;
+
+  return 1;
+}
 
 ### PubSub
 sub wait_for_messages {
@@ -1677,6 +1753,20 @@ Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
   do { ($cursor, $result) = $r->scan($cursor, 'MATCH', '*'); ... }
       while ( $cursor );
 
+=head2 scan_callback
+
+  $r->scan_callback( sub { print "$_[0]\n" } );
+
+  $r->scan_callback( "prefix:*", sub {
+    my ($key) = @_;
+    ...
+  });
+
+Execute callback exactly once for every key matching a pattern
+(of "*" if none given). L</scan> is used internally.
+
+The key in question will be the only argument of the callback.
+
 =head2 sort
 
   $r->sort(key, [BY pattern], [LIMIT offset count], [GET pattern [GET pattern ...]], [ASC|DESC], [ALPHA], [STORE destination])
@@ -1923,6 +2013,20 @@ Set multiple hash fields to multiple values (see L<https://redis.io/commands/hms
 
 Incrementally iterate hash fields and associated values (see L<https://redis.io/commands/hscan>)
 
+=head2 hscan_callback
+
+  $r->hscan_callback( $hashkey, sub { print "$_[0]\n" } );
+
+  $r->hscan_callback( $hashkey, "prefix:*", sub {
+    my ($key, $value) = @_;
+    ...
+  });
+
+Execute callback exactly once for every key matching a pattern
+(of "*" if none given). L</hscan> is used internally.
+
+A (key, value) pair will be passed to the callback as arguments.
+
 =head2 hset
 
   $r->hset(key, field, value)
@@ -2020,6 +2124,20 @@ Remove one or more members from a set (see L<https://redis.io/commands/srem>)
   $r->sscan(key, cursor, [MATCH pattern], [COUNT count])
 
 Incrementally iterate Set elements (see L<https://redis.io/commands/sscan>)
+
+=head2 sscan_callback
+
+  $r->sscan_callback( $key, sub { print "$_[0]\n" } );
+
+  $r->sscan_callback( $key, "prefix:*", sub {
+    my ($key) = @_;
+    ...
+  });
+
+Execute callback exactly once for every member of a set matching a pattern
+(of "*" if none given). L</sscan> is used internally.
+
+The member in question will be the only argument of the callback.
 
 =head2 sunion
 
