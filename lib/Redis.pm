@@ -240,7 +240,7 @@ our $AUTOLOAD;
 sub AUTOLOAD {
   my $command = $AUTOLOAD;
   $command =~ s/.*://;
-
+  if ($command =~ /^ts/) { substr($command,2,0) = ".";}
   my $method = sub { shift->__std_cmd($command, @_) };
 
   # Save this method for future calls
