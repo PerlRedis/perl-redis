@@ -470,20 +470,15 @@ sub keys {
 sub scan_callback {
   my $self = shift;
   my $cb = pop;
-  my ($pattern) = @_;
-  # TODO how do we pass TYPE and COUNT arguments?
 
-  croak("[scan_callback] The last argument must be a function")
+  croak "[scan_callback] The last argument must be a function"
     unless ref($cb) eq 'CODE';
+  croak "[scan_callback] Optional arguments must be a hash, not an odd-sized list"
+    if @_ % 2;
 
-  $pattern = "*"
-    unless defined $pattern;
-
-  # TODO how do we implement HSCAN/ZSCAN? Can't use $_ there
-  #      because they iterate over _pairs_, not just keys.
   my $cursor = 0;
   do {
-    ($cursor, my $list) = $self->scan( $cursor, MATCH => $pattern );
+    ($cursor, my $list) = $self->scan( $cursor, @_ );
     foreach my $key (@$list) {
       $cb->($key);
     };
@@ -1757,15 +1752,21 @@ Incrementally iterate the keys space (see L<https://redis.io/commands/scan>)
 
   $r->scan_callback( sub { print "$_[0]\n" } );
 
-  $r->scan_callback( "prefix:*", sub {
+  $r->scan_callback( MATCH => "prefix:*", TYPE => 'string', sub {
     my ($key) = @_;
     ...
   });
 
-Execute callback exactly once for every key matching a pattern
-(of "*" if none given). L</scan> is used internally.
+Execute callback exactly once for every key matching the criteria,
+or all keys if none given.
+L</scan> is used internally.
 
 The key in question will be the only argument of the callback.
+
+=head3 Note on *_callback methods.
+
+The callback is always the last argument:
+this makes calling code more readable.
 
 =head2 sort
 
