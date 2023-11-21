@@ -37,17 +37,17 @@ my %vals = (
 $o->set($_, $vals{$_}) for keys %vals;
 
 subtest 'shotgun scan' => sub {
-  my @trace;
-  $o->scan_callback(sub { push @trace, $_[0] });
+  my %trace;
+  $o->scan_callback(sub { $trace{$_[0]}++ });
 
-  is_deeply( [sort @trace], [sort keys %vals], 'all keys scanned once' );
+  is_deeply( \%trace, { map { $_ => 1 } keys %vals}, 'all keys scanned exactly once' );
 };
 
 subtest 'scan with pattern' => sub {
-  my @trace;
-  $o->scan_callback('ba*', sub { push @trace, $_[0] });
+  my %trace;
+  $o->scan_callback(MATCH => 'ba*', sub { $trace{$_[0]}++ });
 
-  is_deeply( [sort @trace], [sort qw[bar baz]], 'only selected keys scanned once' );
+  is_deeply( \%trace, { bar => 1, baz => 1 }, 'only selected keys scanned once' );
 };
 
 $o->hset( "hash", "foo", 42 );
@@ -67,14 +67,13 @@ subtest 'shotgun hscan' => sub {
 subtest 'hscan with pattern' => sub {
   my %copy;
 
-  $o->hscan_callback( "hash", "ba*", sub {
+  $o->hscan_callback( "hash", MATCH => "ba*", sub {
     my ($key, $value) = @_;
     $copy{$key} += $value;
   });
 
   is_deeply \%copy, { bar => 137 }, 'only matching keys processed exactly once';
 };
-
 
 subtest 'sscan (iteration over set)' => sub {
   my @keys = qw( foo bar quux x:1 x:2 x:3 );
@@ -94,12 +93,26 @@ subtest 'sscan (iteration over set)' => sub {
 
   {
     my %copy;
-    $o->sscan_callback( "zfc", "x:*", sub {
+    $o->sscan_callback( "zfc", MATCH => "x:*", sub {
       my $entry = shift;
       $copy{$entry}++;
     });
     is_deeply \%copy, \%restricted, 'only matching values in set listed exactly once';
   };
 };
+
+subtest 'zscan' => sub {
+  $o->zadd( "sorted", 1, "first", 2, "second", 3, "x", 3, "y", 3, "z" );
+  my @trace;
+  $o->zscan_callback( "sorted", sub { push @trace, \@_ } );
+  is_deeply(
+    \@trace,
+    [[ first => 1 ], [ second => 2 ], [ x => 3 ], [ y => 3 ], [ z => 3 ]],
+    "sorted set iterated in order"
+  );
+};
+
+# TODO add a scan(TYPE => 'set') call
+# but we need to ensure version >= 6.0.0 first...
 
 done_testing;
