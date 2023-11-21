@@ -487,54 +487,65 @@ sub scan_callback {
   return 1;
 }
 
-sub hscan_callback {
+sub sscan_callback {
   my $self = shift;
   my $cb = pop;
-  my ($key, $pattern) = @_;
 
-  croak("[hscan_callback] The last argument must be a function")
+  croak "[sscan_callback] The last argument must be a function"
     unless ref($cb) eq 'CODE';
 
-  croak("[hscan_callback] key is required")
+  my $key = shift;
+  croak("[sscan_callback] key is required")
     unless defined $key;
 
-  $pattern = "*" unless defined $pattern;
+  croak "[sscan_callback] Optional arguments must be a hash, not an odd-sized list"
+    if @_ % 2;
 
   my $cursor = 0;
   do {
-    ($cursor, my $list) = $self->hscan( $key, $cursor, MATCH => $pattern );
-    while (@$list) {
-      my $k = shift @$list;
-      my $v = shift @$list;
-      $cb->($k, $v);
+    ($cursor, my $list) = $self->sscan( $key, $cursor, @_ );
+    foreach my $key (@$list) {
+      $cb->($key);
     };
   } while $cursor;
 
   return 1;
 }
 
-sub sscan_callback {
-  my $self = shift;
-  my $cb = pop;
-  my ($key, $pattern) = @_;
+# Now do the same as above but under different names
+# and with an extra parameter
+foreach (qw(hscan zscan)) {
+  my $backend = $_;
+  my $method = $_ . "_callback";
+  my $impl = sub {
+    my $self = shift;
+    my $cb = pop;
 
-  croak("[sscan_callback] The last argument must be a function")
-    unless ref($cb) eq 'CODE';
+    croak("[$method] The last argument must be a function")
+      unless ref($cb) eq 'CODE';
 
-  croak("[sscan_callback] key is required")
-    unless defined $key;
+    my $key = shift;
+    croak("[$method] key is required")
+      unless defined $key;
 
-  $pattern = "*" unless defined $pattern;
+    croak "[scan_callback] Optional arguments must be a hash, not an odd-sized list"
+      if @_ % 2;
 
-  my $cursor = 0;
-  do {
-    ($cursor, my $list) = $self->sscan( $key, $cursor, MATCH => $pattern );
-    while (@$list) {
-      $cb->(shift @$list);
-    };
-  } while $cursor;
+    my $cursor = 0;
+    do {
+      ($cursor, my $list) = $self->$backend( $key, $cursor, @_ );
+      while (@$list) {
+        my $k = shift @$list;
+        my $v = shift @$list;
+        $cb->($k, $v);
+      };
+    } while $cursor;
 
-  return 1;
+    return 1;
+  };
+
+  no strict 'refs'; ## no critic
+  *$method = $impl;
 }
 
 ### PubSub
@@ -2018,13 +2029,14 @@ Incrementally iterate hash fields and associated values (see L<https://redis.io/
 
   $r->hscan_callback( $hashkey, sub { print "$_[0]\n" } );
 
-  $r->hscan_callback( $hashkey, "prefix:*", sub {
+  $r->hscan_callback( $hashkey, MATCH => "prefix:*", sub {
     my ($key, $value) = @_;
     ...
   });
 
-Execute callback exactly once for every key matching a pattern
-(of "*" if none given). L</hscan> is used internally.
+Execute callback exactly once for every key matching the pattern
+(or all if none given).
+L</hscan> is used internally.
 
 A (key, value) pair will be passed to the callback as arguments.
 
@@ -2130,13 +2142,13 @@ Incrementally iterate Set elements (see L<https://redis.io/commands/sscan>)
 
   $r->sscan_callback( $key, sub { print "$_[0]\n" } );
 
-  $r->sscan_callback( $key, "prefix:*", sub {
+  $r->sscan_callback( $key, MATCH => "prefix:*", sub {
     my ($key) = @_;
     ...
   });
 
 Execute callback exactly once for every member of a set matching a pattern
-(of "*" if none given). L</sscan> is used internally.
+(of all if none given). L</sscan> is used internally.
 
 The member in question will be the only argument of the callback.
 
@@ -2267,6 +2279,18 @@ Determine the index of a member in a sorted set, with scores ordered from high t
   $r->zscan(key, cursor, [MATCH pattern], [COUNT count])
 
 Incrementally iterate sorted sets elements and associated scores (see L<https://redis.io/commands/zscan>)
+
+=head2 zscan_callback
+
+  $r->zscan(key, [MATCH pattern], [COUNT count], sub {
+    my ($key, $score) = @_;
+    ...
+  });
+
+Execute callback exactly once for every matching key in the sorted set.
+The scan order is incremental (as redis documentation suggests).
+
+L</zscan> is used internally.
 
 =head2 zscore
 
